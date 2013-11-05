@@ -9,19 +9,17 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 17, 2013 by William A. Perkins
-# Last Change: 2013-10-09 14:59:20 d3g096
+# Last Change: 2013-11-05 09:11:00 d3g096
 # -------------------------------------------------------------
 
 
 set(gridpack_partition_sources)
 
 set(target_libraries 
-  gridpack_parallel 
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
   ${MPI_CXX_LIBRARIES}
 )
-
 
 # implementation independent partition sources
 list(APPEND gridpack_partition_sources
@@ -60,8 +58,13 @@ endif()
 # -------------------------------------------------------------
 # gridpack partition library
 # -------------------------------------------------------------
-add_library(gridpack_partition
+add_library(gridpack_partition OBJECT
   ${gridpack_partition_sources}
+)
+
+set(target_objects 
+  $<TARGET_OBJECTS:gridpack_parallel>
+  $<TARGET_OBJECTS:gridpack_partition>
 )
 
 # -------------------------------------------------------------
@@ -75,20 +78,13 @@ install(FILES
 )
 
 # -------------------------------------------------------------
-# gridpack partition library installation
-# -------------------------------------------------------------
-install(TARGETS
-  gridpack_partition
-  DESTINATION lib
-)
-
-# -------------------------------------------------------------
 # partition test suite
 # -------------------------------------------------------------
 add_executable(partition_test 
   test/partition_test.cpp
+  ${target_objects}
 )
-target_link_libraries(partition_test gridpack_partition ${target_libraries})
+target_link_libraries(partition_test ${target_libraries})
 gridpack_add_unit_test(partition partition_test)
 
 
@@ -99,7 +95,8 @@ gridpack_add_unit_test(partition partition_test)
 if (PARMETIS_FOUND) 
     add_executable(parmetis_test 
       test/parmetis_test.cpp
+      ${target_objects}
     )
-    target_link_libraries(parmetis_test gridpack_partition ${target_libraries})
+    target_link_libraries(parmetis_test ${target_libraries})
     gridpack_add_unit_test(parmetis parmetis_test)
 endif (PARMETIS_FOUND)

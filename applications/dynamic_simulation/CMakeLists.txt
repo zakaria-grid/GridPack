@@ -10,16 +10,11 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-08-09 11:41:42 d3g096
+# Last Change: 2013-11-05 09:14:25 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
-    gridpack_components
-    gridpack_factory
-    gridpack_partition
-    gridpack_parallel
-    gridpack_math
-    gridpack_configuration
+    gridpack
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}

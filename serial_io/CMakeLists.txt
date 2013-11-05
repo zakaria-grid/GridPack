@@ -10,18 +10,21 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-07-04 08:13:01 d3g096
+# Last Change: 2013-11-05 09:16:45 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
   ${GA_LIBRARIES} 
+  ${PETSC_LIBRARIES}
   ${Boost_LIBRARIES} 
   ${MPI_CXX_LIBRARIES}
 )
 
-set(target_libraries 
-  gridpack_components gridpack_parallel gridpack_math
-  ${target_libraries} 
+set(target_objects 
+  $<TARGET_OBJECTS:gridpack_parallel>
+  $<TARGET_OBJECTS:gridpack_configuration>
+  $<TARGET_OBJECTS:gridpack_math>
+  $<TARGET_OBJECTS:gridpack_components>
 )
 
 include_directories(AFTER ${GA_INCLUDE_DIRS})
@@ -32,32 +35,9 @@ if (GA_FOUND)
 endif()
 
 # -------------------------------------------------------------
-# TEST: greetings
+# TEST: test_serial_io
 # A simple Serial IO test program
 # -------------------------------------------------------------
-add_executable(test_serial_io test/test_serial_io.cpp)
+add_executable(test_serial_io test/test_serial_io.cpp ${target_objects})
 target_link_libraries(test_serial_io ${target_libraries})
-#
-#!!add_test(test_network_serial_iotest_serial_io)
-#!!add_test(NAME greetings_parallel COMMAND 
-#!!  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:greetings> ${MPIEXEC_POSTFLAGS})
-#!!set_tests_properties(greetings_serial greetings_parallel
-#!!  PROPERTIES 
-#!!  PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
-#!!)
-
-# -------------------------------------------------------------
-# TEST: mpi_test
-# A simple MPI test using boost::test
-# -------------------------------------------------------------
-#!!add_executable(mpi_test test/mpi_test.cpp)
-#!!target_link_libraries(mpi_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
-
-#!!add_test(NAME mpi_test_serial COMMAND $<TARGET_FILE:mpi_test>)
-#!!add_test(NAME mpi_test_parallel COMMAND 
-#!!  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:mpi_test> ${MPIEXEC_POSTFLAGS})
-#!!set_tests_properties(mpi_test_serial mpi_test_parallel
-#!!  PROPERTIES 
-#!!  PASS_REGULAR_EXPRESSION "No errors detected"
-#!!)
 

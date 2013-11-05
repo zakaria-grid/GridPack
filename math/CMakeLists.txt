@@ -7,12 +7,10 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2013-10-23 15:09:04 d3g096
+# Last Change: 2013-11-05 08:43:54 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
-  gridpack_configuration 
-  gridpack_parallel 
   ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES}
 )
 
@@ -96,8 +94,14 @@ endif()
 # -------------------------------------------------------------
 # gridpack math library
 # -------------------------------------------------------------
-add_library(gridpack_math
+add_library(gridpack_math OBJECT
   ${gridpack_math_sources}
+)
+
+set(target_objects
+  $<TARGET_OBJECTS:gridpack_configuration>
+  $<TARGET_OBJECTS:gridpack_parallel>
+  $<TARGET_OBJECTS:gridpack_math>
 )
 
 # -------------------------------------------------------------
@@ -114,18 +118,10 @@ install(FILES
 )
 
 # -------------------------------------------------------------
-# gridpack math library installation
-# -------------------------------------------------------------
-install(TARGETS 
-  gridpack_math
-  DESTINATION lib
-)
-
-# -------------------------------------------------------------
 # a small test (not a unit test)
 # -------------------------------------------------------------
-add_executable(small_matrix_solve small_matrix_solve.cpp)
-target_link_libraries(small_matrix_solve  gridpack_math ${target_libraries})
+add_executable(small_matrix_solve small_matrix_solve.cpp ${target_objects})
+target_link_libraries(small_matrix_solve ${target_libraries})
 add_custom_target(small_matrix_solve_input
 
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -140,30 +136,30 @@ add_dependencies(small_matrix_solve small_matrix_solve_input)
 # -------------------------------------------------------------
 # vector test suite
 # -------------------------------------------------------------
-add_executable(vector_test test/vector_test.cpp)
-target_link_libraries(vector_test gridpack_math ${target_libraries})
+add_executable(vector_test test/vector_test.cpp ${target_objects})
+target_link_libraries(vector_test ${target_libraries})
 gridpack_add_unit_test(vector vector_test)
 
 # -------------------------------------------------------------
 # matrix test suite (one each for dense and sparse)
 # -------------------------------------------------------------
-add_executable(sparse_matrix_test test/matrix_test.cpp)
-target_link_libraries(sparse_matrix_test gridpack_math ${target_libraries})
+add_executable(sparse_matrix_test test/matrix_test.cpp ${target_objects})
+target_link_libraries(sparse_matrix_test ${target_libraries})
 gridpack_add_unit_test(sparse_matrix sparse_matrix_test)
 
-add_executable(dense_matrix_test test/matrix_test.cpp)
+add_executable(dense_matrix_test test/matrix_test.cpp ${target_objects})
 set_target_properties(dense_matrix_test
   PROPERTIES
   COMPILE_DEFINITIONS "TEST_DENSE=YES"
 )
-target_link_libraries(dense_matrix_test gridpack_math ${target_libraries})
+target_link_libraries(dense_matrix_test ${target_libraries})
 gridpack_add_unit_test(dense_matrix dense_matrix_test)
 
 # -------------------------------------------------------------
 # linear solver test suite
 # -------------------------------------------------------------
-add_executable(linear_solver_test test/linear_solver_test.cpp)
-target_link_libraries(linear_solver_test gridpack_math ${target_libraries})
+add_executable(linear_solver_test test/linear_solver_test.cpp ${target_objects})
+target_link_libraries(linear_solver_test ${target_libraries})
 gridpack_add_unit_test(linear_solver linear_solver_test)
 if (PETSC_FOUND)
    add_dependencies(linear_solver_test petscrc math_test_input)
@@ -172,8 +168,8 @@ endif()
 # -------------------------------------------------------------
 # nonlinear solver test suite
 # -------------------------------------------------------------
-add_executable(nonlinear_solver_test test/nonlinear_solver_test.cpp)
-target_link_libraries(nonlinear_solver_test gridpack_math ${target_libraries})
+add_executable(nonlinear_solver_test test/nonlinear_solver_test.cpp ${target_objects})
+target_link_libraries(nonlinear_solver_test ${target_libraries})
 gridpack_add_unit_test(nonlinear_solver nonlinear_solver_test)
 if (PETSC_FOUND)
    add_dependencies(nonlinear_solver_test petscrc math_test_input)

@@ -10,10 +10,10 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-07-18 14:40:14 d3g096
+# Last Change: 2013-11-05 08:19:21 d3g096
 # -------------------------------------------------------------
 
-add_library(gridpack_parallel 
+add_library(gridpack_parallel OBJECT
   distributed.cpp
 )
 
@@ -28,15 +28,6 @@ install(FILES
   shuffler.hpp
   DESTINATION include/gridpack/parallel
 )
-
-# -------------------------------------------------------------
-# gridpack parallel library installation
-# -------------------------------------------------------------
-install(TARGETS 
-  gridpack_parallel
-  DESTINATION lib
-)
-
 
 # -------------------------------------------------------------
 # TEST: greetings

@@ -10,17 +10,11 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-10-25 09:07:46 d3g096
+# Last Change: 2013-11-05 13:25:56 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
-    gridpack_components
-    gridpack_factory
-    gridpack_partition
-    gridpack_parallel
-    gridpack_math
-    gridpack_configuration
-    gridpack_timer
+    gridpack
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
@@ -34,11 +28,6 @@ endif()
 if (PARMETIS_FOUND)
   include_directories(BEFORE ${PARMETIS_INCLUDE_DIR})
 endif()
-
-add_library(powerflow_app
-  pf_components.cpp
-  pf_factory.cpp
-)
 
 add_executable(powerflow.x
    pf_app.cpp
@@ -101,7 +90,10 @@ add_dependencies(powerflow2 powerflow.x.input)
 # -------------------------------------------------------------
 # TEST: pf_network_test
 # -------------------------------------------------------------
-add_executable(pf_network_test test/pf_network_test.cpp)
-target_link_libraries(pf_network_test powerflow_app ${target_libraries})
+add_executable(pf_network_test 
+  test/pf_network_test.cpp
+   pf_components.cpp
+)
+target_link_libraries(pf_network_test ${target_libraries})
 gridpack_add_unit_test(pf_network_test pf_network_test)
 

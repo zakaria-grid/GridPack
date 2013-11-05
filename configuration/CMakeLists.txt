@@ -10,10 +10,10 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-10-02 08:28:56 d3g096
+# Last Change: 2013-11-05 08:23:41 d3g096
 # -------------------------------------------------------------
 
-add_library(gridpack_configuration
+add_library(gridpack_configuration OBJECT
   configuration.cpp
 )
 
@@ -32,9 +32,11 @@ add_custom_target(configuration_test_input
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/test/configuration_test.xml
 )
 
-add_executable(configuration_test test/configuration_test.cpp)
+add_executable(configuration_test 
+  test/configuration_test.cpp
+  $<TARGET_OBJECTS:gridpack_configuration>
+)
 target_link_libraries(configuration_test 
-  gridpack_configuration
   ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 gridpack_add_unit_test(configuration_test configuration_test)
 

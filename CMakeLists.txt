@@ -10,10 +10,11 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2013-10-09 14:01:23 d3g096
+# Last Change: 2013-11-05 13:32:22 d3g096
 # -------------------------------------------------------------
 
-cmake_minimum_required (VERSION 2.6.4)
+# CMake >= 2.8.8 is required because OBJECT libraries are used
+cmake_minimum_required (VERSION 2.8.8)
 project (GridPACK)
 
 #set (GridPACK_VERSION_MAJOR 1)

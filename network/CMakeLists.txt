@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-10-09 15:05:01 d3g096
+# Last Change: 2013-11-05 09:15:36 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries 
@@ -27,9 +27,10 @@ if (PARMETIS_FOUND)
     )
 endif()
 
-set(target_libraries 
-  gridpack_partition gridpack_components gridpack_parallel
-  ${target_libraries} 
+set(target_objects 
+  $<TARGET_OBJECTS:gridpack_parallel>
+  $<TARGET_OBJECTS:gridpack_partition>
+  $<TARGET_OBJECTS:gridpack_components>
 )
 
 include_directories(AFTER ${GA_INCLUDE_DIRS})
@@ -46,14 +47,20 @@ endif()
 # -------------------------------------------------------------
 # TEST: test_network
 # -------------------------------------------------------------
-add_executable(test_network test/test_network.cpp)
+add_executable(test_network 
+  test/test_network.cpp 
+  ${target_objects}
+)
 target_link_libraries(test_network ${target_libraries})
 add_test(test_network_serial test_network)
 
 # -------------------------------------------------------------
 # TEST: network_partition
 # -------------------------------------------------------------
-add_executable(network_partition test/network_partition.cpp)
+add_executable(network_partition 
+  test/network_partition.cpp 
+  ${target_objects}
+)
 target_link_libraries(network_partition ${target_libraries})
 gridpack_add_unit_test(network_partition network_partition)
 
