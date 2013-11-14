@@ -9,7 +9,7 @@
 /**
  * @file   pf_app2.cpp
  * @author William A. Perkins
- * @date   2013-10-29 08:54:39 d3g096
+ * @date   2013-11-06 08:31:25 d3g096
  * 
  * @brief  
  * 
@@ -20,16 +20,10 @@
 #include <iostream>
 #include <ga++.h>
 
-#include "gridpack/applications/powerflow/pf_app2.hpp"
-#include "gridpack/configuration/configuration.hpp"
-#include "gridpack/parser/PTI23_parser.hpp"
-#include "gridpack/math/math.hpp"
-#include "gridpack/math/newton_raphson_solver.hpp"
-#include "gridpack/math/nonlinear_solver.hpp"
-#include "gridpack/mapper/bus_vector_map.hpp"
-#include "gridpack/mapper/full_map.hpp"
-#include "gridpack/serial_io/serial_io.hpp"
-#include "gridpack/utilities/uncopyable.hpp"
+#include "pf_app2.hpp"
+#include "pf_factory.hpp"
+
+#include <gridpack/gridpack.hpp>
 
 
 namespace gridpack {
@@ -339,17 +333,12 @@ PFApp2::execute(void)
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
-  gridpack::parallel::Communicator world;
-  gridpack::math::Initialize();
-  GA_Initialize();
-  MA_init(MT_C_CHAR, 1024*1024, 1024*1024);
+  gridpack::Initialize(argc, argv);
 
   gridpack::powerflow::PFApp2 app;
   app.execute();
 
-  GA_Terminate();
-
-  gridpack::math::Finalize();
+  gridpack::Finalize();
+  return 0;
 }
 

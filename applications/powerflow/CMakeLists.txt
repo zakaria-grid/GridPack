@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-11-05 13:25:56 d3g096
+# Last Change: 2013-11-06 08:37:31 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -22,9 +22,6 @@ set(target_libraries
     ${PETSC_LIBRARIES})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
-if (GA_FOUND)
-  include_directories(AFTER ${GA_INCLUDE_DIRS})
-endif()
 if (PARMETIS_FOUND)
   include_directories(BEFORE ${PARMETIS_INCLUDE_DIR})
 endif()

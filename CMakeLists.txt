@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2013-11-05 13:32:22 d3g096
+# Last Change: 2013-11-06 08:37:21 d3g096
 # -------------------------------------------------------------
 
 # CMake >= 2.8.8 is required because OBJECT libraries are used
@@ -161,6 +161,9 @@ endif()
 set(GRIDPACK_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+if (GA_FOUND)
+  include_directories(AFTER ${GA_INCLUDE_DIRS})
+endif()
 
 # -------------------------------------------------------------
 # Subdirectories
@@ -181,3 +184,12 @@ add_subdirectory(serial_io)
 add_subdirectory(timer)
 
 add_subdirectory(lib)
+
+
+# -------------------------------------------------------------
+# gridpack header installation
+# -------------------------------------------------------------
+install(FILES 
+  gridpack.hpp
+  DESTINATION include/gridpack
+)

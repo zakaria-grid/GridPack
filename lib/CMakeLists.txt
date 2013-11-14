@@ -10,10 +10,11 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 17, 2013 by Bruce Palmer
-# Last Change: 2013-11-05 13:56:07 d3g096
+# Last Change: 2013-11-06 08:36:18 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack 
+  gridpack.cpp
   $<TARGET_OBJECTS:gridpack_parallel>
   $<TARGET_OBJECTS:gridpack_configuration>
   $<TARGET_OBJECTS:gridpack_math>
