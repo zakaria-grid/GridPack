@@ -203,9 +203,9 @@ void gridpack::powerflow::PFApp::execute(void)
   timer->start(t_lsolv);
   isolver.solve(*PQ, *X);
   timer->stop(t_lsolv);
-  tol = X->norm2();
+  tol = PQ->norm2();
 //  busIO.header("\nX values\n");
-//  X->print();
+//  X->save("X.m");
 
   // Exchange new values
   int t_updt = timer->createCategory("Bus Update");
@@ -217,6 +217,7 @@ void gridpack::powerflow::PFApp::execute(void)
     // Push current values in X vector back into network components
     // Need to implement setValues method in PFBus class in order for this to
     // work
+    factory.setMode(RHS);
     vMap.mapToBus(X);
 
     // Exchange data between ghost buses (I don't think we need to exchange data
@@ -226,7 +227,6 @@ void gridpack::powerflow::PFApp::execute(void)
     timer->stop(t_updt);
 
     // Create new versions of Jacobian and PQ vector
-    factory.setMode(RHS);
     vMap.mapToVector(PQ);
 //    sprintf(ioBuf,"\nIteration %d Print PQ\n",iter+1);
 //    busIO.header(ioBuf);
@@ -245,7 +245,7 @@ void gridpack::powerflow::PFApp::execute(void)
     timer->stop(t_lsolv);
 //    X->print();
 
-    tol = X->norm2();
+    tol = PQ->norm2();
     sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
     busIO.header(ioBuf);
     iter++;

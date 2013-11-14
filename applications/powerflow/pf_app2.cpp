@@ -9,7 +9,7 @@
 /**
  * @file   pf_app2.cpp
  * @author William A. Perkins
- * @date   2013-11-06 08:31:25 d3g096
+ * @date   2013-11-14 12:34:59 d3g096
  * 
  * @brief  
  * 
@@ -286,7 +286,7 @@ PFApp2::execute(void)
                                     helper.X->local_size(), 
                                     jbuildf, fbuildf);
     tmpsolver->tolerance(1.0e-08);
-    tmpsolver->maximum_iterations(50);
+    tmpsolver->maximumIterations(50);
     solver.reset(tmpsolver);
   } else {
     solver.reset(new math::NonlinearSolver(network->communicator(),
