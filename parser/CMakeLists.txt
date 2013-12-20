@@ -10,12 +10,20 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-11-05 13:34:30 d3g096
+# Last Change: 2013-12-20 11:11:57 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
+    ${GA_LIBRARIES}
     ${Boost_LIBRARIES}
-    ${MPI_CXX_LIBRARIES})
+    ${MPI_CXX_LIBRARIES}
+)
+
+set(target_objects 
+  $<TARGET_OBJECTS:gridpack_parallel>
+  $<TARGET_OBJECTS:gridpack_timer>
+  $<TARGET_OBJECTS:gridpack_configuration>
+)
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -27,7 +35,10 @@ endif()
 # -------------------------------------------------------------
 # TEST: test_parser
 # -------------------------------------------------------------
-add_executable(test_parser test/PTI23_test.cpp)
+add_executable(test_parser 
+  test/PTI23_test.cpp
+  ${target_objects}
+)
 target_link_libraries(test_parser ${target_libraries})
 
 add_test(test_parser_serial test_parser)
