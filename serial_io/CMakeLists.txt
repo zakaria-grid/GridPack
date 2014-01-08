@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-11-05 09:16:45 d3g096
+# Last Change: 2014-01-08 08:30:08 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -25,6 +25,7 @@ set(target_objects
   $<TARGET_OBJECTS:gridpack_configuration>
   $<TARGET_OBJECTS:gridpack_math>
   $<TARGET_OBJECTS:gridpack_components>
+  $<TARGET_OBJECTS:gridpack_timer>
 )
 
 include_directories(AFTER ${GA_INCLUDE_DIRS})

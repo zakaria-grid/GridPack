@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-12-20 11:11:57 d3g096
+# Last Change: 2014-01-08 08:29:48 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -23,6 +23,7 @@ set(target_objects
   $<TARGET_OBJECTS:gridpack_parallel>
   $<TARGET_OBJECTS:gridpack_timer>
   $<TARGET_OBJECTS:gridpack_configuration>
+  $<TARGET_OBJECTS:gridpack_components>
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})

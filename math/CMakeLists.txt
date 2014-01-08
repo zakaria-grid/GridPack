@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2013-11-14 12:39:17 d3g096
+# Last Change: 2014-01-08 08:29:30 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -105,6 +105,7 @@ add_library(gridpack_math OBJECT
 set(target_objects
   $<TARGET_OBJECTS:gridpack_configuration>
   $<TARGET_OBJECTS:gridpack_parallel>
+  $<TARGET_OBJECTS:gridpack_timer>
   $<TARGET_OBJECTS:gridpack_math>
 )
 
