@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-11-05 09:13:43 d3g096
+# Last Change: 2014-01-14 07:46:28 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
@@ -35,5 +35,15 @@ add_executable(component_serialization_test
 )
 target_link_libraries(component_serialization_test ${target_libraries})
 gridpack_add_unit_test(component_serialization component_serialization_test)
+
+# -------------------------------------------------------------
+# installation
+# -------------------------------------------------------------
+install(FILES 
+  base_component.hpp  
+  data_collection.hpp
+  DESTINATION include/gridpack/component
+)
+
 
 

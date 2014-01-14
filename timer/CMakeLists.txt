@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-11-05 09:23:51 d3g096
+# Last Change: 2014-01-14 07:51:42 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_timer OBJECT
@@ -39,3 +39,12 @@ add_executable(test_timer
 )
 target_link_libraries(test_timer ${target_libraries})
 add_test(test_timer test_timer)
+
+# -------------------------------------------------------------
+# installation
+# -------------------------------------------------------------
+install(FILES 
+  coarse_timer.hpp
+  DESTINATION include/gridpack/timer
+)
+

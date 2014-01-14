@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-08 08:28:51 d3g096
+# Last Change: 2014-01-14 07:49:12 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -39,28 +39,12 @@ endif()
 add_executable(test_mapper test/test_mapper.cpp ${target_objects})
 target_link_libraries(test_mapper ${target_libraries})
 
-#!!target_link_libraries(greetings ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
-
-#!!add_test(NAME greetings_serial COMMAND $<TARGET_FILE:greetings>)
-#!!add_test(NAME greetings_parallel COMMAND 
-#!!  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:greetings> ${MPIEXEC_POSTFLAGS})
-#!!set_tests_properties(greetings_serial greetings_parallel
-#!!  PROPERTIES 
-#!!  PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
-#!!)
-
 # -------------------------------------------------------------
-# TEST: mpi_test
-# A simple MPI test using boost::test
+# installation
 # -------------------------------------------------------------
-#!!add_executable(mpi_test test/mpi_test.cpp)
-#!!target_link_libraries(mpi_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
-
-#!!add_test(NAME mpi_test_serial COMMAND $<TARGET_FILE:mpi_test>)
-#!!add_test(NAME mpi_test_parallel COMMAND 
-#!!  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:mpi_test> ${MPIEXEC_POSTFLAGS})
-#!!set_tests_properties(mpi_test_serial mpi_test_parallel
-#!!  PROPERTIES 
-#!!  PASS_REGULAR_EXPRESSION "No errors detected"
-#!!)
+install(FILES 
+  bus_vector_map.hpp
+  full_map.hpp
+  DESTINATION include/gridpack/mapper
+)
 

@@ -5,6 +5,8 @@ host=`uname -n`
 rm -f CMakeCache.txt 
 
 options="-Wdev --debug-trycompile"
+
+# useful build types: Debug, Release, RelWithDebInfo
 common_flags="\
         -D CMAKE_BUILD_TYPE:STRING=Debug \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \

@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2014-01-08 08:29:30 d3g096
+# Last Change: 2014-01-14 07:49:40 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -34,6 +34,30 @@ list(APPEND gridpack_math_sources
   dae_solver.cpp
   dae_solver_implementation.cpp
   implementation_visitor.cpp
+)
+
+# implementation independent math header files
+set(gridpack_math_headers
+  basic_linear_matrix_solver_implementation.hpp
+  dae_solver.hpp
+  dae_solver_functions.hpp
+  dae_solver_implementation.hpp
+  implementation_visitor.hpp
+  linear_matrix_solver.hpp
+  linear_matrix_solver_implementation.hpp
+  linear_solver.hpp
+  linear_solver_implementation.hpp
+  math.hpp
+  matrix.hpp
+  matrix_implementation.hpp
+  newton_raphson_solver.hpp
+  newton_raphson_solver_implementation.hpp
+  nonlinear_solver.hpp
+  nonlinear_solver_functions.hpp
+  nonlinear_solver_implementation.hpp
+  nonlinear_solver_interface.hpp
+  vector.hpp
+  vector_implementation.hpp
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -110,19 +134,6 @@ set(target_objects
 )
 
 # -------------------------------------------------------------
-# gridpack math header installation
-# -------------------------------------------------------------
-install(FILES 
-  implementation_visitor.hpp
-  math.hpp
-  matrix.hpp
-  matrix_implementation.hpp
-  vector.hpp
-  vector_implementation.hpp
-  DESTINATION include/gridpack/math
-)
-
-# -------------------------------------------------------------
 # a small test (not a unit test)
 # -------------------------------------------------------------
 add_executable(small_matrix_solve small_matrix_solve.cpp ${target_objects})
@@ -191,4 +202,14 @@ if (PETSC_FOUND)
 endif()
 
   
+
+
+# -------------------------------------------------------------
+# installation
+# -------------------------------------------------------------
+install(FILES 
+  ${gridpack_math_headers}
+  DESTINATION include/gridpack/math
+)
+
 

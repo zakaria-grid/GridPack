@@ -9,7 +9,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 17, 2013 by William A. Perkins
-# Last Change: 2013-11-05 09:11:00 d3g096
+# Last Change: 2014-01-14 07:51:29 d3g096
 # -------------------------------------------------------------
 
 
@@ -27,6 +27,14 @@ list(APPEND gridpack_partition_sources
   graph_partitioner.cpp
   graph_partitioner_implementation.cpp
   simple_adjacency.cpp
+)
+
+# implementation independent headers
+set(gridpack_partition_headers
+  graph_partitioner_implementation.hpp
+  adjacency_list.hpp
+  simple_adjacency.hpp
+  graph_partitioner.hpp
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -68,16 +76,6 @@ set(target_objects
 )
 
 # -------------------------------------------------------------
-# gridpack partition header installation
-# -------------------------------------------------------------
-install(FILES
-  adjacency_list.hpp
-  graph_partitioner.hpp
-  graph_partitioner_implementation.hpp
-  DESTINATION include/gridpack/partition
-)
-
-# -------------------------------------------------------------
 # partition test suite
 # -------------------------------------------------------------
 add_executable(partition_test 
@@ -100,3 +98,14 @@ if (PARMETIS_FOUND)
     target_link_libraries(parmetis_test ${target_libraries})
     gridpack_add_unit_test(parmetis parmetis_test)
 endif (PARMETIS_FOUND)
+
+# -------------------------------------------------------------
+# installation
+# -------------------------------------------------------------
+install(FILES
+  ${gridpack_partition_headers}
+  DESTINATION include/gridpack/partition
+)
+
+
+

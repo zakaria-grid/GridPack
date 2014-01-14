@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 17, 2013 by Bruce Palmer
-# Last Change: 2013-11-06 08:36:18 d3g096
+# Last Change: 2014-01-14 07:53:51 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack 
@@ -22,4 +22,22 @@ add_library(gridpack
   $<TARGET_OBJECTS:gridpack_partition>
   $<TARGET_OBJECTS:gridpack_components>
   $<TARGET_OBJECTS:gridpack_timer>
+)
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/GridPACK.cmake.in 
+  ${CMAKE_CURRENT_BINARY_DIR}/GridPACK.cmake @ONLY)
+
+
+# -------------------------------------------------------------
+# installation
+# -------------------------------------------------------------
+
+install(TARGETS 
+  gridpack
+  DESTINATION lib
+)
+
+install(FILES 
+  ${CMAKE_CURRENT_BINARY_DIR}/GridPACK.cmake
+  DESTINATION lib
 )
