@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2014-01-09 10:30:25 d3g096
+# Last Change: 2014-01-28 11:33:44 d3g096
 # -------------------------------------------------------------
 
 # CMake >= 2.8.8 is required because OBJECT libraries are used
@@ -130,6 +130,8 @@ if(DOXYGEN_FOUND)
       COMMENT "Generating API documentation with Doxygen" VERBATIM
       )
 
+    
+
     # The custom target "devdoc" generates "developer"
     # documentation. This has all the nitty gritty details and code
     # that only people who work on GridPACK care about.
@@ -179,6 +181,9 @@ add_subdirectory(factory)
 add_subdirectory(mapper)
 add_subdirectory(applications/powerflow)
 add_subdirectory(applications/dynamic_simulation)
+add_subdirectory(applications/contingency_analysis)
+add_subdirectory(applications/examples/hello_world)
+add_subdirectory(applications/examples/resistor_grid)
 add_subdirectory(parser)
 add_subdirectory(serial_io)
 add_subdirectory(timer)

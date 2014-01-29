@@ -5,9 +5,9 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   pf_main.cpp
+ * @file   hw_main.cpp
  * @author Bruce Palmer
- * @date   2014-01-28 11:31:40 d3g096
+ * @date   January 27, 2014
  * 
  * @brief  
  */
@@ -17,9 +17,9 @@
 #include <ga.h>
 #include <macdecls.h>
 #include "gridpack/math/math.hpp"
-#include "pf_app.hpp"
+#include "hw_app.hpp"
 
-// Calling program for the powerflow applications
+// Calling program for the hello_world applications
 
 main(int argc, char **argv)
 {
@@ -32,7 +32,7 @@ main(int argc, char **argv)
   int stack = 200000, heap = 200000;
   MA_init(C_DBL, stack, heap);
 
-  gridpack::powerflow::PFApp app;
+  gridpack::hello_world::HWApp app;
   app.execute(argc, argv);
 
   GA_Terminate();

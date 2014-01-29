@@ -7,6 +7,7 @@
 #include <boost/foreach.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+// #include <boost/property_tree/json_parser.hpp>
 #include <fstream>
 #include <iostream>
 #include <streambuf>
@@ -51,6 +52,32 @@ Configuration * Configuration::configuration() {
 	return config;
 }
 
+const int TAB_SIZE = 3;
+static void indent(std::ostream & out, int indent) {
+	while(indent-- > 0)
+		out << " " ;
+}
+static bool dump_xml(boost::property_tree::ptree pt, std::ostream & out, int indent_amount = 0) {
+	bool first = true;
+ 	BOOST_FOREACH(ptree::value_type & v, pt) {
+		if(first) {
+			first = false;
+			if(indent_amount > 0)  out << std::endl;
+		}
+		indent(out, indent_amount);
+		out << "<" << v.first << ">" ;
+		bool no_child = dump_xml(v.second, out, indent_amount+TAB_SIZE);
+		if(! no_child) {
+			indent(out, indent_amount);
+		}
+		else {
+			out << v.second.data();
+		}
+		out << "</" << v.first << ">" << std::endl;
+	}
+	return first;
+}
+
 
 #ifdef USE_MPI
 bool Configuration::open(const std::string & file,MPI_Comm comm) {
@@ -90,8 +117,16 @@ bool Configuration::open(const std::string & file) {
 		 (*pimpl->logging) << "Error reading XML file " << file << std::endl;
 		return false;
 	}
-	if(!pimpl->logging && pimpl->pt.get<bool>("Configuration/enableLogging",false))
+	if(!pimpl->logging && pimpl->pt.get<bool>("Configuration.enableLogging",false))
 		pimpl->logging = & std::cout;
+	if(pimpl->logging != NULL && rank== 0) {
+		try {
+			dump_xml(pimpl->pt, *pimpl->logging);
+		}
+		catch(...) {
+			 (*pimpl->logging) << "Error writing XML file " << file << std::endl;
+		}
+    }
 	return true;
 }
 
@@ -155,7 +190,14 @@ std::string Configuration::get(Configuration::KeyType key, const std::string & d
   ret.replace(ret.find_last_not_of(" ")+1, std::string::npos,"");
   return ret;
 }
-bool Configuration::get(Configuration::KeyType key, std::string * output) { return get0_bool(pimpl->pt,key, output); }
+bool Configuration::get(Configuration::KeyType key, std::string * output) {
+  bool ret = get0_bool(pimpl->pt,key, output);
+
+  // remove leading and trailing white space from string
+  output->replace(0,output->find_first_not_of(" "), "");
+  output->replace(output->find_last_not_of(" ")+1, std::string::npos,"");
+  return ret;
+}
 
 std::vector<double> Configuration::get(Configuration::KeyType key, const std::vector<double> & default_value) { 
 	CursorPtr c = getCursor(key);
@@ -192,6 +234,20 @@ void Configuration::children(ChildCursors & cs) {
 		c->pimpl->logging = pimpl->logging;
 		c->pimpl->pt = v.second;
 		cs.push_back(c);
+	}
+}
+
+void Configuration::children(ChildElements & cs) {
+	cs.clear();
+	BOOST_FOREACH(ptree::value_type & v, pimpl->pt) {
+//		boost::shared_ptr<Cursor> c(new Configuration);
+		CursorPtr c(new Configuration);
+		c->pimpl->logging = pimpl->logging;
+		c->pimpl->pt = v.second;
+		cs.push_back(ChildElement());
+		ChildElement & last = cs.back();
+		last.cursor = c;
+		last.name = v.first;
 	}
 }
 

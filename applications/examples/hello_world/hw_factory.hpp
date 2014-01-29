@@ -5,9 +5,9 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   pf_factory.hpp
+ * @file   hw_factory.hpp
  * @author Bruce Palmer
- * @date   2014-01-28 11:33:42 d3g096
+ * @date   2014-01-28 10:32:02 d3g096
  * 
  * @brief  
  * 
@@ -15,63 +15,41 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _pf_factory_h_
-#define _pf_factory_h_
+#ifndef _hw_factory_h_
+#define _hw_factory_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
-#include "pf_components.hpp"
-#include "gridpack/math/matrix.hpp"
+#include "hw_components.hpp"
 
 namespace gridpack {
-namespace powerflow {
+namespace hello_world {
 
-//enum PFMode{YBus, Jacobian};
+// This example only needs the functionality in the base factory class
 
-class PFFactory
-  : public gridpack::factory::BaseFactory<PFNetwork> {
+class HWFactory
+  : public gridpack::factory::BaseFactory<HWNetwork> {
   public:
     /**
      * Basic constructor
      * @param network: network associated with factory
      */
-    PFFactory(NetworkPtr network);
+    HWFactory(boost::shared_ptr<HWNetwork> network)
+      : gridpack::factory::BaseFactory<HWNetwork>(network)
+    {
+      p_network = network;
+    }
 
     /**
      * Basic destructor
      */
-    ~PFFactory();
-
-    /**
-     * Create the admittance (Y-Bus) matrix
-     */
-    void setYBus(void);
-
-    /**
-     * Find GBus vector 
-     */
-    void setGBus(void);
-
-    /**
-     * Make SBus vector 
-     */
-    void setSBus(void);
-
-    /**
-     * Create the PQ 
-     */
-    void setPQ(void);
-
-    /**
-     * Create the Jacobian matrix
-     */
-    void setJacobian(void);
+    ~HWFactory() {}
 
   private:
 
     NetworkPtr p_network;
 };
 
-} // powerflow
+} // hello_world
 } // gridpack
 #endif

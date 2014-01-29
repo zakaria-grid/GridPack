@@ -57,6 +57,7 @@ FullMatrixMap(boost::shared_ptr<_network> network)
   setupOffsetArrays();
 
   contributions();
+  GA_Sync();
 
 }
 
@@ -64,6 +65,7 @@ FullMatrixMap(boost::shared_ptr<_network> network)
 {
   GA_Destroy(gaOffsetI);
   GA_Destroy(gaOffsetJ);
+  GA_Sync();
 }
 
 /**
@@ -75,8 +77,8 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
   gridpack::parallel::Communicator comm = p_network->communicator();
   boost::shared_ptr<gridpack::math::Matrix>
     Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_jDim, p_maxrow));
-  loadBusData(Ret,true);
-  loadBranchData(Ret,true);
+  loadBusData(Ret,false);
+  loadBranchData(Ret,false);
   GA_Sync();
   Ret->ready();
   return Ret;
@@ -103,6 +105,52 @@ void mapToMatrix(gridpack::math::Matrix &matrix)
 void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
   mapToMatrix(*matrix);
+}
+
+/**
+ * Overwrite elements of existing matrix. This can be used to overwrite selected
+ * elements of a matrix
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void overwriteMatrix(gridpack::math::Matrix &matrix)
+{
+  loadBusData(matrix,false);
+  loadBranchData(matrix,false);
+  GA_Sync();
+  matrix.ready();
+}
+
+/**
+ * Overwrite elements of existing matrix. This can be used to overwrite selected
+ * elements of a matrix
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void overwriteMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
+{
+  overwriteMatrix(*matrix);
+}
+
+/**
+ * Increment elements of existing matrix. This can be used to increment selected
+ * elements of a matrix
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void incrementMatrix(gridpack::math::Matrix &matrix)
+{
+  loadBusData(matrix,true);
+  loadBranchData(matrix,true);
+  GA_Sync();
+  matrix.ready();
+}
+
+/**
+ * Increment elements of existing matrix. This can be used to increment selected
+ * elements of a matrix
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void incrementMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
+{
+  incrementMatrix(*matrix);
 }
 
 /**
@@ -588,12 +636,12 @@ void setupOffsetArrays()
     NGA_Put(gaOffsetI,&p_minRowIndex,&p_maxRowIndex,iOffsets,&one);
     NGA_Put(gaOffsetJ,&p_minRowIndex,&p_maxRowIndex,jOffsets,&one);
   }
-  GA_Sync();
 
   // Clean up arrays that are no longer needed
   GA_Destroy(gaMatBlksI);
   GA_Destroy(gaMatBlksJ);
 
+  GA_Sync();
   delete [] mapc;
   delete [] iSizes;
   delete [] jSizes;
@@ -626,9 +674,13 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
   }
 
   // Gather matrix offsets
-  int *offsets = new int[p_busContribution];
+  int *i_offsets;
+  int *j_offsets;
   if (p_busContribution > 0) {
-    NGA_Gather(gaOffsetI,offsets,indices,p_busContribution);
+    i_offsets = new int[p_busContribution];
+    j_offsets = new int[p_busContribution];
+    NGA_Gather(gaOffsetI,i_offsets,indices,p_busContribution);
+    NGA_Gather(gaOffsetJ,j_offsets,indices,p_busContribution);
   }
 
   // Add matrix elements
@@ -645,14 +697,14 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
         if (p_network->getBus(i)->matrixDiagValues(values)) {
           icnt = 0;
           for (k=0; k<jsize; k++) {
-            jdx = offsets[jcnt] + k;
+            jdx = j_offsets[jcnt] + k;
             for (j=0; j<isize; j++) {
-              idx = offsets[jcnt] + j;
-//              if (flag) {
+              idx = i_offsets[jcnt] + j;
+              if (flag) {
                 matrix.addElement(idx, jdx, values[icnt]);
-//              } else {
-//                matrix.setElement(idx, jdx, values[icnt]);
-//              }
+              } else {
+                matrix.setElement(idx, jdx, values[icnt]);
+              }
               icnt++;
             }
           }
@@ -665,7 +717,10 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
 
   // Clean up arrays
   delete [] indices;
-  delete [] offsets;
+  if (p_busContribution > 0) {
+    delete [] i_offsets;
+    delete [] j_offsets;
+  }
   delete [] values;
 }
 
@@ -746,11 +801,11 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
             jdx = j_offsets[jcnt] + k;
             for (j=0; j<isize; j++) {
               idx = i_offsets[jcnt] + j;
-//              if (flag) {
+              if (flag) {
                 matrix.addElement(idx, jdx, values[icnt]);
-//              } else {
-//                matrix.setElement(idx, jdx, values[icnt]);
-//              }
+              } else {
+                matrix.setElement(idx, jdx, values[icnt]);
+              }
               icnt++;
             }
           }
@@ -775,11 +830,11 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
             idx = j_offsets[jcnt] + k;
             for (j=0; j<isize; j++) {
               jdx = i_offsets[jcnt] + j;
-//              if (flag) {
+              if (flag) {
                 matrix.addElement(jdx, idx, values[icnt]);
-//              } else {
-//                matrix.setElement(jdx, idx, values[icnt]);
-//              }
+              } else {
+                matrix.setElement(jdx, idx, values[icnt]);
+              }
               icnt++;
             }
           }

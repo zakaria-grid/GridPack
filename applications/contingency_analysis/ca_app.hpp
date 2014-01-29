@@ -5,39 +5,39 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   pf_app.hpp
- * @author Bruce Palmer
- * @date   2014-01-28 11:30:49 d3g096
- * 
- * @brief  
- * 
- * 
+ * @file   ca_app.hpp
+ * @author Yousu Chen 
+ * @date   January 20, 2014
+ *
+ * @brief
+ *
+ *
  */
 // -------------------------------------------------------------
 
-#ifndef _pf_app_h_
-#define _pf_app_h_
+#ifndef _ca_app_h_
+#define _ca_app_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "pf_factory.hpp"
+#include "gridpack/configuration/configuration.hpp"
+#include "gridpack/applications/contingency_analysis/ca_factory.hpp"
 
 namespace gridpack {
-namespace powerflow {
+namespace contingency_analysis {
 
-// Calling program for powerflow application
-
-class PFApp
+// Calling program for contingency analysis application
+class CAApp
 {
   public:
     /**
      * Basic constructor
      */
-    PFApp(void);
+    CAApp(void);
 
     /**
      * Basic destructor
      */
-    ~PFApp(void);
+    ~CAApp(void);
 
     /**
      * Execute application
@@ -46,9 +46,9 @@ class PFApp
      */
     void execute(int argc, char** argv);
 
-  private:
+    private:
 };
 
-} // powerflow
+} // contingency analysis 
 } // gridpack
 #endif

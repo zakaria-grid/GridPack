@@ -5,9 +5,9 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   ds_factory.hpp
- * @author Shuangshuang Jin 
- * @date   September 19, 2013
+ * @file   ca_factory.hpp
+ * @author Yousu Chen 
+ * @date   January 20, 2014
  * 
  * @brief  
  * 
@@ -15,53 +15,41 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _ds_factory_h_
-#define _ds_factory_h_
+#ifndef _ca_factory_h_
+#define _ca_factory_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
-#include "gridpack/applications/dynamic_simulation/ds_components.hpp"
+#include "gridpack/applications/contingency_analysis/ca_components.hpp"
 #include "gridpack/math/matrix.hpp"
-#include "gridpack/applications/dynamic_simulation/ds_components.hpp"
 
 namespace gridpack {
-namespace dynamic_simulation {
+namespace contingency_analysis {
 
-class DSFactory
-  : public gridpack::factory::BaseFactory<DSNetwork> {
+class CAFactory
+  : public gridpack::factory::BaseFactory<CANetwork> {
   public:
     /**
      * Basic constructor
      * @param network: network associated with factory
      */
-    DSFactory(NetworkPtr network);
+    CAFactory(NetworkPtr network);
 
     /**
      * Basic destructor
      */
-    ~DSFactory();
+    ~CAFactory();
 
     /**
      * Create the admittance (Y-Bus) matrix
      */
     void setYBus(void);
 
-    /**
-     * Get the updating factor for posfy11 stage ybus
-     */
-    gridpack::ComplexType setFactor(int sw2_2, int sw3_2);
-
-    /**
-     * Apply an event to all branches in the system
-     * @param event a struct describing a fault
-     */
-    void setEvent(const DSBranch::Event &event);
-
   private:
 
     NetworkPtr p_network;
 };
 
-} // dynamic_simulation
+} // contingency_analysis 
 } // gridpack
 #endif

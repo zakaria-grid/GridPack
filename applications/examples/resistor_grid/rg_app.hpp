@@ -5,9 +5,9 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   pf_app.hpp
+ * @file   rg_app.hpp
  * @author Bruce Palmer
- * @date   2014-01-28 11:30:49 d3g096
+ * @date   2014-01-28 d3g293
  * 
  * @brief  
  * 
@@ -15,29 +15,28 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _pf_app_h_
-#define _pf_app_h_
+#ifndef _rg_app_h_
+#define _rg_app_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "pf_factory.hpp"
 
 namespace gridpack {
-namespace powerflow {
+namespace resistor_grid {
 
-// Calling program for powerflow application
+// Calling program for resistor application
 
-class PFApp
+class RGApp
 {
   public:
     /**
      * Basic constructor
      */
-    PFApp(void);
+    RGApp(void);
 
     /**
      * Basic destructor
      */
-    ~PFApp(void);
+    ~RGApp(void);
 
     /**
      * Execute application
@@ -49,6 +48,6 @@ class PFApp
   private:
 };
 
-} // powerflow
+} // resistor_grid
 } // gridpack
 #endif

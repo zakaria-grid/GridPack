@@ -5,11 +5,11 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   pf_main.cpp
- * @author Bruce Palmer
- * @date   2014-01-28 11:31:40 d3g096
- * 
- * @brief  
+ * @file   ca_main.cpp
+ * @author Yousu Chen 
+ * @date   January 20, 2014
+ *
+ * @brief
  */
 // -------------------------------------------------------------
 
@@ -17,22 +17,22 @@
 #include <ga.h>
 #include <macdecls.h>
 #include "gridpack/math/math.hpp"
-#include "pf_app.hpp"
+#include "gridpack/applications/contingency_analysis/ca_app.hpp"
 
-// Calling program for the powerflow applications
+// Calling program for the contingency_analysis applications
 
 main(int argc, char **argv)
 {
   // Initialize MPI libraries
   int ierr = MPI_Init(&argc, &argv);
-  // Initialize Math libraries
+  // Intialize Math libraries
   gridpack::math::Initialize();
 
   GA_Initialize();
   int stack = 200000, heap = 200000;
   MA_init(C_DBL, stack, heap);
 
-  gridpack::powerflow::PFApp app;
+  gridpack::contingency_analysis::CAApp app;
   app.execute(argc, argv);
 
   GA_Terminate();
@@ -42,3 +42,4 @@ main(int argc, char **argv)
   // Clean up MPI libraries
   ierr = MPI_Finalize();
 }
+

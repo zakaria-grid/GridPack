@@ -195,9 +195,18 @@ public:
 	 */
 	const std::string & path();
 
-	/* iterate over children */
 	typedef std::vector< CursorPtr > ChildCursors;
+	/* return a vector of cursors to child elements immediately below this cursor */
 	void children(ChildCursors &);
+
+	// a ChildElement is a cursor and the leaf name of the element associated with tha cursor.
+	struct ChildElement {
+		CursorPtr cursor;
+		std::string name;
+	} ;
+	typedef std::vector< ChildElement > ChildElements;
+	/* return a vector of cursors to pairs of cursors and names of children immediately below this cursor */
+	void children(ChildElements &);
 };
 
 

@@ -5,9 +5,9 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   pf_app.hpp
+ * @file   hw_app.hpp
  * @author Bruce Palmer
- * @date   2014-01-28 11:30:49 d3g096
+ * @date   2013-08-08 10:18:32 d3g293
  * 
  * @brief  
  * 
@@ -15,29 +15,28 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _pf_app_h_
-#define _pf_app_h_
+#ifndef _hw_app_h_
+#define _hw_app_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "pf_factory.hpp"
 
 namespace gridpack {
-namespace powerflow {
+namespace hello_world {
 
-// Calling program for powerflow application
+// Calling program for hello world application
 
-class PFApp
+class HWApp
 {
   public:
     /**
      * Basic constructor
      */
-    PFApp(void);
+    HWApp(void);
 
     /**
      * Basic destructor
      */
-    ~PFApp(void);
+    ~HWApp(void);
 
     /**
      * Execute application
@@ -49,6 +48,6 @@ class PFApp
   private:
 };
 
-} // powerflow
+} // hello_world
 } // gridpack
 #endif

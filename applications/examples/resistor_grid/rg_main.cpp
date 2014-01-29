@@ -5,9 +5,9 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   pf_main.cpp
+ * @file   rg_main.cpp
  * @author Bruce Palmer
- * @date   2014-01-28 11:31:40 d3g096
+ * @date   July 23, 2013
  * 
  * @brief  
  */
@@ -17,9 +17,9 @@
 #include <ga.h>
 #include <macdecls.h>
 #include "gridpack/math/math.hpp"
-#include "pf_app.hpp"
+#include "gridpack/applications/examples/resistor_grid/rg_app.hpp"
 
-// Calling program for the powerflow applications
+// Calling program for the resistor_grid applications
 
 main(int argc, char **argv)
 {
@@ -32,7 +32,7 @@ main(int argc, char **argv)
   int stack = 200000, heap = 200000;
   MA_init(C_DBL, stack, heap);
 
-  gridpack::powerflow::PFApp app;
+  gridpack::resistor_grid::RGApp app;
   app.execute(argc, argv);
 
   GA_Terminate();
