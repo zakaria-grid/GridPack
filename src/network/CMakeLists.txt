@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-08 09:06:28 d3g096
+# Last Change: 2014-02-06 14:00:33 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries 
@@ -19,10 +19,17 @@ set(target_libraries
   ${MPI_CXX_LIBRARIES}
 )
 
-if (PARMETIS_FOUND)
+if (GRIDPACK_USE_PARMETIS_PARTITION)
   include_directories(BEFORE ${PARMETIS_INCLUDE_DIR})
   set(target_libraries 
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
+    ${target_libraries}
+    )
+elseif (PETSC_FOUND)
+  include_directories(BEFORE ${PETSC_INCLUDES})
+  set(target_libraries 
+    gridpack_math
+    ${PETSC_LIBRARIES}
     ${target_libraries}
     )
 endif()

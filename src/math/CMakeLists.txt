@@ -7,14 +7,13 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2014-01-08 09:02:00 d3g096
+# Last Change: 2014-02-06 14:21:36 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
   gridpack_configuration 
   gridpack_parallel 
   gridpack_timer
-  ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES}
 )
 
 # implementation independent math sources
@@ -94,7 +93,7 @@ if (PETSC_FOUND)
       petsc/dae_solver.cpp
     )  
 
-    set(target_libraries ${PETSC_LIBRARIES} ${target_libraries})
+    set(target_libraries ${target_libraries} ${PETSC_LIBRARIES})
 
     # PETSc-specific GridPACK configuration file(s) for test suites
     # gridpack.petsrc is temporary.  It's used to set the PETSc options in the
@@ -121,6 +120,11 @@ else()
     message(FATAL_ERROR "A math implementation (e.g. PETSc) must be specified")
 
 endif()
+
+set(target_libraries
+  ${target_libraries}
+  ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES}
+)
 
 # -------------------------------------------------------------
 # gridpack math library

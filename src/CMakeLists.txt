@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2014-01-28 11:33:44 d3g096
+# Last Change: 2014-02-07 09:34:22 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -145,6 +145,12 @@ endif(DOXYGEN_FOUND)
 # -------------------------------------------------------------
 # Options for all Programs/Libraries
 # -------------------------------------------------------------
+
+# choose which partitioner implementation is used
+
+set(GRIDPACK_USE_PARMETIS_PARTITION OFF
+  CACHE BOOL "Use ParMETIS for network partitioning"
+)
 
 # remove annoying warnings produced by the GNU compiler about
 # deprecated variables/functions; some are caused by GridPACK code

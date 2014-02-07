@@ -8,7 +8,7 @@
 /**
  * @file   communicator.hpp
  * @author William A. Perkins
- * @date   2014-02-04 14:19:02 d3g096
+ * @date   2014-02-06 09:23:34 d3g096
  * 
  * @brief  
  * 
@@ -20,7 +20,7 @@
 #ifndef _communicator_hpp_
 #define _communicator_hpp_
 
-#include <boost/mpi/communicator.hpp>
+#include <boost/mpi.hpp>
 
 namespace gridpack {
 namespace parallel {
@@ -96,6 +96,16 @@ public:
   boost::mpi::communicator& getCommunicator(void)
   {
     return pComm;
+  }
+
+  const MPI_Comm getMPIComm(void) const
+  {
+    return static_cast<MPI_Comm>(pComm);
+  }
+
+  MPI_Comm getMPIComm(void)
+  {
+    return static_cast<MPI_Comm>(pComm);
   }
 
 protected:

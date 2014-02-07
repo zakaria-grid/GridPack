@@ -6,7 +6,7 @@
 /**
  * @file   network_partition.cpp
  * @author William A. Perkins
- * @date   2014-02-04 13:32:27 d3g096
+ * @date   2014-02-07 10:17:17 d3g096
  * 
  * @brief  A test of network partitioning
  * 
@@ -23,6 +23,7 @@
 #define BOOST_TEST_ALTERNATIVE_INIT_API
 #include <boost/test/included/unit_test.hpp>
 
+#include "gridpack/math/math.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "base_network.hpp"
 
@@ -444,10 +445,12 @@ int
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
+  gridpack::math::Initialize();
   GA_Initialize();
   MA_init(MT_C_CHAR, 1024*1024, 1024*1024);
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
-  GA::Terminate();
+  GA_Terminate();
+  gridpack::math::Finalize();
 }
 
 

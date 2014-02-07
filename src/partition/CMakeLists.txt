@@ -9,14 +9,12 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 17, 2013 by William A. Perkins
-# Last Change: 2014-01-08 09:05:40 d3g096
+# Last Change: 2014-02-07 10:08:36 d3g096
 # -------------------------------------------------------------
-
 
 set(gridpack_partition_sources)
 
-set(target_libraries 
-  gridpack_parallel 
+set(target_libraries
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
   ${MPI_CXX_LIBRARIES}
@@ -45,7 +43,7 @@ include_directories(AFTER ${GA_INCLUDE_DIRS})
 # -------------------------------------------------------------
 # implementation specific sources and flags
 # -------------------------------------------------------------
-if (PARMETIS_FOUND)
+if (GRIDPACK_USE_PARMETIS_PARTITION)
 
    include_directories(BEFORE ${PARMETIS_INCLUDE_DIR})
    list(APPEND gridpack_partition_sources
@@ -54,16 +52,32 @@ if (PARMETIS_FOUND)
      parmetis/parmetis_graph_partitioner_impl.cpp
    )
    set(target_libraries 
+     gridpack_parallel
      ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
-     ${GA_LIBRARIES} 
      ${target_libraries}
    )
+
+elseif (PETSC_FOUND)
+
+    include_directories (BEFORE ${PETSC_INCLUDES})
+    list(APPEND gridpack_partition_sources
+      petsc/graph_partitioner.cpp
+      petsc/petsc_graph_partitioner_impl.cpp
+    )
+    set(target_libraries 
+      gridpack_math
+      gridpack_parallel
+      ${PETSC_LIBRARIES} 
+      ${target_libraries}
+    )
 
 else()
 
     message(FATAL_ERROR "A partition implementation (e.g. ParMETIS) must be specified")
 
 endif()
+
+
 
 # -------------------------------------------------------------
 # gridpack partition library
@@ -73,8 +87,18 @@ add_library(gridpack_partition
 )
 
 # -------------------------------------------------------------
+# adjacency test suite
+# -------------------------------------------------------------
+add_executable(adjacency_test
+  test/adjacency_test.cpp
+)
+target_link_libraries(adjacency_test gridpack_partition ${target_libraries})
+gridpack_add_unit_test(adjacency adjacency_test)
+
+# -------------------------------------------------------------
 # partition test suite
 # -------------------------------------------------------------
+
 add_executable(partition_test 
   test/partition_test.cpp
 )
@@ -86,13 +110,13 @@ gridpack_add_unit_test(partition partition_test)
 # -------------------------------------------------------------
 # ParMETIS specific unit tests
 # -------------------------------------------------------------
-if (PARMETIS_FOUND) 
+if (${GRIDPACK_USE_PARMETIS_PARTITION})
     add_executable(parmetis_test 
       test/parmetis_test.cpp
     )
     target_link_libraries(parmetis_test gridpack_partition ${target_libraries})
     gridpack_add_unit_test(parmetis parmetis_test)
-endif (PARMETIS_FOUND)
+endif ()
 
 # -------------------------------------------------------------
 # installation
