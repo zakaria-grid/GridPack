@@ -5,11 +5,11 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   greetings.cpp
- * @author William A. Perkins
- * @date   2014-02-10 14:39:36 d3g096
+ * @file   task_test.cpp
+ * @author Bruce Palmer
+ * @date   February 10, 2014
  * 
- * @brief  A simple test of the GridPACK parallel environment
+ * @brief  A simple test of the GridPACK task manager
  * 
  * 
  */
@@ -20,13 +20,14 @@
 // Pacific Northwest Laboratory
 // -------------------------------------------------------------
 // -------------------------------------------------------------
-// Created May  6, 2013 by William A. Perkins
-// Last Change: 2013-05-03 12:23:12 d3g096
+// Created February 10, 2014
+// Last Change: February 10, 2014
 // -------------------------------------------------------------
 
 #include <iostream>
 #include <ga.h>
 #include "gridpack/parallel/parallel.hpp"
+#include "gridpack/parallel/task_manager.hpp"
 
 // -------------------------------------------------------------
 //  Main Program
@@ -35,8 +36,9 @@ int
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
-
-  // Limit scope so that program exits cleanly
+  GA_Initialize();
+  // Create an artificial scope so that all objects call their destructors
+  // before GA_Terminate is called
   if (1) {
     gridpack::parallel::Communicator world;
 
@@ -45,15 +47,17 @@ main(int argc, char **argv)
     int i;
     char buf[128];
 
-    for (i=0; i<nprocs; i++) {
-      if (i == me) {
-        printf("I am process %d of %d.\n",me,nprocs);
-      }
+    int ntasks = 4*nprocs; 
+
+    gridpack::parallel::TaskManager tskmgr;
+
+    tskmgr.set(ntasks);
+    int itask;
+    while(tskmgr.nextTask(&itask)) {
+      printf("Evaluating task %d on processor %d out of %d\n",itask,me,nprocs);
     }
-    world.barrier();
 
     // Create two communicators, each containing half the processors
-    if (me == 0) printf("\nCreating communicators using split:\n\n");
     if (nprocs > 1) {
       int color;
       if (static_cast<double>(me)/static_cast<double>(nprocs) < 0.5) {
@@ -67,43 +71,16 @@ main(int argc, char **argv)
           printf("I am process %d (original process is %d) of %d on communicator %d.\n",
               lcomm.rank(),me,lcomm.size(),color);
       }
-    }
 
-    // Create a communictor to test copy constructor
-    gridpack::parallel::Communicator gcomm;
-    if (me == 0) printf("\nCreating communicators using divide:\n\n");
-    if (nprocs > 1) {
-      int nsize = nprocs/2;
-      gridpack::parallel::Communicator lcomm = world.divide(nsize);
-      gcomm = lcomm;
-      for (i=0; i<nprocs; i++) {
-        if (i == me) 
-          printf("I am process %d (original process is %d) of %d.\n",
-              lcomm.rank(),me,lcomm.size());
-      }
-    }
-
-    if (me == 0) printf("\nTesting assignment operator for communicators:\n\n");
-    if (nprocs > 1) {
-      int nsize = gcomm.size();
-      for (i=0; i<nprocs; i++) {
-        if (i == me) 
-          printf("(assignment) I am process %d (original process is %d) of %d.\n",
-              gcomm.rank(),me,gcomm.size());
-      }
-    }
-
-    gridpack::parallel::Communicator cpcomm(gcomm);
-    if (me == 0) printf("\nTesting copy constructor for communicators:\n\n");
-    if (nprocs > 1) {
-      int nsize = gcomm.size();
-      for (i=0; i<nprocs; i++) {
-        if (i == me) 
-          printf("(copy) I am process %d (original process is %d) of %d.\n",
-              gcomm.rank(),me,gcomm.size());
+      tskmgr.set(ntasks);
+      while(tskmgr.nextTask(lcomm,&itask)) {
+        printf("Evaluating task %d on processor %d (global id %d) in sub-communicator of size %d\n",
+            itask,lcomm.rank(),me,lcomm.size());
       }
     }
   }
+
+  GA_Terminate();
   return 0;
 }
 

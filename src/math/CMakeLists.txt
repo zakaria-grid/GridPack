@@ -7,13 +7,16 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2014-02-06 14:21:36 d3g096
+# Last Change: 2014-02-11 11:54:23 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
   gridpack_configuration 
   gridpack_parallel 
   gridpack_timer
+  ${GA_LIBRARIES}
+  ${Boost_LIBRARIES}
+  ${MPI_CXX_LIBRARIES}
 )
 
 # implementation independent math sources
@@ -63,6 +66,9 @@ set(gridpack_math_headers
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+if (GA_FOUND)
+    include_directories(AFTER ${GA_INCLUDE_DIRS})
+endif()
 
 # implementation specific sources and flags
 if (PETSC_FOUND)

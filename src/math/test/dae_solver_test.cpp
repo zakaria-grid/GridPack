@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-11-14 14:17:09 d3g096
+ * @date   2014-02-11 07:40:46 d3g096
  * 
  * @brief  
  * 
@@ -379,7 +379,8 @@ main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
 
-  boost::mpi::communicator world;
+  gridpack::parallel::Communicator world;
+
   boost::scoped_ptr<gridpack::utility::Configuration>
     config(gridpack::utility::Configuration::configuration());
   
@@ -392,4 +393,5 @@ main(int argc, char **argv)
 
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
   gridpack::math::Finalize();
+  return result;
 }

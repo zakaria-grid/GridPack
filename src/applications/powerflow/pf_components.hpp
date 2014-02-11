@@ -151,6 +151,12 @@ class PFBus
     bool isPV(void);
 
     /**
+     * Return whether or not a bus is isolated
+     * @return true if bus is isolated
+     */
+    bool isIsolated(void) const;
+
+    /**
      * Set voltage value
      */
     void setVoltage(void);

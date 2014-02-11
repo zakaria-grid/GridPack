@@ -6,7 +6,7 @@
 /**
  * @file   pf_network_test.cpp
  * @author William A. Perkins
- * @date   2014-02-07 12:45:36 d3g096
+ * @date   2014-02-11 11:53:43 d3g096
  * 
  * @brief  Unit tests for powerflow network and component types
  * 
@@ -123,11 +123,9 @@ main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
   gridpack::math::Initialize();
-  GA_Initialize();
-  MA_init(MT_C_CHAR, 1024*1024, 1024*1024);
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
-  GA_Terminate();
   gridpack::math::Finalize();
+  return result;
 }
 
 

@@ -6,7 +6,7 @@
 /**
  * @file   PTI23_test.cpp
  * @author Kevin Glass
- * @date   2013-06-17 12:09:38 d3k427
+ * @date   2014-02-11 10:28:46 d3g096
  * 
  * @brief  Test PTI23_parser capability. Currently not implemented.
  * 
@@ -56,7 +56,7 @@ BOOST_AUTO_TEST_CASE( SerialInputTest )
   timer->start(t_read);
   if (me == 0) {
     std::ifstream            input;
-    input.open("pti08.raw");
+    input.open(filename.c_str());
     if (!input.is_open()) {
       throw gridpack::Exception("failed to open case data file");
     }
@@ -85,17 +85,13 @@ int
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
-  boost::mpi::communicator world;
+  gridpack::parallel::Communicator world;
   int me = world.rank();
-  GA_Initialize();
-  int stack = 200000, heap = 200000;
-  MA_init(C_DBL, stack, heap);
   if (me == 0) {
     printf("Testing Serial Input\n");
   }
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
-
-  GA_Terminate();
+  return result;
 }
 
 
