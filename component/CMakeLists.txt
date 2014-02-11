@@ -10,12 +10,18 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-14 07:46:28 d3g096
+# Last Change: 2014-02-11 07:35:31 d3g096
 # -------------------------------------------------------------
 
-set(target_libraries ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+set(target_libraries
+    ${GA_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${MPI_CXX_LIBRARIES})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+if (GA_FOUND)
+    include_directories(AFTER ${GA_INCLUDE_DIRS})
+endif()
 
 add_library(gridpack_components OBJECT
   base_component.cpp

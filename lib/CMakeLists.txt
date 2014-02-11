@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 17, 2013 by Bruce Palmer
-# Last Change: 2014-01-14 07:53:51 d3g096
+# Last Change: 2014-02-11 07:37:16 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack 
@@ -26,6 +26,11 @@ add_library(gridpack
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/GridPACK.cmake.in 
   ${CMAKE_CURRENT_BINARY_DIR}/GridPACK.cmake @ONLY)
+
+
+set(GRIDPACK_TP_INCLUDE_FLAGS)
+  
+set(GRIDPACK_TP_LIBS)
 
 
 # -------------------------------------------------------------

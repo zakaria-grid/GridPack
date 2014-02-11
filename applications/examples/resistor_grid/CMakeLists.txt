@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-29 13:32:25 d3g096
+# Last Change: 2014-02-11 07:31:17 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -50,3 +50,24 @@ add_custom_target(resistor_grid.x.input
 
 )
 add_dependencies(resistor_grid.x resistor_grid.x.input)
+
+# -------------------------------------------------------------
+# install as a sample application
+# -------------------------------------------------------------
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
+  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
+
+install(FILES 
+  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
+  ${CMAKE_CURRENT_SOURCE_DIR}/rg_app.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/rg_components.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/rg_main.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/rg_app.hpp  
+  ${CMAKE_CURRENT_SOURCE_DIR}/rg_components.hpp  
+  ${CMAKE_CURRENT_SOURCE_DIR}/rg_factory.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/rg_grid.F90
+  ${CMAKE_CURRENT_BINARY_DIR}/input.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/small.raw
+  DESTINATION doc/gridpack/example/resistor_grid
+)

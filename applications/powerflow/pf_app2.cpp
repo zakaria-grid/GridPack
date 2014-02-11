@@ -9,7 +9,7 @@
 /**
  * @file   pf_app2.cpp
  * @author William A. Perkins
- * @date   2014-01-29 13:28:30 d3g096
+ * @date   2014-02-11 08:00:03 d3g096
  * 
  * @brief  
  * 
@@ -335,12 +335,11 @@ PFApp2::execute(void)
 int
 main(int argc, char **argv)
 {
-  gridpack::Initialize(argc, argv);
+  gridpack::parallel::Environment(argc, argv);
 
   gridpack::powerflow::PFApp2 app;
   app.execute();
 
-  gridpack::Finalize();
   return 0;
 }
 

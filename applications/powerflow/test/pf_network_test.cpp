@@ -6,7 +6,7 @@
 /**
  * @file   pf_network_test.cpp
  * @author William A. Perkins
- * @date   2013-10-03 11:51:13 d3g096
+ * @date   2014-02-10 08:30:36 d3g096
  * 
  * @brief  Unit tests for powerflow network and component types
  * 
@@ -38,7 +38,7 @@ BOOST_AUTO_TEST_CASE ( bus_serialization )
     bus1.reset(new gridpack::powerflow::PFBus);
     // FIXME: need initialization
   }
-  broadcast(world, bus1, 0);
+  broadcast(world.getCommunicator(), bus1, 0);
 
   // FIXME: need to test contents
 }
@@ -52,7 +52,7 @@ BOOST_AUTO_TEST_CASE ( branch_serialization )
     branch1.reset(new gridpack::powerflow::PFBranch);
     // FIXME: need initialization
   }
-  broadcast(world, branch1, 0);
+  broadcast(world.getCommunicator(), branch1, 0);
 
   // FIXME: need to test contents
 }
@@ -121,10 +121,8 @@ int
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
-  GA_Initialize();
-  MA_init(MT_C_CHAR, 1024*1024, 1024*1024);
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
-  GA::Terminate();
+  return result;
 }
 
 

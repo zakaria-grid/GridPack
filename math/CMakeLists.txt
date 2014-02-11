@@ -11,7 +11,9 @@
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
-  ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES}
+  ${GA_LIBRARIES}
+  ${Boost_LIBRARIES}
+  ${MPI_CXX_LIBRARIES}
 )
 
 # implementation independent math sources
@@ -61,6 +63,9 @@ set(gridpack_math_headers
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+if (GA_FOUND)
+    include_directories(AFTER ${GA_INCLUDE_DIRS})
+endif()
 
 # implementation specific sources and flags
 if (PETSC_FOUND)

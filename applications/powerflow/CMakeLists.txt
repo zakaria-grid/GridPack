@@ -15,6 +15,7 @@
 
 set(target_libraries
     gridpack
+    gridpack_ymatrix_components
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}

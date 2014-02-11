@@ -22,7 +22,7 @@
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
-#include "gridpack/applications/dynamic_simulation/ds_components.hpp"
+#include "ds_components.hpp"
 #include "gridpack/parser/dictionary.hpp"
 
 /**
@@ -64,14 +64,23 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagSize(int *isize, int *jsize)
   } else if (p_mode == GENERATOR) {
   } else if (p_mode == PERM) {*/
   //if (p_mode == YBUS || p_mode == YL || p_mode = FY || p_mode = POSFY) {
-  if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus || p_mode == preFY ||
+  if (YMBus::isIsolated()) return false;
+  if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus || p_mode == onFY ||
       p_mode == posFY) {
-    *isize = 1;
-    *jsize = 1;
+    //*isize = 1;
+    //*jsize = 1;
+    return YMBus::matrixDiagSize(isize,jsize);
   } else if (p_mode == PERM) {
     if (p_ngen > 0) {
       *isize = 1;
       *jsize = p_ngen;
+    } else {
+      return false;
+    }
+  } else if (p_mode == PERMTrans) {
+    if (p_ngen > 0) {
+      *isize = p_ngen;
+      *jsize = 1;
     } else {
       return false;
     }
@@ -82,11 +91,18 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagSize(int *isize, int *jsize)
     } else {
       return false;
     }
+  } else if (p_mode == permYMOD) {
+    if (p_ngen > 0) {
+      *isize = 1;
+      *jsize = 1;
+    } else {
+      return false;
+    }
   } else if (p_mode == PMatrix) {
     if (p_ngen > 0) {
       *isize = 1;
-      //*jsize = 1;
-      *jsize = p_ngen;
+      *jsize = 1;
+      //*jsize = p_ngen;
     } else {
       *isize = 1;
       *jsize = 0;
@@ -107,10 +123,11 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagSize(int *isize, int *jsize)
 bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
 {
   if (p_mode == YBUS) {
-    gridpack::ComplexType ret(p_ybusr,p_ybusi);
-    values[0] = ret;
-    return true;
-  } else if (p_mode == preFY) {
+    return YMBus::matrixDiagValues(values);
+    //gridpack::ComplexType ret(p_ybusr,p_ybusi);
+    //values[0] = ret;
+    //return true;
+  } else if (p_mode == onFY) {
     if (p_from_flag) {
       gridpack::ComplexType ret(0.0, 1.0e7);
       values[0] = ret;
@@ -127,16 +144,22 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
       return false;
     }
   } else if (p_mode == YL) {
-    //if (p_type == 1) { 
-      //p_pl = p_pl;// - p_pg[0];
-      //p_ql = p_ql;// - p_qg[0];
-    //}
     p_ybusr = p_ybusr+p_pl/(p_voltage*p_voltage);
     p_ybusi = p_ybusi+(-p_ql)/(p_voltage*p_voltage);
+    //printf("p_ybusr=%f, p_ybusi=%f\n", p_ybusr, p_ybusi);
     gridpack::ComplexType ret(p_ybusr, p_ybusi);
     values[0] = ret;
     return true;
   } else if (p_mode == PERM) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        values[i] = 1.0;
+      }
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == PERMTrans) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
         values[i] = 1.0;
@@ -173,11 +196,29 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
     } else {
       return false;
     }
+  } else if (p_mode == permYMOD) {
+    if (p_ngen > 0) {
+      values[0] = 0.0;
+      for (int ip = 0; ip < p_ngen; ip++) {
+        double ra = p_r[ip] * p_sbase / p_mva[ip];
+        double xd;
+        if (p_dstr[ip] == 0) { 
+          xd = p_dtr[ip] * p_sbase / p_mva[ip];
+        }
+        gridpack::ComplexType Y_a(ra, xd);
+        Y_a = 1.0 / Y_a;
+        values[0] += Y_a;
+      } 
+      return true;
+    } else {
+      return false;
+    }
   } else if (p_mode == PMatrix) {
     if (p_ngen > 0) {
-      for (int i = 0; i < p_ngen; i++) {
+      /*for (int i = 0; i < p_ngen; i++) {
         values[i] = -1.0;
-      }
+      }*/
+      values[0] = 1.0; 
       return true;
     } else {
       return false;
@@ -228,7 +269,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorSize(int *size) const
     }
   } else if (p_mode == init_pelect || p_mode == init_eprime || p_mode == init_mac_ang || p_mode == init_mac_spd || p_mode == init_eqprime || p_mode == init_pmech || p_mode == init_mva || p_mode == init_d0 || p_mode == init_h) {
     if (p_ngen > 0) {
-      *size = 1;
+      //*size = 1;
+      *size = p_ngen;
      } else {
       return false;
      }
@@ -335,7 +377,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
   } else if (p_mode == init_mac_ang) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
-        values[0] = atan2(imag(p_eprime[i]), real(p_eprime[i]));
+        //values[0] = atan2(imag(p_eprime[i]), real(p_eprime[i]));
+        values[i] = atan2(imag(p_eprime[i]), real(p_eprime[i]));
       }
       return true;
     } else {
@@ -344,7 +387,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
   } else if (p_mode == init_mac_spd) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
-        values[0] = 1.0; 
+        //values[0] = 1.0; 
+        values[i] = 1.0; 
       }
       return true;
     } else {
@@ -353,7 +397,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
   } else if (p_mode == init_eqprime) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
-        values[0] = abs(p_eprime[i]); 
+        //values[0] = abs(p_eprime[i]); 
+        values[i] = abs(p_eprime[i]); 
       }
       return true;
     } else {
@@ -362,7 +407,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
   } else if (p_mode == init_pmech) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
-        values[0] = abs(p_pelect[i]); 
+        //values[0] = abs(p_pelect[i]); 
+        values[i] = abs(p_pelect[i]); 
       }
       return true;
     } else {
@@ -371,7 +417,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
   } else if (p_mode == init_mva) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
-        values[0] = p_mva[i]; 
+        //values[0] = p_mva[i]; 
+        values[i] = p_mva[i]; 
       }
       return true;
     } else {
@@ -380,7 +427,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
   } else if (p_mode == init_d0) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
-        values[0] = p_d0[i]; 
+        //values[0] = p_d0[i]; 
+        values[i] = p_d0[i]; 
       }
       return true;
     } else {
@@ -389,7 +437,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
   } else if (p_mode == init_h) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
-        values[0] = p_h[i]; 
+        //values[0] = p_h[i]; 
+        values[i] = p_h[i]; 
       }
       return true;
     } else {
@@ -410,7 +459,7 @@ void gridpack::dynamic_simulation::DSBus::setValues(ComplexType *values)
 
 void gridpack::dynamic_simulation::DSBus::setYBus(void)
 {
-  gridpack::ComplexType ret(0.0,0.0);
+  /*gridpack::ComplexType ret(0.0,0.0);
   std::vector<boost::shared_ptr<BaseComponent> > branches;
   getNeighborBranches(branches);
   int size = branches.size();
@@ -426,9 +475,21 @@ void gridpack::dynamic_simulation::DSBus::setYBus(void)
   if (p_shunt) {
     gridpack::ComplexType shunt(p_shunt_gs,p_shunt_bs);
     ret += shunt;
-  }
+  }*/
+  YMBus::setYBus();
+  gridpack::ComplexType ret;
+  ret = YMBus::getYBus();
   p_ybusr = real(ret);
   p_ybusi = imag(ret);
+}
+
+/**
+ * Get values of YBus matrix. These can then be used in subsequent
+ * calculations
+ */
+gridpack::ComplexType gridpack::dynamic_simulation::DSBus::getYBus(void)
+{
+  return YMBus::getYBus();
 }
 
 /**
@@ -441,6 +502,8 @@ void gridpack::dynamic_simulation::DSBus::setYBus(void)
 void gridpack::dynamic_simulation::DSBus::load(
   const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
+  YMBus::load(data);
+
   p_sbase = 100.0;
 
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
@@ -516,6 +579,9 @@ void gridpack::dynamic_simulation::DSBus::load(
  */
 void gridpack::dynamic_simulation::DSBus::setMode(int mode)
 {
+  if (mode == YBUS || mode == YL) {
+    YMBus::setMode(gridpack::ymatrix::YBus);
+  }
   p_mode = mode;
 }
 
@@ -533,6 +599,15 @@ double gridpack::dynamic_simulation::DSBus::getVoltage(void)
  */
 double gridpack::dynamic_simulation::DSBus::getPhase(void)
 {
+}
+
+/**
+ * Return whether or not a bus is isolated
+ * @return true if bus is isolated
+ */
+bool gridpack::dynamic_simulation::DSBus::isIsolated(void) const
+{
+  return YMBus::isIsolated();
 }
 
 void gridpack::dynamic_simulation::DSBus::setIFunc(void)
@@ -643,14 +718,15 @@ bool gridpack::dynamic_simulation::DSBranch::matrixForwardSize(int *isize, int *
   } else if (p_mode == GENERATOR) {
   }*/
   if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus ||
-      p_mode == preFY || p_mode == posFY) {
-    if (p_active) {
+      p_mode == onFY || p_mode == posFY) {
+    /*if (p_active) {
       *isize = 1;
       *jsize = 1;
       return true;
     } else {
       return false;
-    }
+    }*/
+    return YMBranch::matrixForwardSize(isize,jsize);
   } else {
     return false;
   }
@@ -675,14 +751,15 @@ bool gridpack::dynamic_simulation::DSBranch::matrixReverseSize(int *isize, int *
     }
   } else if (p_mode == YBUS) {*/
   if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus ||
-      p_mode == preFY || p_mode == posFY) {
-    if (p_active) {
+      p_mode == onFY || p_mode == posFY) {
+    /*if (p_active) {
       *isize = 1;
       *jsize = 1;
       return true;
     } else {
       return false;
-    }
+    }*/
+    return YMBranch::matrixReverseSize(isize,jsize);
   } else {
     return false;
   }
@@ -697,12 +774,13 @@ bool gridpack::dynamic_simulation::DSBranch::matrixReverseSize(int *isize, int *
 bool gridpack::dynamic_simulation::DSBranch::matrixForwardValues(ComplexType *values)
 {
   if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus) {
-    if (p_active) {
+    /*if (p_active) {
       values[0] = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd); 
       return true;
     } else {
       return false;
-    }
+    }*/
+    return YMBranch::matrixForwardValues(values);
   /*} else if (p_mode == PERM) {
     values[0] = 0;
     values[1] = 0;
@@ -754,13 +832,14 @@ bool gridpack::dynamic_simulation::DSBranch::matrixForwardValues(ComplexType *va
 bool gridpack::dynamic_simulation::DSBranch::matrixReverseValues(ComplexType *values)
 {
   if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus) {
-    if (p_active) {
+    /*if (p_active) {
       values[0] = gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
       return true;
       return true;
     } else {
       return false;
-    }
+    }*/
+    return YMBranch::matrixForwardValues(values);
   } else if (p_mode == posFY) {
     if (p_event) {
       values[0] = -getUpdateFactor();
@@ -813,30 +892,14 @@ bool gridpack::dynamic_simulation::DSBranch::matrixReverseValues(ComplexType *va
 // Calculate contributions to the admittance matrix from the branches
 void gridpack::dynamic_simulation::DSBranch::setYBus(void)
 {
-  int i;
-  p_ybusr_frwd = 0.0;
-  p_ybusi_frwd = 0.0;
-  p_ybusr_rvrs = 0.0;
-  p_ybusi_rvrs = 0.0;
-  for (i=0; i<p_elems; i++) {
-    gridpack::ComplexType ret(p_resistance[i],p_reactance[i]);
-    ret = -1.0/ret; 
-    gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
-    a = p_tap_ratio[i]*a;
-    if (p_branch_status[i] == 1) {
-      if (p_xform[i]) {
-        p_ybusr_frwd += real(ret/conj(a));
-        p_ybusi_frwd += imag(ret/conj(a));
-        p_ybusr_rvrs += real(ret/a);
-        p_ybusi_rvrs += imag(ret/a);
-      } else {
-        p_ybusr_frwd += real(ret);
-        p_ybusi_frwd += imag(ret);
-        p_ybusr_rvrs += real(ret);
-        p_ybusi_rvrs += imag(ret);
-      }
-    }
-  }
+  YMBranch::setYBus();
+  gridpack::ComplexType ret;
+  ret = YMBranch::getForwardYBus();
+  p_ybusr_frwd = real(ret);
+  p_ybusi_frwd = imag(ret);
+  ret = YMBranch::getReverseYBus();
+  p_ybusr_rvrs = real(ret);
+  p_ybusi_rvrs = imag(ret);  
   // Not really a contribution to the admittance matrix but might as well
   // calculate phase angle difference between buses at each end of branch
   gridpack::dynamic_simulation::DSBus *bus1 =
@@ -865,6 +928,8 @@ void gridpack::dynamic_simulation::DSBranch::setYBus(void)
 void gridpack::dynamic_simulation::DSBranch::load(
   const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
+  YMBranch::load(data);
+
   bool ok = true;
   data->getValue(BRANCH_NUM_ELEMENTS, &p_elems);
   double rvar;
@@ -915,6 +980,9 @@ void gridpack::dynamic_simulation::DSBranch::load(
  */
 void gridpack::dynamic_simulation::DSBranch::setMode(int mode)
 {
+  if (mode == YBUS || mode == YL) {
+    YMBranch::setMode(gridpack::ymatrix::YBus);
+  }
   p_mode = mode;
 }
 

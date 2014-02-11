@@ -10,43 +10,36 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-02-11 07:38:47 d3g096
+# Last Change: 2014-02-11 07:49:11 d3g096
 # -------------------------------------------------------------
-
-add_library(gridpack_timer OBJECT
-  coarse_timer.cpp
-)
 
 set(target_libraries
-    ${GA_LIBRARIES}
     ${Boost_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
-)
-
-set(target_objects
-  $<TARGET_OBJECTS:gridpack_parallel>
-  $<TARGET_OBJECTS:gridpack_timer>
-)
+    ${GA_LIBRARIES}
+    ${MPI_CXX_LIBRARIES})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(AFTER ${GA_INCLUDE_DIRS})
 
-# -------------------------------------------------------------
-# TEST: test_timer
-# -------------------------------------------------------------
-
-add_executable(test_timer 
-  test/test_timer.cpp
-  ${target_objects}
+add_library(gridpack_ymatrix_components
+  ymatrix_components.cpp
 )
-target_link_libraries(test_timer ${target_libraries})
-add_test(test_timer test_timer)
+
+# -------------------------------------------------------------
+# component serialization tests
+# -------------------------------------------------------------
+target_link_libraries(gridpack_ymatrix_components ${target_libraries})
 
 # -------------------------------------------------------------
 # installation
 # -------------------------------------------------------------
 install(FILES 
-  coarse_timer.hpp
-  DESTINATION include/gridpack/timer
+  ymatrix_components.hpp  
+  DESTINATION include/gridpack/applications/components/y_matrix
 )
+
+install(TARGETS 
+  gridpack_ymatrix_components
+  DESTINATION lib
+)
+
 

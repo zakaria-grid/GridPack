@@ -61,26 +61,29 @@ gridpack::powerflow::PFBus::~PFBus(void)
 bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize, int *jsize) const
 {
   if (p_mode == Jacobian) {
+    if (!YMBus::isIsolated()) {
 #ifdef LARGE_MATRIX
-    *isize = 2;
-    *jsize = 2;
-    return true;
-#else
-    if (getReferenceBus()) {
-      return false;
-    } else if (p_isPV) {
-      *isize = 1;
-      *jsize = 1;
-      return true;
-    } else {
       *isize = 2;
       *jsize = 2;
       return true;
-    }
+#else
+      if (getReferenceBus()) {
+        return false;
+      } else if (p_isPV) {
+        *isize = 1;
+        *jsize = 1;
+        return true;
+      } else {
+        *isize = 2;
+        *jsize = 2;
+        return true;
+      }
 #endif
+    } else {
+      return false;
+    }
   } else if (p_mode == YBus) {
-    *isize = 1;
-    *jsize = 1;
+    return YMBus::matrixDiagSize(isize,jsize);
   }
   return true;
 }
@@ -94,68 +97,47 @@ bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize, int *jsize) const
 bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
 {
   if (p_mode == YBus) {
-    gridpack::ComplexType ret(p_ybusr,p_ybusi);
-//    values[0] = p_ybusr;
-//    values[1] = p_ybusi;
-//    values[2] = -p_ybusi;
-//    values[3] = p_ybusr;
-    values[0] = ret;
-    return true;
+    return YMBus::matrixDiagValues(values);
   } else if (p_mode == Jacobian) {
+    if (!YMBus::isIsolated()) {
 #ifdef LARGE_MATRIX
-    if (!getReferenceBus()) {
-      values[0] = -p_Qinj - p_ybusi * p_v *p_v; 
-      values[1] = p_Pinj - p_ybusr * p_v *p_v; 
-      values[2] = p_Pinj / p_v + p_ybusr * p_v; 
-      values[3] = p_Qinj / p_v - p_ybusi * p_v; 
-      // Fix up matrix elements if bus is PV bus
-      if (p_isPV) {
+      if (!getReferenceBus()) {
+        values[0] = -p_Qinj - p_ybusi * p_v *p_v; 
+        values[1] = p_Pinj - p_ybusr * p_v *p_v; 
+        values[2] = p_Pinj / p_v + p_ybusr * p_v; 
+        values[3] = p_Qinj / p_v - p_ybusi * p_v; 
+        // Fix up matrix elements if bus is PV bus
+        if (p_isPV) {
+          values[1] = 0.0;
+          values[2] = 0.0;
+          values[3] = 1.0;
+        }
+        return true;
+      } else {
+        values[0] = 1.0;
         values[1] = 0.0;
         values[2] = 0.0;
         values[3] = 1.0;
+        return true;
       }
-      return true;
-    } else {
-      values[0] = 1.0;
-      values[1] = 0.0;
-      values[2] = 0.0;
-      values[3] = 1.0;
-      return true;
-    }
 #else
-    if (!getReferenceBus() && !p_isPV) {
-      /*      double branch_values[4];
-      // TODO: More stuff here
-      std::vector<boost::shared_ptr<BaseComponent> > branches;
-      getNeighborBranches(branches);
-      int size = branches.size();
-      int i;
-      values[0] = 0.0;
-      values[1] = 0.0;
-      values[2] = 2.0*p_v*p_ybusr;
-      values[3] = -2.0*p_v*p_ybusi;
-      //printf("p_v = %f\n", p_v);
-      for (i=0; i<size; i++) {
-      (dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()))->
-      getJacobian(this, branch_values);
-      values[0] -= p_v*branch_values[0];
-      values[1] += p_v*(-branch_values[1]); //correct diagonal value 
-      values[2] += branch_values[2];
-      values[3] += branch_values[3];
-      } */ // use simple equations below to get diagonal values. YChen 9/29/2013
-      values[0] = -p_Qinj - p_ybusi * p_v *p_v; 
-      values[1] = p_Pinj - p_ybusr * p_v *p_v; 
-      values[2] = p_Pinj / p_v + p_ybusr * p_v; 
-      values[3] = p_Qinj / p_v - p_ybusi * p_v; 
-      // Fix up matrix elements if bus is PV bus
-      return true;
-    } else if (!getReferenceBus() && p_isPV) {
-      values[0] = -p_Qinj - p_ybusi * p_v *p_v; 
-      return true;
+      if (!getReferenceBus() && !p_isPV) {
+        values[0] = -p_Qinj - p_ybusi * p_v *p_v; 
+        values[1] = p_Pinj - p_ybusr * p_v *p_v; 
+        values[2] = p_Pinj / p_v + p_ybusr * p_v; 
+        values[3] = p_Qinj / p_v - p_ybusi * p_v; 
+        // Fix up matrix elements if bus is PV bus
+        return true;
+      } else if (!getReferenceBus() && p_isPV) {
+        values[0] = -p_Qinj - p_ybusi * p_v *p_v; 
+        return true;
+      } else {
+        return false;
+      }
+#endif
     } else {
       return false;
     }
-#endif
   }
 }
 
@@ -168,19 +150,23 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
 bool gridpack::powerflow::PFBus::vectorSize(int *size) const
 {
   if (p_mode == RHS || p_mode == State) {
+    if (!YMBus::isIsolated()) {
 #ifdef LARGE_MATRIX
-    *size = 2;
-    return true;
-#else
-    if (getReferenceBus()) {
-      return false;
-    } else if (p_isPV) {
-      *size = 1;
-    } else {
       *size = 2;
-    }
-    return true;
+      return true;
+#else
+      if (getReferenceBus()) {
+        return false;
+      } else if (p_isPV) {
+        *size = 1;
+      } else {
+        *size = 2;
+      }
+      return true;
 #endif
+    } else {
+      return false;
+    }
   } else if (p_mode == S_Cal ){
     *size = 1;
   } else {
@@ -208,77 +194,61 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
   if (p_mode == State) {
     values[0] = p_v;
     values[1] = p_a;
+    return true;
   }
   if (p_mode == RHS) {
-    if (!getReferenceBus()) {
-      std::vector<boost::shared_ptr<BaseComponent> > branches;
-      getNeighborBranches(branches);
-      int size = branches.size();
-      int i;
-      double P, Q, p, q;
-      P = 0.0;
-      Q = 0.0;
-      for (i=0; i<size; i++) {
-        gridpack::powerflow::PFBranch *branch
-          = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
-        branch->getPQ(this, &p, &q);
-        P += p;
-        Q += q;
-        //printf("i=%d:p=%f, q=%f, P=%f, Q=%f\n", i,p,q,P,Q);
-      }
-      //printf("p_P0=%f,p_Q0=%f\n\n", p_P0,p_Q0);
-      // Also add bus i's own Pi, Qi
-      P += p_v*p_v*p_ybusr;
-      Q += p_v*p_v*(-p_ybusi);
-      p_Pinj = P;
-      p_Qinj = Q;
-      //printf("p = %f, q = %f\n", p_voltage*p_voltage*p_ybusr, p_voltage*p_voltage*(-p_ybusi));
-      P -= p_P0;
-      Q -= p_Q0;
-      values[0] = P;
+    if (!YMBus::isIsolated()) {
+      if (!getReferenceBus()) {
+        std::vector<boost::shared_ptr<BaseComponent> > branches;
+        getNeighborBranches(branches);
+        int size = branches.size();
+        int i;
+        double P, Q, p, q;
+        P = 0.0;
+        Q = 0.0;
+        for (i=0; i<size; i++) {
+          gridpack::powerflow::PFBranch *branch
+            = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
+          branch->getPQ(this, &p, &q);
+          P += p;
+          Q += q;
+          //printf("i=%d:p=%f, q=%f, P=%f, Q=%f\n", i,p,q,P,Q);
+        }
+        //printf("p_P0=%f,p_Q0=%f\n\n", p_P0,p_Q0);
+        // Also add bus i's own Pi, Qi
+        P += p_v*p_v*p_ybusr;
+        Q += p_v*p_v*(-p_ybusi);
+        p_Pinj = P;
+        p_Qinj = Q;
+        //printf("p = %f, q = %f\n", p_voltage*p_voltage*p_ybusr, p_voltage*p_voltage*(-p_ybusi));
+        P -= p_P0;
+        Q -= p_Q0;
+        values[0] = P;
 #ifdef LARGE_MATRIX
-      if (!p_isPV) {
-        values[1] = Q;
+        if (!p_isPV) {
+          values[1] = Q;
+        } else {
+          values[1] = 0.0;
+        }
+#else
+        if (!p_isPV) {
+          values[1] = Q;
+        }
+#endif
+        return true;
       } else {
-        values[1] = 0.0;
-      }
-#else
-      if (!p_isPV) {
-        values[1] = Q;
-      }
-#endif
-      return true;
-    } else {
 #ifdef LARGE_MATRIX
-      values[0] = 0.0;
-      values[1] = 0.0;
-      return true;
+        values[0] = 0.0;
+        values[1] = 0.0;
+        return true;
 #else
-      return false;
+        return false;
 #endif
+      }
+    } else {
+      return false;
     }
   }
-  /*  if (p_mode == Jacobian) {
-    std::vector<boost::shared_ptr<BaseComponent> > branches;
-    getNeighborBranches(branches);
-    int size = branches.size();
-    int i;
-    double P, Q, p, q;
-    P = 0.0;
-    Q = 0.0;
-    for (i=0; i<size; i++) {
-      gridpack::powerflow::PFBranch *branch
-        = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
-      branch->getPQ(this, &p, &q);
-      P += p;
-      Q += q;
-    }
-    P -= p_P0;
-    Q -= p_Q0;
-    values[0] = P;
-    values[1] = Q;
-    return true;
-  } */
 }
 
 /**
@@ -328,35 +298,6 @@ void gridpack::powerflow::PFBus::setXCBuf(void *buf)
   *p_vMag_ptr = p_v;
 }
 
-void gridpack::powerflow::PFBus::setYBus(void)
-{
-  gridpack::ComplexType ret(0.0,0.0);
-  std::vector<boost::shared_ptr<BaseComponent> > branches;
-  getNeighborBranches(branches);
-  int size = branches.size();
-  int i;
-  // HACK: Need to cast pointer, is there a better way?
-  for (i=0; i<size; i++) {
-    gridpack::powerflow::PFBranch *branch
-      = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
-    ret -= branch->getAdmittance();
-    ret -= branch->getTransformer(this);
-    ret += branch->getShunt(this);
-  }
-  if (p_shunt) {
-    gridpack::ComplexType shunt(p_shunt_gs,p_shunt_bs);
-    ret += shunt;
-  }
-  p_ybusr = real(ret);
-  p_ybusi = imag(ret);
-}
-
-gridpack::ComplexType gridpack::powerflow::PFBus::getYBus(void)
-{
-  gridpack::ComplexType ret(p_ybusr,p_ybusi);
-  return ret;
-}
-  
 /**
  * Load values stored in DataCollection object into PFBus object. The
  * DataCollection object will have been filled when the network was created
@@ -367,23 +308,15 @@ gridpack::ComplexType gridpack::powerflow::PFBus::getYBus(void)
 void gridpack::powerflow::PFBus::load(
     const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
-  bool ok = data->getValue(CASE_SBASE, &p_sbase);
-  //p_shunt = data->getValue(BUS_BASEKV, &p_sbase);
+  YMBus::load(data);
 
+  bool ok = data->getValue(CASE_SBASE, &p_sbase);
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
   data->getValue(BUS_VOLTAGE_MAG, &p_voltage); 
   p_v = p_voltage;
   double pi = 4.0*atan(1.0);
   p_angle = p_angle*pi/180.0;
   p_a = p_angle;
-  p_shunt = true;
-  p_shunt = p_shunt && data->getValue(BUS_SHUNT_GL, &p_shunt_gs);
-  p_shunt = p_shunt && data->getValue(BUS_SHUNT_BL, &p_shunt_bs);
-  p_shunt_gs /= p_sbase;
-  p_shunt_bs /= p_sbase;
-  // TODO: Need to get values of P0 and Q0 from Network Configuration file
-  //printf("p_shunt_gs=%f,p_shunt_bs=%f\n",p_shunt_gs,p_shunt_bs);
-  // Check to see if bus is reference bus
   int itype;
   data->getValue(BUS_TYPE, &itype);
   if (itype == 3) {
@@ -392,7 +325,7 @@ void gridpack::powerflow::PFBus::load(
 
   // if BUS_TYPE = 2 then bus is a PV bus
   p_isPV = false;
- // if (itype == 2) p_isPV = true;
+  // if (itype == 2) p_isPV = true;
 
   // added p_pg,p_qg,p_pl,p_ql,p_sbase;
   p_load = true;
@@ -408,7 +341,6 @@ void gridpack::powerflow::PFBus::load(
       lgen = true;
       lgen = lgen && data->getValue(GENERATOR_PG, &pg,i);
       lgen = lgen && data->getValue(GENERATOR_QG, &qg,i);
-      //printf("ng=%d,pg=%f,qg=%f\n",i,pg,qg);
       lgen = lgen && data->getValue(GENERATOR_VS, &vs,i);
       lgen = lgen && data->getValue(GENERATOR_STAT, &gstatus,i);
       if (lgen) {
@@ -425,6 +357,27 @@ void gridpack::powerflow::PFBus::load(
 
 }
 
+/**
+ * Set values of YBus matrix. These can then be used in subsequent
+ * calculations
+ */
+void gridpack::powerflow::PFBus::setYBus(void)
+{
+  YMBus::setYBus();
+  gridpack::ComplexType ret;
+  ret = YMBus::getYBus();
+  p_ybusr = real(ret);
+  p_ybusi = imag(ret);
+}
+
+/**
+ * Get values of YBus matrix. These can then be used in subsequent
+ * calculations
+ */
+gridpack::ComplexType gridpack::powerflow::PFBus::getYBus(void)
+{
+  return YMBus::getYBus();
+}
 
 /**
  * Set the mode to control what matrices and vectors are built when using
@@ -433,6 +386,9 @@ void gridpack::powerflow::PFBus::load(
  */
 void gridpack::powerflow::PFBus::setMode(int mode)
 {
+  if (mode == YBus) {
+    YMBus::setMode(gridpack::ymatrix::YBus);
+  }
   p_mode = mode;
 }
 
@@ -453,6 +409,15 @@ double gridpack::powerflow::PFBus::getVoltage()
 bool gridpack::powerflow::PFBus::isPV(void)
 {
   return p_isPV;
+}
+
+/**
+ * Return whether or not a bus is isolated
+ * @return true if bus is isolated
+ */
+bool gridpack::powerflow::PFBus::isIsolated(void) const
+{
+  return YMBus::isIsolated();
 }
 
 /**
@@ -591,6 +556,8 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = !bus1->getReferenceBus();
     ok = ok && !bus2->getReferenceBus();
+    ok = ok && !bus1->isIsolated();
+    ok = ok && !bus2->isIsolated();
     ok = ok && (p_active);
     if (ok) {
 #ifdef LARGE_MATRIX
@@ -625,13 +592,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
       return true; */
     }
   } else if (p_mode == YBus) {
-    if (p_active) {
-      *isize = 1;
-      *jsize = 1;
-      return true;
-    } else {
-      return false;
-    }
+    return YMBranch::matrixForwardSize(isize,jsize);
   }
 }
 bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) const
@@ -643,6 +604,8 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = !bus1->getReferenceBus();
     ok = ok && !bus2->getReferenceBus();
+    ok = ok && !bus1->isIsolated();
+    ok = ok && !bus2->isIsolated();
     ok = ok && (p_active);
     if (ok) {
 #ifdef LARGE_MATRIX
@@ -674,13 +637,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
       return false;
     }
   } else if (p_mode == YBus) {
-    if (p_active == 1) {
-      *isize = 1;
-      *jsize = 1;
-      return true;
-    } else {
-      return false;
-    }
+    return YMBranch::matrixReverseSize(isize,jsize);
   }
 }
 
@@ -699,6 +656,8 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = !bus1->getReferenceBus();
     ok = ok && !bus2->getReferenceBus();
+    ok = ok && !bus1->isIsolated();
+    ok = ok && !bus2->isIsolated();
     ok = ok && (p_active);
     if (ok) {
       double t11, t12, t21, t22;
@@ -761,12 +720,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
 //    values[1] = p_ybusi_frwd;
 //    values[2] = -p_ybusi_frwd;
 //    values[3] = p_ybusr_frwd;
-    if (p_active == 1) {
-      values[0] = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
-      return true;
-    } else {
-      return false;
-    }
+    return YMBranch::matrixForwardValues(values);
   }
 }
 
@@ -779,6 +733,8 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = !bus1->getReferenceBus();
     ok = ok && !bus2->getReferenceBus();
+    ok = ok && !bus1->isIsolated();
+    ok = ok && !bus2->isIsolated();
     ok = ok && (p_active == 1);
     if (ok) {
       double t11, t12, t21, t22;
@@ -841,42 +797,21 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
   //  values[1] = p_ybusi_rvrs;
   //  values[2] = -p_ybusi_rvrs;
   //  values[3] = p_ybusr_rvrs;
-    if (p_active) {
-      values[0] = gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
-      return true;
-    } else {
-      return false;
-    }
+    return YMBranch::matrixForwardValues(values);
   }
 }
 
 // Calculate contributions to the admittance matrix from the branches
 void gridpack::powerflow::PFBranch::setYBus(void)
 {
-  int i;
-  p_ybusr_frwd = 0.0;
-  p_ybusi_frwd = 0.0;
-  p_ybusr_rvrs = 0.0;
-  p_ybusi_rvrs = 0.0;
-  for (i=0; i<p_elems; i++) {
-    gridpack::ComplexType ret(p_resistance[i],p_reactance[i]);
-    ret = -1.0/ret;
-    gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
-    a = p_tap_ratio[i]*a;
-    if (p_branch_status[i] == 1) {
-      if (p_xform[i]) {
-        p_ybusr_frwd += real(ret/conj(a));
-        p_ybusi_frwd += imag(ret/conj(a));
-        p_ybusr_rvrs += real(ret/a);
-        p_ybusi_rvrs += imag(ret/a);
-      } else {
-        p_ybusr_frwd += real(ret);
-        p_ybusi_frwd += imag(ret);
-        p_ybusr_rvrs += real(ret);
-        p_ybusi_rvrs += imag(ret);
-      }
-    }
-  }
+  YMBranch::setYBus();
+  gridpack::ComplexType ret;
+  ret = YMBranch::getForwardYBus();
+  p_ybusr_frwd = real(ret);
+  p_ybusi_frwd = imag(ret);
+  ret = YMBranch::getReverseYBus();
+  p_ybusr_rvrs = real(ret);
+  p_ybusi_rvrs = imag(ret);
   // Not really a contribution to the admittance matrix but might as well
   // calculate phase angle difference between buses at each end of branch
   gridpack::powerflow::PFBus *bus1 =
@@ -905,6 +840,8 @@ void gridpack::powerflow::PFBranch::setYBus(void)
 void gridpack::powerflow::PFBranch::load(
     const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
+  YMBranch::load(data);
+
   bool ok = true;
   data->getValue(BRANCH_NUM_ELEMENTS, &p_elems);
   double rvar;
@@ -955,6 +892,9 @@ void gridpack::powerflow::PFBranch::load(
  */
 void gridpack::powerflow::PFBranch::setMode(int mode)
 {
+  if (mode == YBus) {
+    YMBranch::setMode(gridpack::ymatrix::YBus);
+  }
   p_mode = mode;
 }
 

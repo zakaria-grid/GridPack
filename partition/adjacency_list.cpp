@@ -105,18 +105,19 @@ void
 AdjacencyList::ready(void)
 {
 #if 1
-  int me = GA_Nodeid();
-  int nprocs = GA_Nnodes();
+  int grp = this->communicator().getGroup();
+  int me = GA_Pgroup_nodeid(grp);
+  int nprocs = GA_Pgroup_nnodes(grp);
   p_adjacency.clear();
   p_adjacency.resize(p_nodes.size());
 
   // Find total number of nodes and edges. Assume no duplicates
   int nedges = p_edges.size();
   int total_edges = nedges;
-  GA_Igop(&total_edges, 1, "+");
+  GA_Pgroup_igop(grp,&total_edges, 1, "+");
   int nnodes = p_nodes.size();
   int total_nodes = nnodes;
-  GA_Igop(&total_nodes, 1, "+");
+  GA_Pgroup_igop(grp,&total_nodes, 1, "+");
 
   // Create a global array containing all edges
   int i, p;
@@ -124,13 +125,14 @@ AdjacencyList::ready(void)
   dist[0] = 0;
   for (p=1; p<nprocs; p++) {
     double max = static_cast<double>(total_edges);
-    max = max*(static_cast<double>(p))/(static_cast<double>(nprocs));
+    max = (static_cast<double>(p))*(max/(static_cast<double>(nprocs)));
     dist[p] = 2*(static_cast<int>(max));
   }
   int g_edges = GA_Create_handle();
   int dims = 2*total_edges;
   NGA_Set_data(g_edges,1,&dims,C_INT);
   NGA_Set_irreg_distr(g_edges,dist,&nprocs);
+  NGA_Set_pgroup(g_edges, grp);
   if (!GA_Allocate(g_edges)) {
     //TODO: some kind of error
   }
@@ -141,7 +143,7 @@ AdjacencyList::ready(void)
     dist[p] = 0;
   }
   dist[me] = nedges;
-  GA_Igop(dist, nprocs, "+");
+  GA_Pgroup_igop(grp,dist, nprocs, "+");
   int *offset = new int[nprocs];
   offset[0] = 0;
   for (p=1; p<nprocs; p++) {
@@ -163,7 +165,7 @@ AdjacencyList::ready(void)
   delete [] edge_ids;
   delete [] offset;
   delete [] dist;
-  GA_Sync();
+  GA_Pgroup_sync(grp);
 
   // Cycle through all edges and find out how many are attached to the nodes on
   // your process. Start by creating a map between the global node indices and
@@ -204,7 +206,7 @@ AdjacencyList::ready(void)
     delete [] buf;
   }
   GA_Destroy(g_edges);
-  GA_Sync();
+  GA_Pgroup_sync(grp);
 #else
   int me(this->processor_rank());
   int nproc(this->processor_size());
