@@ -1,19 +1,20 @@
+# -*- mode: cmake -*-
 #
 #     Copyright (c) 2013 Battelle Memorial Institute
 #     Licensed under modified BSD License. A copy of this license can be
 #     found
 #     in the LICENSE file in the top level directory of this distribution.
 #
-# -*- mode: cmake -*-
 # -------------------------------------------------------------
 # file: CMakeLists.txt
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-02-06 14:00:33 d3g096
+# Last Change: 2014-02-14 11:30:22 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries 
+  ${PETSC_LIBRARIES}
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
   ${MPI_CXX_LIBRARIES}
@@ -27,15 +28,10 @@ if (GRIDPACK_USE_PARMETIS_PARTITION)
     )
 elseif (PETSC_FOUND)
   include_directories(BEFORE ${PETSC_INCLUDES})
-  set(target_libraries 
-    gridpack_math
-    ${PETSC_LIBRARIES}
-    ${target_libraries}
-    )
 endif()
 
 set(target_libraries 
-  gridpack_partition gridpack_components gridpack_parallel
+  gridpack_partition gridpack_components gridpack_parallel gridpack_math
   ${target_libraries} 
 )
 

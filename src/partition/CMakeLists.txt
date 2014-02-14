@@ -9,12 +9,13 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 17, 2013 by William A. Perkins
-# Last Change: 2014-02-07 10:08:36 d3g096
+# Last Change: 2014-02-14 11:11:27 d3g096
 # -------------------------------------------------------------
 
 set(gridpack_partition_sources)
 
 set(target_libraries
+  ${PETSC_LIBRARIES}
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
   ${MPI_CXX_LIBRARIES}
@@ -52,7 +53,6 @@ if (GRIDPACK_USE_PARMETIS_PARTITION)
      parmetis/parmetis_graph_partitioner_impl.cpp
    )
    set(target_libraries 
-     gridpack_parallel
      ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
      ${target_libraries}
    )
@@ -64,12 +64,6 @@ elseif (PETSC_FOUND)
       petsc/graph_partitioner.cpp
       petsc/petsc_graph_partitioner_impl.cpp
     )
-    set(target_libraries 
-      gridpack_math
-      gridpack_parallel
-      ${PETSC_LIBRARIES} 
-      ${target_libraries}
-    )
 
 else()
 
@@ -77,6 +71,11 @@ else()
 
 endif()
 
+set(target_libraries
+  gridpack_math
+  gridpack_parallel
+  ${target_libraries}
+)
 
 
 # -------------------------------------------------------------

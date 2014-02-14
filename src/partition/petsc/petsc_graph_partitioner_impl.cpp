@@ -8,7 +8,7 @@
 /**
  * @file   petsc_graph_partitioner_impl.cpp
  * @author William A. Perkins
- * @date   2014-02-07 10:01:25 d3g096
+ * @date   2014-02-14 11:51:41 d3g096
  * 
  * @brief  
  * 
@@ -105,7 +105,7 @@ PETScGraphPartitionerImpl::p_partition(void)
     IS gblis;
 
     ierr = MatPartitioningApply(part, &gblis); CHKERRXX(ierr);
-    ierr = ISView(gblis, PETSC_VIEWER_STDOUT_WORLD); CHKERRXX(ierr);
+    ierr = ISView(gblis, PETSC_VIEWER_STDOUT_(this->communicator())); CHKERRXX(ierr);
 
     IS locis;
     

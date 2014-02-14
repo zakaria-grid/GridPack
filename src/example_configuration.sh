@@ -15,7 +15,7 @@ common_flags="\
 if [ $host == "flophouse" ]; then
 
     prefix="/net/flophouse/files0/perksoft/linux64"
-    /usr/bin/cmake -Wdev --debug-trycompile \
+    $prefix/bin/cmake -Wdev --debug-trycompile \
         -D GA_DIR:STRING="$prefix" \
         -D BOOST_ROOT:STRING="$prefix" \
         -D PETSC_DIR:STRING="$prefix/../petsc-3.4.3" \
