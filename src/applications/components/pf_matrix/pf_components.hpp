@@ -22,7 +22,6 @@
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
-#include "gridpack/network/base_network.hpp"
 #include "gridpack/applications/components/y_matrix/ymatrix_components.hpp"
 
 namespace gridpack {
@@ -400,10 +399,6 @@ private:
   }  
 
 };
-
-
-/// The type of network used in the powerflow application
-typedef network::BaseNetwork<PFBus, PFBranch > PFNetwork;
 
 
 }     // powerflow

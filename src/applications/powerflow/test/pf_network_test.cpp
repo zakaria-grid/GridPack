@@ -6,7 +6,7 @@
 /**
  * @file   pf_network_test.cpp
  * @author William A. Perkins
- * @date   2014-02-11 11:53:43 d3g096
+ * @date   2014-02-14 10:53:40 d3g096
  * 
  * @brief  Unit tests for powerflow network and component types
  * 
@@ -25,8 +25,10 @@
 #include <boost/test/included/unit_test.hpp>
 
 #include "gridpack/math/math.hpp"
+#include "gridpack/parallel/communicator.hpp"
 #include "gridpack/component/base_component.hpp"
-#include "pf_components.hpp"
+#include "gridpack/applications/components/pf_matrix/pf_components.hpp"
+#include "gridpack/applications/powerflow/pf_factory.hpp"
 
 BOOST_AUTO_TEST_SUITE ( pf_network_test ) 
 
