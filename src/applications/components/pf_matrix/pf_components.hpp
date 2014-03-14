@@ -7,7 +7,7 @@
 /**
  * @file   pf_components.hpp
  * @author Bruce Palmer
- * @date   2013-10-24 14:30:43 d3g096
+ * @date   2014-03-05 14:50:50 d3g096
  * 
  * @brief  
  * 
@@ -125,6 +125,11 @@ class PFBus
     void setMode(int mode);
 
     /**
+     * Reset voltage and phase angle to initial values
+     */
+    void resetVoltage(void);
+
+    /**
      * Return the value of the voltage magnitude on this bus
      * @return voltage magnitude
      */
@@ -143,17 +148,23 @@ class PFBus
     double getPhase(void);
 
     /**
+     * Get generator status
+     * @return vector of generator statuses
+     */
+    std::vector<int> getGenStatus();
+
+    /**
+     * Get list of generator IDs
+     * @return vector of generator IDs
+     */
+    std::vector<std::string> getGenerators();
+
+    /**
      * Return whether or not the bus is a PV bus (V held fixed in powerflow
      * equations)
      * @return true if bus is PV bus
      */
     bool isPV(void);
-
-    /**
-     * Return whether or not a bus is isolated
-     * @return true if bus is isolated
-     */
-    bool isIsolated(void) const;
 
     /**
      * Set voltage value
@@ -166,9 +177,22 @@ class PFBus
     void setPhase(void);
 
     /**
-     * setGBus
-    */
-    void setGBus(void);
+     * Set generator status
+     * @param gen_id generator ID
+     * @param status generator status
+     */
+    void setGenStatus(std::string gen_id, int status);
+
+    /**
+     * Set isPV status
+     * @param status isPV status
+     */
+    void setIsPV(int status);
+
+    /**
+     * Reset isPV status
+     */
+    void resetIsPV();
 
     /**
      * setSBus
@@ -204,10 +228,11 @@ class PFBus
     std::vector<double> p_pg, p_qg;
     std::vector<int> p_gstatus;
     std::vector<double> p_vs;
+    std::vector<std::string> p_gid;
     double p_pl, p_ql;
     double p_sbase;
     double p_Pinj, p_Qinj;
-    bool p_isPV;
+    bool p_isPV, p_saveisPV;
 
     /**
      * Variables that are exchanged between buses
@@ -223,7 +248,6 @@ private:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-//    ar & boost::serialization::base_object<gridpack::component::BaseBusComponent>(*this)
     ar  & boost::serialization::base_object<gridpack::ymatrix::YMBus>(*this)
       & p_shunt_gs
       & p_shunt_bs
@@ -236,10 +260,12 @@ private:
       & p_angle & p_voltage
       & p_pg & p_qg
       & p_gstatus
+      & p_vs & p_gid
       & p_pl & p_ql
       & p_sbase
       & p_Pinj & p_Qinj
-      & p_isPV;
+      & p_isPV
+      & p_saveisPV;
   }  
 
 };
@@ -297,27 +323,6 @@ class PFBranch
     void load(const boost::shared_ptr<gridpack::component::DataCollection> &data);
 
     /**
-     * Return the complex admittance of the branch
-     * @return: complex addmittance of branch
-     */
-    gridpack::ComplexType getAdmittance(void);
-
-    /**
-     * Return transformer contribution from the branch to the calling
-     * bus
-     * @param bus: pointer to the bus making the call
-     * @return: contribution from transformers to Y matrix
-     */
-    gridpack::ComplexType getTransformer(PFBus *bus);
-
-    /**
-     * Return the contribution to a bus from shunts
-     * @param bus: pointer to the bus making the call
-     * @return: contribution to Y matrix from shunts associated with branches
-     */
-    gridpack::ComplexType getShunt(PFBus *bus);
-
-    /**
      * Return the contribution to the Jacobian for the powerflow equations from
      * a branch
      * @param bus: pointer to the bus making the call
@@ -341,6 +346,13 @@ class PFBranch
     void setMode(int mode);
 
     /**
+     * Return complex power for line element
+     * @param tag describing line element on branch
+     * @return complex power
+     */
+    gridpack::ComplexType getComplexPower(std::string tag);
+
+    /**
      * Write output from branches to standard out
      * @param string (output) string with information to be printed out
      * @param signal an optional character string to signal to this
@@ -360,12 +372,12 @@ class PFBranch
     std::vector<double> p_shunt_admt_g2;
     std::vector<double> p_shunt_admt_b2;
     std::vector<bool> p_xform, p_shunt;
+    std::vector<double> p_rateA;
     int p_mode;
     double p_ybusr_frwd, p_ybusi_frwd;
     double p_ybusr_rvrs, p_ybusi_rvrs;
     double p_theta;
     double p_sbase;
-    std::vector<int> p_branch_status;
     int p_elems;
     bool p_active;
 
@@ -377,7 +389,6 @@ private:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-//    ar & boost::serialization::base_object<gridpack::component::BaseBranchComponent>(*this)
     ar  & boost::serialization::base_object<gridpack::ymatrix::YMBranch>(*this)
       & p_reactance
       & p_resistance
@@ -388,13 +399,14 @@ private:
       & p_shunt_admt_b1
       & p_shunt_admt_g2
       & p_shunt_admt_b2
-      & p_xform & p_shunt
+      & p_xform & p_shunt 
+      & p_rateA
       & p_mode
       & p_ybusr_frwd & p_ybusi_frwd
       & p_ybusr_rvrs & p_ybusi_rvrs
       & p_theta
       & p_sbase
-      & p_branch_status
+      & p_elems
       & p_active;
   }  
 

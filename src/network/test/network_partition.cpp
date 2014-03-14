@@ -6,7 +6,7 @@
 /**
  * @file   network_partition.cpp
  * @author William A. Perkins
- * @date   2014-02-11 11:55:19 d3g096
+ * @date   2014-03-14 13:29:16 d3g096
  * 
  * @brief  A test of network partitioning
  * 
@@ -300,8 +300,8 @@ BOOST_AUTO_TEST_CASE (bus_data_shuffle)
     }
   }
 
-  Shuffler<BogusBusDataPtr> shuffler;
-  shuffler(world, buses, dest);
+  gridpack::parallel::Shuffler<BogusBusDataPtr> shuffler(world);
+  shuffler(buses, dest);
 
 }  
 
@@ -336,8 +336,8 @@ BOOST_AUTO_TEST_CASE (branch_data_shuffle)
     }
   }
 
-  Shuffler<BogusBranchDataPtr> shuffler;
-  shuffler(world, branches, dest);
+  gridpack::parallel::Shuffler<BogusBranchDataPtr> shuffler(world);
+  shuffler(branches, dest);
 
 }  
 

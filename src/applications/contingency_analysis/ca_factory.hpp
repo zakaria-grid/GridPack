@@ -24,10 +24,11 @@
 #include "ca_driver.hpp"
 #include "gridpack/math/matrix.hpp"
 
+typedef gridpack::network::BaseNetwork< gridpack::contingency_analysis::CABus,
+        gridpack::contingency_analysis::CABranch > CANetwork;
+
 namespace gridpack {
 namespace contingency_analysis {
-
-//enum CAMode{YBus, Jacobian};
 
 class CAFactory
   : public gridpack::factory::BaseFactory<CANetwork> {
@@ -44,14 +45,14 @@ class CAFactory
     ~CAFactory();
 
     /**
+     * Reset voltages to initial values on all buses
+     */
+    void resetVoltage(void);
+
+    /**
      * Create the admittance (Y-Bus) matrix
      */
     void setYBus(void);
-
-    /**
-     * Find GBus vector 
-     */
-    void setGBus(void);
 
     /**
      * Make SBus vector 
@@ -64,11 +65,6 @@ class CAFactory
     void setPQ(void);
 
     /**
-     * Create the Jacobian matrix
-     */
-    void setJacobian(void);
-#if 1
-    /**
      * Set contingency
      * @param contingency the contigency that is to be set
      */
@@ -79,11 +75,40 @@ class CAFactory
      */
     void clearContingency(gridpack::contingency_analysis::Contingency
         contingency);
-#endif
+    
+    /**
+     * Check for lone buses in the system. Do this by looking for buses that
+     * have no branches attached to them or for whom all the branches attached
+     * to the bus have all transmission elements with status false (the element
+     * is off). Set status of bus to isolated so that it does not contribute to
+     * powerflow matrix
+     * @param stream optional stream pointer that can be used to print out IDs
+     * of isolated buses
+     * @return false if there is an isolated bus in the network
+     */
+    bool checkLoneBus(std::ofstream *stream = NULL);
+
+    /**
+     * Set lone buses back to their original status.
+     */
+    void clearLoneBus();
+
+    /**
+     * Check to see if there any violations on the network
+     * @param minV maximum voltage limit
+     * @param maxV maximum voltage limit
+     * @param bus_ok return true if no violations on buses
+     * @param branch_ok return true if no violations on branches
+     */
+    void  checkContingencies(double minV, double maxV,
+        bool *bus_ok, bool *branch_ok);
+
+
   private:
 
     NetworkPtr p_network;
     std::vector<bool> p_saveStatus;
+    std::vector<bool> p_saveIsolatedStatus;
 };
 
 } // contingency_analysis

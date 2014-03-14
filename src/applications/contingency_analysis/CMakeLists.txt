@@ -21,6 +21,7 @@ set(target_libraries
     gridpack_math
     gridpack_configuration
     gridpack_timer
+    gridpack_pfmatrix_components
     gridpack_ymatrix_components
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
@@ -36,8 +37,8 @@ endif()
 add_executable(ca.x
    ca_driver.cpp
    ca_app.cpp
-   ca_components.cpp
    ca_factory.cpp
+   ca_components.cpp
    ca_main.cpp
 )
 
@@ -52,12 +53,17 @@ add_custom_target(ca.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/SJin_3g9b.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_ca.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/SJin_3g9b.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_ca.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies.xml
 )
 add_dependencies(ca.x ca.x.input)
 

@@ -171,6 +171,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   timer->start(t_vmap);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
   timer->stop(t_vmap);
+  PQ->print();
   timer->start(t_cmap);
   factory.setMode(Jacobian);
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
@@ -191,7 +192,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   ComplexType tol;
 
   // These need to eventually be set using configuration file
-  tolerance = 1.0e-5;
+  tolerance = 1.0e-6;
   max_iteration = 50;
 
   // Create linear solver
@@ -270,11 +271,18 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
     busIO.header(ioBuf);
     iter++;
   }
+
   // Push final result back onto buses
   timer->start(t_bmap);
   factory.setMode(RHS);
   vMap.mapToBus(X);
   timer->stop(t_bmap);
+
+  // Make sure that ghost buses have up-to-date values before printing out
+  // results
+  timer->start(t_updt);
+  network->updateBuses();
+  timer->stop(t_updt);
 
   gridpack::serial_io::SerialBranchIO<PFNetwork> branchIO(128,network);
   branchIO.header("\n   Branch Power Flow\n");

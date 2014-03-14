@@ -93,8 +93,14 @@ class YMBus
      */
     bool isIsolated(void) const;
 
+    /**
+     * Change isolated status of bus
+     * @param flag true if bus is isolated
+     */
+    void setIsolated(const bool flag);
+
   private:
-    double p_shunt_gs;
+      double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
     int p_mode;
@@ -196,6 +202,15 @@ class YMBranch
      * @return: contribution to Y matrix from shunts associated with branches
      */
     gridpack::ComplexType getShunt(YMBus *bus);
+
+    /**
+     * Return contributions to Y-matrix from a specific transmission element
+     * @param tag character string for transmission element
+     * @param Yii contribution from "from" bus
+     * @param Yij contribution from line element
+     */
+    void getLineElements(const std::string tag,
+        gridpack::ComplexType *Yii, gridpack::ComplexType *Yij);
 
     /**
      * Return status of all transmission elements
