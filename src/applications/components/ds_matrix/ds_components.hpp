@@ -262,6 +262,7 @@ class DSBranch
   public:
     // Small utility structure to encapsulate information about fault events
     struct Event{
+      std::string name;
       double start,end;
       int from_idx, to_idx;
       double step;
