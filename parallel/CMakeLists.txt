@@ -10,11 +10,12 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-02-11 07:50:13 d3g096
+# Last Change: 2014-03-24 11:56:43 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_parallel OBJECT
   environment.cpp
+  communicator.cpp
   distributed.cpp
 )
 
@@ -32,6 +33,7 @@ install(FILES
   parallel.hpp
   distributed.hpp
   shuffler.hpp
+  ga_shuffler.hpp
   printit.hpp
   task_manager.hpp
   DESTINATION include/gridpack/parallel
@@ -87,6 +89,14 @@ gridpack_add_unit_test(mpi_test mpi_test)
 # -------------------------------------------------------------
 # TEST: shuffle_test
 # -------------------------------------------------------------
-add_executable(shuffle_test test/shuffle_test.cpp)
-target_link_libraries(shuffle_test ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+add_executable(shuffle_test 
+  test/shuffle_test.cpp
+  $<TARGET_OBJECTS:gridpack_parallel>
+)
+target_link_libraries(shuffle_test 
+  ${GA_LIBRARIES} 
+  ${Boost_LIBRARIES} 
+  ${MPI_CXX_LIBRARIES}
+)
 gridpack_add_unit_test(shuffle shuffle_test)
+

@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-29 13:30:41 d3g096
+# Last Change: 2014-03-24 11:54:21 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -29,13 +29,35 @@ endif()
 add_executable(ca.x
    ca_driver.cpp
    ca_app.cpp
-   ca_components.cpp
    ca_factory.cpp
+   ca_components.cpp
    ca_main.cpp
 )
 
 target_link_libraries(ca.x ${target_libraries})
 
+# Put some sample input in the binary directory so ca.x can run
+
+add_custom_target(ca.x.input
+ 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_ca.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_ca.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies.xml
+)
+add_dependencies(ca.x ca.x.input)
 
 # -------------------------------------------------------------
 # TEST: pf_network_test

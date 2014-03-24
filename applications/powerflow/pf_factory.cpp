@@ -19,7 +19,6 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/factory/base_factory.hpp"
-#include "pf_components.hpp"
 #include "pf_factory.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
@@ -66,20 +65,6 @@ void gridpack::powerflow::PFFactory::setYBus(void)
     dynamic_cast<PFBus*>(p_network->getBus(i).get())->setYBus();
   }
 
-}
-
-/**
- * Find GBus vector 
- */
-void gridpack::powerflow::PFFactory::setGBus(void)
-{
-  int numBus = p_network->numBuses();
-  int i;
-
-  // Invoke setGBus method on all bus objects
-  for (i=0; i<numBus; i++) {
-    dynamic_cast<PFBus*>(p_network->getBus(i).get())->setGBus();
-  }
 }
 
 /**

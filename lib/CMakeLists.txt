@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 17, 2013 by Bruce Palmer
-# Last Change: 2014-02-11 07:37:16 d3g096
+# Last Change: 2014-03-24 12:17:41 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack 
@@ -21,6 +21,9 @@ add_library(gridpack
   $<TARGET_OBJECTS:gridpack_factory>
   $<TARGET_OBJECTS:gridpack_partition>
   $<TARGET_OBJECTS:gridpack_components>
+  $<TARGET_OBJECTS:gridpack_pfmatrix_components>
+  $<TARGET_OBJECTS:gridpack_ymatrix_components>
+  $<TARGET_OBJECTS:gridpack_dsmatrix_components>
   $<TARGET_OBJECTS:gridpack_timer>
 )
 

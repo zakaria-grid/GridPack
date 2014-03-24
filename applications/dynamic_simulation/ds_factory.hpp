@@ -20,9 +20,8 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
-#include "gridpack/applications/dynamic_simulation/ds_components.hpp"
+#include "gridpack/applications/components/ds_matrix/ds_components.hpp"
 #include "gridpack/math/matrix.hpp"
-#include "gridpack/applications/dynamic_simulation/ds_components.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -56,6 +55,12 @@ class DSFactory
      * @param event a struct describing a fault
      */
     void setEvent(const DSBranch::Event &event);
+
+    /**
+     * Check network to see if there is a process with no generators
+     * @return true if all processors have at least on generator
+     */
+    bool checkGen(void);
 
   private:
 

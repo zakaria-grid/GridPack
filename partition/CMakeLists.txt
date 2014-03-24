@@ -9,7 +9,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 17, 2013 by William A. Perkins
-# Last Change: 2014-01-14 07:51:29 d3g096
+# Last Change: 2014-03-24 12:01:43 d3g096
 # -------------------------------------------------------------
 
 
@@ -73,6 +73,7 @@ add_library(gridpack_partition OBJECT
 set(target_objects 
   $<TARGET_OBJECTS:gridpack_parallel>
   $<TARGET_OBJECTS:gridpack_partition>
+  $<TARGET_OBJECTS:gridpack_timer>
 )
 
 # -------------------------------------------------------------

@@ -93,8 +93,14 @@ class YMBus
      */
     bool isIsolated(void) const;
 
+    /**
+     * Change isolated status of bus
+     * @param flag true if bus is isolated
+     */
+    void setIsolated(const bool flag);
+
   private:
-    double p_shunt_gs;
+      double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
     int p_mode;
@@ -198,6 +204,35 @@ class YMBranch
     gridpack::ComplexType getShunt(YMBus *bus);
 
     /**
+     * Return contributions to Y-matrix from a specific transmission element
+     * @param tag character string for transmission element
+     * @param Yii contribution from "from" bus
+     * @param Yij contribution from line element
+     */
+    void getLineElements(const std::string tag,
+        gridpack::ComplexType *Yii, gridpack::ComplexType *Yij);
+
+    /**
+     * Return status of all transmission elements
+     * @return vector containing status of transmission elements
+     */
+    std::vector<bool> getLineStatus();
+
+    /**
+     * Return tags of all transmission elements
+     * @return vector containging tag of transmission elements
+     */
+    std::vector<std::string> getLineTags();
+
+    /**
+     * Set the status of a transmission element based on its tag name
+     * @param tag name of transmission element
+     * @param status that transmission element should be set to
+     * @return false if no transmission element with that name exists
+     */
+    bool setLineStatus(std::string tag, bool status);
+
+    /**
      * Set the mode to control what matrices and vectors are built when using
      * the mapper
      * @param mode: enumerated constant for different modes
@@ -218,7 +253,8 @@ class YMBranch
     int p_mode;
     double p_ybusr_frwd, p_ybusi_frwd;
     double p_ybusr_rvrs, p_ybusi_rvrs;
-    std::vector<int> p_branch_status;
+    std::vector<bool> p_branch_status;
+    std::vector<std::string> p_tag;
     int p_elems;
     bool p_isolated;
     bool p_active;
@@ -246,6 +282,7 @@ private:
       & p_ybusr_frwd & p_ybusi_frwd
       & p_ybusr_rvrs & p_ybusi_rvrs
       & p_branch_status
+      & p_tag
       & p_elems
       & p_isolated
       & p_active;

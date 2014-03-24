@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2014-02-10 09:10:59 d3g096
+ * @date   2014-02-19 12:26:16 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -49,13 +49,13 @@ static const std::string print_prefix =
 // make_test_matrix
 // -------------------------------------------------------------
 static gridpack::math::Matrix *
-make_test_matrix(int& global_size)
+make_test_matrix(const gridpack::parallel::Communicator& comm,
+                 int& global_size)
 {
-  gridpack::parallel::Communicator world;
-  boost::mpi::all_reduce(world, local_size, global_size, std::plus<int>());
+  boost::mpi::all_reduce(comm, local_size, global_size, std::plus<int>());
 
   gridpack::math::Matrix *A =
-    new gridpack::math::Matrix(world, local_size, global_size, the_storage_type);
+    new gridpack::math::Matrix(comm, local_size, local_size, the_storage_type);
   return A;
 }
 
@@ -63,9 +63,10 @@ make_test_matrix(int& global_size)
 // make_and_fill_test_matrix
 // -------------------------------------------------------------
 static gridpack::math::Matrix *
-make_and_fill_test_matrix(const int& bandwidth, int& global_size)
+make_and_fill_test_matrix(const gridpack::parallel::Communicator& comm,
+                          const int& bandwidth, int& global_size)
 {
-  gridpack::math::Matrix *A = make_test_matrix(global_size);
+  gridpack::math::Matrix *A = make_test_matrix(comm, global_size);
 
   int halfbw(std::max((bandwidth - 1)/2, 0));
 
@@ -88,7 +89,8 @@ BOOST_AUTO_TEST_SUITE(MatrixTest)
 BOOST_AUTO_TEST_CASE( construction )
 {
   int global_size;
-  std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(global_size));
+  gridpack::parallel::Communicator world;
+  std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(world, global_size));
 
   int lo, hi;
   A->localRowRange(lo, hi);
@@ -100,13 +102,22 @@ BOOST_AUTO_TEST_CASE( construction )
   BOOST_CHECK_EQUAL(A->cols(), global_size);
   gridpack::math::Matrix::StorageType tmptype(A->storageType());
   BOOST_CHECK_EQUAL(tmptype, the_storage_type);
+
+  gridpack::parallel::Communicator self(world.divide(1));
+  std::auto_ptr<gridpack::math::Matrix> B(make_test_matrix(self, global_size));
+
+  BOOST_CHECK_EQUAL(B->localRows(), local_size);
+  BOOST_CHECK_EQUAL(B->rows(), local_size);
+  BOOST_CHECK_EQUAL(B->cols(), local_size);
+
 }
 
 BOOST_AUTO_TEST_CASE( storage )
 {
   int global_size;
+  gridpack::parallel::Communicator world;
   std::auto_ptr<gridpack::math::Matrix> 
-    A(make_and_fill_test_matrix(3, global_size));
+    A(make_and_fill_test_matrix(world, 3, global_size));
 
   gridpack::math::Matrix::StorageType tmptype(A->storageType());
   BOOST_CHECK_EQUAL(tmptype, the_storage_type);
@@ -129,7 +140,8 @@ BOOST_AUTO_TEST_CASE( storage )
 BOOST_AUTO_TEST_CASE( set_and_get )
 {
   int global_size;
-  std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(global_size));
+  gridpack::parallel::Communicator world;
+  std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(world, global_size));
 
   int lo, hi;
   A->localRowRange(lo, hi);
@@ -152,7 +164,8 @@ BOOST_AUTO_TEST_CASE( set_and_get )
 BOOST_AUTO_TEST_CASE( bad_get )
 {
   int global_size;
-  std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(global_size));
+  gridpack::parallel::Communicator world;
+  std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(world, global_size));
 
   int lo, hi;
   A->localRowRange(lo, hi);
@@ -173,7 +186,8 @@ BOOST_AUTO_TEST_CASE( bad_get )
 BOOST_AUTO_TEST_CASE( bad_set )
 {
   int global_size;
-  std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(global_size));
+  gridpack::parallel::Communicator world;
+  std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(world, global_size));
 
   gridpack::ComplexType x(1.0);
 
@@ -279,7 +293,8 @@ BOOST_AUTO_TEST_SUITE(MatrixOperationsTest)
 BOOST_AUTO_TEST_CASE( clone )
 {
   int global_size;
-  std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(global_size));
+  gridpack::parallel::Communicator world;
+  std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(world, global_size));
 
   const int bw(1);
   int lo, hi;
@@ -317,7 +332,8 @@ BOOST_AUTO_TEST_CASE( add )
 {
   
   int global_size;
-  std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(global_size));
+  gridpack::parallel::Communicator world;
+  std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(world, global_size));
 
   int lo, hi;
   A->localRowRange(lo, hi);
@@ -357,7 +373,7 @@ BOOST_AUTO_TEST_CASE( identity )
 {
   gridpack::parallel::Communicator world;
   int global_size;
-  std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(global_size));
+  std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(world, global_size));
 
   int lo, hi;
   A->localRowRange(lo, hi);
@@ -373,7 +389,7 @@ BOOST_AUTO_TEST_CASE( identity )
   std::auto_ptr<gridpack::math::Matrix> B(gridpack::math::identity(*A));
   
   std::auto_ptr<gridpack::math::Matrix> 
-    C(make_and_fill_test_matrix(3, global_size));
+    C(make_and_fill_test_matrix(world, 3, global_size));
   C->identity();
 
   for (int i = lo; i < hi; ++i) {
@@ -395,8 +411,9 @@ BOOST_AUTO_TEST_CASE( identity )
 BOOST_AUTO_TEST_CASE( scale )
 {
   int global_size;
+  gridpack::parallel::Communicator world;
   std::auto_ptr<gridpack::math::Matrix> 
-    A(make_and_fill_test_matrix(3, global_size));
+    A(make_and_fill_test_matrix(world, 3, global_size));
 
   gridpack::ComplexType z(2.0);
   A->scale(z);
@@ -419,8 +436,9 @@ BOOST_AUTO_TEST_CASE( scale )
 BOOST_AUTO_TEST_CASE( Transpose )
 {
   int global_size;
+  gridpack::parallel::Communicator world;
   std::auto_ptr<gridpack::math::Matrix> 
-    A(make_and_fill_test_matrix(3, global_size));
+    A(make_and_fill_test_matrix(world, 3, global_size));
 
   std::auto_ptr<gridpack::math::Matrix> B(gridpack::math::transpose(*A));
 
@@ -442,8 +460,9 @@ BOOST_AUTO_TEST_CASE( Transpose )
 BOOST_AUTO_TEST_CASE( ColumnDiagonalOps )
 {
   int global_size;
+  gridpack::parallel::Communicator world;
   std::auto_ptr<gridpack::math::Matrix> 
-    A(make_and_fill_test_matrix(3, global_size));
+    A(make_and_fill_test_matrix(world, 3, global_size));
   int icolumn(global_size/2);
 
   std::auto_ptr<gridpack::math::Vector>  
@@ -495,8 +514,9 @@ BOOST_AUTO_TEST_CASE( ColumnDiagonalOps )
 BOOST_AUTO_TEST_CASE( AddDiagonal )
 {
   int global_size;
+  gridpack::parallel::Communicator world;
   std::auto_ptr<gridpack::math::Matrix> 
-    A(make_test_matrix(global_size));
+    A(make_test_matrix(world, global_size));
   A->identity();
 
   A->print();
@@ -528,15 +548,21 @@ BOOST_AUTO_TEST_CASE( MatrixVectorMultiply )
   static const int bandwidth(3);
   static const gridpack::ComplexType scale(2.0);
   int global_size;
+  gridpack::parallel::Communicator world;
   std::auto_ptr<gridpack::math::Matrix> 
-    A(make_and_fill_test_matrix(bandwidth, global_size));
+    A(make_and_fill_test_matrix(world, bandwidth, global_size)),
+    T(transpose(*A));
+
+  A->print();
+  T->print();
 
   std::auto_ptr<gridpack::math::Vector>  
     xvector(new gridpack::math::Vector(A->communicator(), A->localRows())),
-    yvector;
+    yvector, zvector;
 
   xvector->fill(scale);
   yvector.reset(multiply(*A, *xvector));
+  zvector.reset(transposeMultiply(*T, *xvector));
             
   int lo, hi;
   xvector->localIndexRange(lo, hi);
@@ -545,18 +571,25 @@ BOOST_AUTO_TEST_CASE( MatrixVectorMultiply )
     int bw(bandwidth);
     if (i == 0 || i == global_size - 1) bw--;
     gridpack::ComplexType 
-      x(static_cast<gridpack::ComplexType>(i*bw)*scale), y;
+      x(static_cast<gridpack::ComplexType>(i*bw)*scale), y, z;
     yvector->getElement(i, y);
     BOOST_CHECK_CLOSE(real(x), real(y), delta);
     BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
+
+    zvector->getElement(i, z);
+    BOOST_CHECK_CLOSE(real(x), real(z), delta);
+    BOOST_CHECK_CLOSE(abs(x), abs(z), delta);
   }
 }
+
+
 
 BOOST_AUTO_TEST_CASE( MultiplyDiagonalTest )
 {
   int global_size;
+  gridpack::parallel::Communicator world;
   std::auto_ptr<gridpack::math::Matrix> 
-    A(make_and_fill_test_matrix(3, global_size));
+    A(make_and_fill_test_matrix(world, 3, global_size));
   std::auto_ptr<gridpack::math::Vector>
     dscale(new gridpack::math::Vector(A->communicator(), A->localRows()));
   gridpack::ComplexType z(2.0);
@@ -584,9 +617,10 @@ BOOST_AUTO_TEST_CASE( MultiplyIdentity )
 {
   static const int bandwidth(3);
   int global_size;
+  gridpack::parallel::Communicator world;
   std::auto_ptr<gridpack::math::Matrix> 
-    A(make_and_fill_test_matrix(bandwidth, global_size)),
-    B(new gridpack::math::Matrix(A->communicator(), A->localRows(), A->cols(), 
+    A(make_and_fill_test_matrix(world, bandwidth, global_size)),
+    B(new gridpack::math::Matrix(A->communicator(), A->localRows(), A->localCols(), 
                                  gridpack::math::Matrix::Sparse));
   B->identity();
   std::auto_ptr<gridpack::math::Matrix> 
@@ -622,8 +656,8 @@ BOOST_AUTO_TEST_CASE ( MatrixMatrixMultiply )
     { -11.0, 25.0,
         6.0, 21.0 }; 
   std::auto_ptr<gridpack::math::Matrix> 
-    A(new gridpack::math::Matrix(world, 2, world.size()*3)),
-    B(new gridpack::math::Matrix(world, 3, world.size()*2,
+    A(new gridpack::math::Matrix(world, 2, 3)),
+    B(new gridpack::math::Matrix(world, 3, 2,
                                  gridpack::math::Matrix::Sparse));
 
   std::vector<int> iidx(2*3) , jidx(2*3);
@@ -681,7 +715,7 @@ BOOST_AUTO_TEST_CASE( NonSquareTranspose )
     { 1.0,  2.0,  3.0,
       4.0,  5.0,  6.0 };
   std::auto_ptr<gridpack::math::Matrix> 
-    A(new gridpack::math::Matrix(world, 2, world.size()*3, the_storage_type));
+    A(new gridpack::math::Matrix(world, 2, 3, the_storage_type));
 
   std::vector<int> iidx(2*3) , jidx(2*3);
   int k(0);
@@ -703,7 +737,7 @@ BOOST_AUTO_TEST_CASE( NonSquareTranspose )
   // FIXME: check B contents
 
   std::auto_ptr<gridpack::math::Matrix> 
-    C(new gridpack::math::Matrix(world, 3, world.size()*2, the_storage_type));
+    C(new gridpack::math::Matrix(world, 3, 2, the_storage_type));
   transpose(*A, *C);
   C->print();
 
@@ -716,8 +750,9 @@ BOOST_AUTO_TEST_CASE( NonSquareTranspose )
 BOOST_AUTO_TEST_CASE( ComplexOperations )
 {
   int global_size;
+  gridpack::parallel::Communicator world;
   std::auto_ptr<gridpack::math::Matrix> 
-    A(make_test_matrix(global_size));
+    A(make_test_matrix(world, global_size));
 
   int lo, hi;
   A->localRowRange(lo, hi);
@@ -762,8 +797,9 @@ BOOST_AUTO_TEST_CASE( print)
 {
   static const int bandwidth(3);
   int global_size;
+  gridpack::parallel::Communicator world;
   std::auto_ptr<gridpack::math::Matrix> 
-    A(make_and_fill_test_matrix(bandwidth, global_size));
+    A(make_and_fill_test_matrix(world, bandwidth, global_size));
 
   A->print();
 
@@ -789,8 +825,9 @@ BOOST_AUTO_TEST_CASE( load_save )
 {
   static const int bandwidth(3);
   int global_size;
+  gridpack::parallel::Communicator world;
   std::auto_ptr<gridpack::math::Matrix> 
-    A(make_and_fill_test_matrix(bandwidth, global_size));
+    A(make_and_fill_test_matrix(world, bandwidth, global_size));
 
   A->print();
 
@@ -804,7 +841,7 @@ BOOST_AUTO_TEST_CASE( load_save )
 
   std::auto_ptr<gridpack::math::Matrix> 
     B(new gridpack::math::Matrix(A->communicator(), 
-                                 A->localRows(), A->cols(),
+                                 A->localRows(), A->localCols(),
                                  the_storage_type));
   B->loadBinary(out.c_str());
 
@@ -814,8 +851,6 @@ BOOST_AUTO_TEST_CASE( load_save )
   BOOST_CHECK_CLOSE(real(B->norm2()), 0.0, delta);
 
 }
-
-
 
 BOOST_AUTO_TEST_SUITE_END()
 

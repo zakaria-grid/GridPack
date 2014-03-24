@@ -10,12 +10,11 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-08 08:30:25 d3g096
+# Last Change: 2014-03-24 11:53:04 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
     gridpack
-    gridpack_ymatrix_components
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
@@ -29,7 +28,6 @@ endif()
 
 add_executable(ds.x
    ds_app.cpp
-   ds_components.cpp
    ds_factory.cpp
    ds_main.cpp
 )

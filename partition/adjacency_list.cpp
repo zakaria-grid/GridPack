@@ -7,7 +7,7 @@
 /**
  * @file   adjacency_list.cpp
  * @author William A. Perkins
- * @date   2013-12-11 10:04:35 d3g096
+ * @date   2014-02-26 12:56:16 d3g096
  * 
  * @brief  Implementation of AdjacencyList
  * 
@@ -116,8 +116,6 @@ AdjacencyList::ready(void)
   int total_edges = nedges;
   GA_Pgroup_igop(grp,&total_edges, 1, "+");
   int nnodes = p_nodes.size();
-  int total_nodes = nnodes;
-  GA_Pgroup_igop(grp,&total_nodes, 1, "+");
 
   // Create a global array containing all edges
   int i, p;
@@ -231,7 +229,7 @@ AdjacencyList::ready(void)
       //           std::ostream_iterator<Index>(std::cout, ","));
       // std::cout << std::endl;
     }
-    broadcast(this->communicator(), current_indexes, p);
+    boost::mpi::broadcast(this->communicator(), current_indexes, p);
 
     // make a copy of the local edges in a list (so it's easier to
     // remove those completely accounted for)
@@ -285,12 +283,12 @@ AdjacencyList::ready(void)
 
       if (me == p) {
 	size_t allsize;
-	reduce(this->communicator(), 
-	    connected_indexes.size(), allsize, std::plus<size_t>(), p);
+        boost::mpi::reduce(this->communicator(), 
+                           connected_indexes.size(), allsize, std::plus<size_t>(), p);
 
 	std::vector<IndexVector> all_connected_indexes;
-	gather(this->communicator(), 
-	    connected_indexes, all_connected_indexes, p);
+        boost::mpi::gather(this->communicator(), 
+                           connected_indexes, all_connected_indexes, p);
 	p_adjacency[local_index].clear();
 	for (std::vector<IndexVector>::iterator k = all_connected_indexes.begin();
 	    k != all_connected_indexes.end(); ++k) {
@@ -298,9 +296,9 @@ AdjacencyList::ready(void)
 	      std::back_inserter(p_adjacency[local_index]));
 	}
       } else {
-	reduce(this->communicator(), 
-	    connected_indexes.size(), std::plus<size_t>(), p);
-	gather(this->communicator(), connected_indexes, p);
+	boost::mpi::reduce(this->communicator(), 
+                           connected_indexes.size(), std::plus<size_t>(), p);
+	boost::mpi::gather(this->communicator(), connected_indexes, p);
       }
       this->communicator().barrier();
     }

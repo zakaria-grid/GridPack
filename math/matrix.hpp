@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2014-01-13 12:06:53 d3g096
+ * @date   2014-02-19 11:45:12 d3g096
  * 
  * @brief  
  * 
@@ -75,14 +75,14 @@ public:
    * 
    * @param dist parallel environment
    * @param local_rows matrix rows to be owned by the local process
-   * @param cols total number of columns (same on all processes)
+   * @param local_cols matrix columns to be owned by the local process
    * @param storage_type specify dense or sparse storage 
    * 
    * @return 
    */
   Matrix(const parallel::Communicator& dist,
          const int& local_rows,
-         const int& cols,
+         const int& local_cols,
          const StorageType& storage_type = Sparse);
 
   /// Sparse matrix constructor with maximum number of nonzeros in a row
@@ -95,14 +95,14 @@ public:
    * 
    * @param dist parallel environment
    * @param local_rows matrix rows to be owned by the local process
-   * @param cols total number of columns (same on all processes)
+   * @param local_cols matrix columns to be owned by the local process
    * @param max_nz_per_row maximum number of nonzeros in a row
    * 
    * @return new Matrix
    */
   Matrix(const parallel::Communicator& dist,
          const int& local_rows,
-         const int& cols,
+         const int& local_cols,
          const int& max_nz_per_row);
   
   /// Sparse matrix constructor with number of nonzeros for each row
@@ -111,14 +111,14 @@ public:
    * 
    * @param dist parallel environment
    * @param local_rows matrix rows to be owned by the local process
-   * @param cols total number of columns (same on all processes)
+   * @param local_cols matrix columns to be owned by the local process
    * @param nz_by_row 
    * 
    * @return 
    */
   Matrix(const parallel::Communicator& dist,
          const int& local_rows,
-         const int& cols,
+         const int& local_cols,
          const int *nz_by_row);
 
   /// Construct with an existing (allocated) implementation 
@@ -210,6 +210,12 @@ public:
   int cols(void) const
   {
     return p_matrix_impl->cols();
+  }
+
+  /// Get the number of local columns in this matrix
+  int localCols(void) const
+  {
+    return p_matrix_impl->localCols();
   }
 
   /// Get the storage type of this matrix
@@ -680,6 +686,17 @@ extern Matrix *multiply(const Matrix& A, const Matrix& B);
  */
 extern Vector *multiply(const Matrix& A, const Vector& x);
 
+/// Multiply the transpose of a Matrix by a Vector and make a new Vector for the result
+/** 
+ * 
+ * 
+ * @param A 
+ * @param x 
+ * 
+ * @return 
+ */
+extern Vector *transposeMultiply(const Matrix& A, const Vector& x);
+
 /// Make an identity matrix with the same ownership as the specified matrix
 extern Matrix *identity(const Matrix& A);
 
@@ -754,6 +771,17 @@ extern void multiply(const Matrix& A, const Matrix& B, Matrix& result);
  * @param result 
  */
 extern void multiply(const Matrix& A, const Vector& x, Vector& result);
+
+/// Multiply the transpose of a Matrix by a Vector and put the result in existing Vector
+/** 
+ * 
+ * 
+ * @param A 
+ * @param x 
+ * @param result same size and distribution as @c x
+ */
+extern void transposeMultiply(const Matrix& A, const Vector& x, Vector& result);
+
 
 } // namespace math
 } // namespace gridpack

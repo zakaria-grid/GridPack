@@ -23,13 +23,20 @@
 namespace gridpack {
 namespace contingency_analysis {
 
+enum ContingencyType{Generator, Branch};
+
 struct Contingency
 {
+  int p_type;
   std::string p_name;
   int p_id;
+  // Line contingencies
   std::vector<int> p_from;
   std::vector<int> p_to;
   std::vector<std::string> p_ckt;
+  // Generator contingencies
+  std::vector<int> p_busid;
+  std::vector<std::string> p_genid;
 };
 
 // Calling program for contingency analysis application
@@ -52,8 +59,7 @@ class CADriver
      * @return vector of contingencies
      */
     std::vector<gridpack::contingency_analysis::Contingency> getContingencies(
-        gridpack::utility::Configuration::CursorPtr &cursor);
-
+        gridpack::utility::Configuration::ChildCursors contingencies);
 
     /**
      * Execute application

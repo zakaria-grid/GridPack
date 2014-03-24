@@ -13,13 +13,13 @@
 #ifndef PTI23_PARSER_HPP_
 #define PTI23_PARSER_HPP_
 
-#include "mpi.h"
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp> // needed of is_any_of()
 #include <vector>
 #include <map>
 #include <cstdio>
 #include <cstdlib>
+
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 #include "gridpack/parser/dictionary.hpp"
@@ -33,24 +33,25 @@ namespace parser {
 
 
 template <class _network>
-  class PTI23_parser {
+class PTI23_parser
+{
     public:
-
-      /**
-       * Constructor
-       * @param network network object that will be filled with contents of network configuration file
-       */
-      PTI23_parser(boost::shared_ptr<_network> network)
-      {
-        p_network = network;
-      }
+  /// Constructor 
+  /**
+   * 
+   * @param network network object that will be filled with contents
+   * of network configuration file (must be child of network::BaseNetwork<>)
+   */
+  PTI23_parser(boost::shared_ptr<_network> network)
+    : p_network(network)
+  { }
 
       /**
        * Destructor
        */
       virtual ~PTI23_parser()
       {
-        p_busData.clear();
+        p_busData.clear();      // unnecessary
         p_branchData.clear();
       }
 
@@ -89,8 +90,8 @@ template <class _network>
         p_branchData.clear();
         p_busMap.clear();
 
-        int me;
-        int ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
+        int me(p_network->communicator().rank());
+
         if (me == 0) {
           std::ifstream            input;
           input.open(fileName.c_str());
@@ -142,8 +143,7 @@ template <class _network>
       {
         int t_create = p_timer->createCategory("Parser:createNetwork");
         p_timer->start(t_create);
-        int me;
-        int ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
+        int me(p_network->communicator().rank());
         if (me == 0) {
           int i;
           int numBus = p_busData.size();
@@ -196,6 +196,30 @@ template <class _network>
         p_timer->stop(t_create);
       }
     protected:
+
+      // Clean up 2 character tags so that single quotes are removed and single
+      // character tags are right-justified
+      std::string clean2Char(std::string string)
+      {
+        std::string tag = string;
+        // Find and remove single quotes
+        int ntok1 = tag.find_first_not_of('\'',0);
+        int ntok2 = tag.find('\'',ntok1);
+        if (ntok2 == std::string::npos) ntok2 = tag.length();
+        std::string clean_tag = tag.substr(ntok1,ntok2-ntok1);
+        //get rid of white space
+        ntok1 = clean_tag.find_first_not_of(' ',0);
+        ntok2 = clean_tag.find(' ',ntok1);
+        if (ntok2 == std::string::npos) ntok2 = clean_tag.length();
+        tag = clean_tag.substr(ntok1,ntok2-ntok1);
+        if (tag.length() == 1) {
+          clean_tag = " ";
+          clean_tag.append(tag);
+        } else {
+          clean_tag = tag;
+        }
+        return clean_tag;
+      }
 
       void find_case(std::ifstream & input)
       {
@@ -380,8 +404,10 @@ template <class _network>
 
           p_busData[l_idx]->addValue(GENERATOR_BUSNUMBER, atoi(split_line[0].c_str()), ngen);
 
+          // Clean up 2 character tag
+          std::string tag = clean2Char(split_line[1]);
           // GENERATOR_ID              "ID"                  integer
-          p_busData[l_idx]->addValue(GENERATOR_ID, atoi(split_line[1].c_str()), ngen);
+          p_busData[l_idx]->addValue(GENERATOR_ID, (char*)tag.c_str(), ngen);
 
           // GENERATOR_PG              "PG"                  float
           p_busData[l_idx]->addValue(GENERATOR_PG, atof(split_line[2].c_str()),
@@ -558,8 +584,10 @@ template <class _network>
             index++;
           }
 
+          // Clean up 2 character tag
+          std::string tag = clean2Char(split_line[2]);
           // BRANCH_CKT          "CKT"                 character
-          p_branchData[l_idx]->addValue(BRANCH_CKT, (char*)split_line[2].c_str(),
+          p_branchData[l_idx]->addValue(BRANCH_CKT, (char*)tag.c_str(),
               nelems);
 
           // BRANCH_R            "R"                   float
@@ -662,7 +690,7 @@ template <class _network>
           // BRANCH_CKT values
           int nelems = 0;
           p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
-          std::string b_ckt(split_line[2].c_str());
+          std::string b_ckt(clean2Char(split_line[2]));
           int i;
           int idx = -1;
           for (i=0; i<nelems; i++) {

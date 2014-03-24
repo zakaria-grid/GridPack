@@ -5,9 +5,9 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   pf_components.hpp
- * @author Bruce Palmer
- * @date   2013-10-24 14:30:43 d3g096
+ * @file   se_components.hpp
+ * @author Yousu Chen 
+ * @date   2/24/2014 
  * 
  * @brief  
  * 
@@ -15,8 +15,8 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _pf_components_h_
-#define _pf_components_h_
+#ifndef _se_components_h_
+#define _se_components_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
@@ -26,23 +26,23 @@
 #include "gridpack/applications/components/y_matrix/ymatrix_components.hpp"
 
 namespace gridpack {
-namespace powerflow {
+namespace state_estimation{
 
-enum PFMode{YBus, Jacobian, RHS, S_Cal, State};
+enum SEMode{YBus};
 
-class PFBus
+class SEBus
   : public gridpack::ymatrix::YMBus
 {
   public:
     /**
      *  Simple constructor
      */
-    PFBus(void);
+    SEBus(void);
 
     /**
      *  Simple destructor
      */
-    ~PFBus(void);
+    ~SEBus(void);
 
     /**
      * Return size of matrix block on the diagonal contributed by
@@ -110,7 +110,7 @@ class PFBus
     gridpack::ComplexType getYBus(void);
 
     /**
-     * Load values stored in DataCollection object into PFBus object. The
+     * Load values stored in DataCollection object into SEBus object. The
      * DataCollection object will have been filled when the network was created
      * from an external configuration file
      * @param data: DataCollection object contain parameters relevant to this
@@ -157,27 +157,6 @@ class PFBus
     bool isIsolated(void) const;
 
     /**
-     * Set voltage value
-     */
-    void setVoltage(void);
-
-    /**
-     * Set phase angle value
-     */
-    void setPhase(void);
-
-    /**
-     * setGBus
-    */
-    void setGBus(void);
-
-    /**
-     * setSBus
-    BUS = (CG*(GEN(ON,PG) + J*GEN(ON,QG)-(PD+J*QD))/BASEMVA
-    */
-    void setSBus(void);
-
-    /**
      * Write output from buses to standard out
      * @param string (output) string with information to be printed out
      * @param signal an optional character string to signal to this
@@ -205,6 +184,7 @@ class PFBus
     std::vector<double> p_pg, p_qg;
     std::vector<int> p_gstatus;
     std::vector<double> p_vs;
+    std::vector<int> p_gid;
     double p_pl, p_ql;
     double p_sbase;
     double p_Pinj, p_Qinj;
@@ -237,6 +217,7 @@ private:
       & p_angle & p_voltage
       & p_pg & p_qg
       & p_gstatus
+      & p_vs & p_gid
       & p_pl & p_ql
       & p_sbase
       & p_Pinj & p_Qinj
@@ -245,18 +226,18 @@ private:
 
 };
 
-class PFBranch
+class SEBranch
   : public gridpack::ymatrix::YMBranch {
   public:
     /**
      *  Simple constructor
      */
-    PFBranch(void);
+    SEBranch(void);
 
     /**
      *  Simple destructor
      */
-    ~PFBranch(void);
+    ~SEBranch(void);
 
     /**
      * Return size of off-diagonal matrix block contributed by the component
@@ -289,7 +270,7 @@ class PFBranch
     gridpack::ComplexType getYBus(void);
 
     /**
-     * Load values stored in DataCollection object into PFBranch object. The
+     * Load values stored in DataCollection object into SEBranch object. The
      * DataCollection object will have been filled when the network was created
      * from an external configuration file
      * @param data: DataCollection object contain parameters relevant to this
@@ -309,30 +290,14 @@ class PFBranch
      * @param bus: pointer to the bus making the call
      * @return: contribution from transformers to Y matrix
      */
-    gridpack::ComplexType getTransformer(PFBus *bus);
+    gridpack::ComplexType getTransformer(SEBus *bus);
 
     /**
      * Return the contribution to a bus from shunts
      * @param bus: pointer to the bus making the call
      * @return: contribution to Y matrix from shunts associated with branches
      */
-    gridpack::ComplexType getShunt(PFBus *bus);
-
-    /**
-     * Return the contribution to the Jacobian for the powerflow equations from
-     * a branch
-     * @param bus: pointer to the bus making the call
-     * @param values: an array of 4 doubles that holds return metrix elements
-     * @return: contribution to Jacobian matrix from branch
-     */
-    void getJacobian(PFBus *bus, double *values);
-
-    /**
-     * Return contribution to constraints
-     * @param p: real part of constraint
-     * @param q: imaginary part of constraint
-     */
-    void getPQ(PFBus *bus, double *p, double *q);
+    gridpack::ComplexType getShunt(SEBus *bus);
 
     /**
      * Set the mode to control what matrices and vectors are built when using
@@ -366,7 +331,8 @@ class PFBranch
     double p_ybusr_rvrs, p_ybusi_rvrs;
     double p_theta;
     double p_sbase;
-    std::vector<int> p_branch_status;
+    std::vector<bool> p_branch_status;
+    std::vector<std::string> p_tag;
     int p_elems;
     bool p_active;
 
@@ -396,21 +362,23 @@ private:
       & p_theta
       & p_sbase
       & p_branch_status
+      & p_tag
+      & p_elems
       & p_active;
   }  
 
 };
 
 
-/// The type of network used in the powerflow application
-typedef network::BaseNetwork<PFBus, PFBranch > PFNetwork;
+/// The type of network used in the contingency analysis application
+typedef network::BaseNetwork<SEBus, SEBranch > SENetwork;
 
 
-}     // powerflow
+}     // state_estimation
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::powerflow::PFBus);
-BOOST_CLASS_EXPORT_KEY(gridpack::powerflow::PFBranch);
+BOOST_CLASS_EXPORT_KEY(gridpack::state_estimation::SEBus);
+BOOST_CLASS_EXPORT_KEY(gridpack::state_estimation::SEBranch);
 
 
 #endif
