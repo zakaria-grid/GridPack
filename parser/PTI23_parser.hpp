@@ -66,6 +66,7 @@ class PTI23_parser
         int t_total = p_timer->createCategory("Parser:Total Elapsed Time");
         p_timer->start(t_total);
         getCase(fileName);
+        //brdcst_data();
         createNetwork();
         p_timer->stop(t_total);
         p_timer->configTimer(true);
@@ -144,53 +145,88 @@ class PTI23_parser
         int t_create = p_timer->createCategory("Parser:createNetwork");
         p_timer->start(t_create);
         int me(p_network->communicator().rank());
-        if (me == 0) {
-          int i;
-          int numBus = p_busData.size();
-          for (i=0; i<numBus; i++) {
-            int idx;
-            p_busData[i]->getValue(BUS_NUMBER,&idx);
-            p_network->addBus(idx);
-            p_network->setGlobalBusIndex(i,i);
-            *(p_network->getBusData(i)) = *(p_busData[i]);
-            p_network->getBusData(i)->addValue(CASE_ID,p_case_id);
-            p_network->getBusData(i)->addValue(CASE_SBASE,p_case_sbase);
-          }
-          int numBranch = p_branchData.size();
-          for (i=0; i<numBranch; i++) {
-            int idx1, idx2;
-            p_branchData[i]->getValue(BRANCH_FROMBUS,&idx1);
-            p_branchData[i]->getValue(BRANCH_TOBUS,&idx2);
-            p_network->addBranch(idx1, idx2);
-            p_network->setGlobalBranchIndex(i,i);
-            int g_idx1, g_idx2;
-            std::map<int, int>::iterator it;
-            it = p_busMap.find(idx1);
-            g_idx1 = it->second;
-            p_network->setGlobalBusIndex1(i,g_idx1);
-            p_network->setLocalBusIndex1(i,g_idx1);
-            it = p_busMap.find(idx2);
-            g_idx2 = it->second;
-            p_network->setGlobalBusIndex2(i,g_idx2);
-            p_network->setLocalBusIndex2(i,g_idx2);
-            *(p_network->getBranchData(i)) = *(p_branchData[i]);
-            p_network->getBranchData(i)->addValue(CASE_ID,p_case_id);
-            p_network->getBranchData(i)->addValue(CASE_SBASE,p_case_sbase);
-          }
-#if 0
-          // debug
-          printf("Number of buses: %d\n",numBus);
-          for (i=0; i<numBus; i++) {
-          printf("Dumping bus: %d\n",i);
-            p_network->getBusData(i)->dump();
-          }
-          printf("Number of branches: %d\n",numBranch);
-          for (i=0; i<numBranch; i++) {
-          printf("Dumping branch: %d\n",i);
-            p_network->getBranchData(i)->dump();
-          }
-#endif
+        int nprocs(p_network->communicator().size());
+        int i;
+        // Exchange information on number of buses and branches on each
+        // processor
+        int sbus[nprocs], sbranch[nprocs];
+        int nbus[nprocs], nbranch[nprocs];
+        for (i=0; i<nprocs; i++) {
+          sbus[i] = 0;
+          sbranch[i] = 0;
         }
+        sbus[me] = p_busData.size();
+        sbranch[me] = p_branchData.size();
+        MPI_Comm comm = static_cast<MPI_Comm>(p_network->communicator());
+        int ierr;
+        ierr = MPI_Allreduce(sbus,nbus,nprocs,MPI_INT,MPI_SUM,comm);
+        ierr = MPI_Allreduce(sbranch,nbranch,nprocs,MPI_INT,MPI_SUM,comm);
+        // Transmit CASE_ID and CASE_SBASE to all processors
+        int isval, irval;
+        if (me == 0) {
+          isval = p_case_id;
+        } else {
+          isval = 0;
+        }
+        ierr = MPI_Allreduce(&isval,&irval,1,MPI_INT,MPI_SUM,comm);
+        p_case_id = irval;
+        double sval, rval;
+        if (me == 0) {
+          sval = p_case_sbase;
+        } else {
+          sval = 0.0;
+        }
+        ierr = MPI_Allreduce(&sval,&rval,1,MPI_DOUBLE,MPI_SUM,comm);
+        p_case_sbase = rval;
+        // evaluate offsets for buses and branches
+        int offset_bus[nprocs], offset_branch[nprocs];
+        offset_bus[0] = 0;
+        offset_branch[0] = 0;
+        for (i=1; i<nprocs; i++) {
+          offset_bus[i] = offset_bus[i-1]+nbus[i-1];
+          offset_branch[i] = offset_branch[i-1]+nbranch[i-1];
+        }
+
+        int numBus = p_busData.size();
+        for (i=0; i<numBus; i++) {
+          int idx;
+          p_busData[i]->getValue(BUS_NUMBER,&idx);
+          p_network->addBus(idx);
+          p_network->setGlobalBusIndex(i,i+offset_bus[me]);
+          *(p_network->getBusData(i)) = *(p_busData[i]);
+          p_network->getBusData(i)->addValue(CASE_ID,p_case_id);
+          p_network->getBusData(i)->addValue(CASE_SBASE,p_case_sbase);
+        }
+        int numBranch = p_branchData.size();
+        for (i=0; i<numBranch; i++) {
+          int idx1, idx2;
+          p_branchData[i]->getValue(BRANCH_FROMBUS,&idx1);
+          p_branchData[i]->getValue(BRANCH_TOBUS,&idx2);
+          p_network->addBranch(idx1, idx2);
+          p_network->setGlobalBranchIndex(i,i+offset_branch[me]);
+          int g_idx1, g_idx2;
+          std::map<int, int>::iterator it;
+          it = p_busMap.find(idx1);
+          g_idx1 = it->second;
+          it = p_busMap.find(idx2);
+          g_idx2 = it->second;
+          *(p_network->getBranchData(i)) = *(p_branchData[i]);
+          p_network->getBranchData(i)->addValue(CASE_ID,p_case_id);
+          p_network->getBranchData(i)->addValue(CASE_SBASE,p_case_sbase);
+        }
+#if 0
+        // debug
+        printf("Number of buses: %d\n",numBus);
+        for (i=0; i<numBus; i++) {
+          printf("Dumping bus: %d\n",i);
+          p_network->getBusData(i)->dump();
+        }
+        printf("Number of branches: %d\n",numBranch);
+        for (i=0; i<numBranch; i++) {
+          printf("Dumping branch: %d\n",i);
+          p_network->getBranchData(i)->dump();
+        }
+#endif
         p_busData.clear();
         p_branchData.clear();
         p_timer->stop(t_create);
@@ -230,6 +266,9 @@ class PTI23_parser
   //      gridpack::component::DataCollection                data;
 
         std::getline(input, line);
+        while (check_comment(line)) {
+          std::getline(input, line);
+        }
         std::vector<std::string>  split_line;
 
         boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(" "), boost::token_compress_on);
@@ -545,6 +584,7 @@ class PTI23_parser
           std::map<std::pair<int, int>, int>::iterator it;
           it = p_branchMap.find(branch_pair);
 
+          bool switched = false;
           if (it != p_branchMap.end()) {
             l_idx = it->second;
             p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
@@ -558,6 +598,7 @@ class PTI23_parser
                   o_idx1,o_idx2);
               l_idx = it->second;
               p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
+              switched = true;
             } else {
               boost::shared_ptr<gridpack::component::DataCollection>
                 data(new gridpack::component::DataCollection);
@@ -583,6 +624,9 @@ class PTI23_parser
                   index));
             index++;
           }
+          
+          // BRANCH_SWITCHED
+          p_branchData[l_idx]->addValue(BRANCH_SWITCHED, switched, nelems);
 
           // Clean up 2 character tag
           std::string tag = clean2Char(split_line[2]);
@@ -701,7 +745,11 @@ class PTI23_parser
               break;
             }
           }
-          if (idx == -1) continue;
+          if (idx == -1) {
+            printf("No match for transformer from %d to %d\n",
+                fromBus,toBus);
+            continue;
+          }
 
           /*
            * type: integer
@@ -1304,8 +1352,127 @@ class PTI23_parser
         }
       }
 
+      // Distribute data uniformly on processors
+      void brdcst_data(void)
+      {
+        int t_brdcst = p_timer->createCategory("Parser:brdcst_data");
+        int t_serial = p_timer->createCategory("Parser:data packing and unpacking");
+        MPI_Comm comm = static_cast<MPI_Comm>(p_network->communicator());
+        int me(p_network->communicator().rank());
+        int nprocs(p_network->communicator().size());
+        if (nprocs == 1) return;
+        p_timer->start(t_brdcst);
+
+        // find number of buses and branches and broadcast this information to
+        // all processors
+        int sbus, sbranch;
+        if (me == 0) {
+          sbus = p_busData.size();
+          sbranch = p_branchData.size();
+        } else {
+          sbus = 0;
+          sbranch = 0;
+        }
+        int ierr, nbus, nbranch;
+        ierr = MPI_Allreduce(&sbus, &nbus, 1, MPI_INT, MPI_SUM, comm);
+        ierr = MPI_Allreduce(&sbranch, &nbranch, 1, MPI_INT, MPI_SUM, comm);
+        double rprocs = static_cast<double>(nprocs);
+        double rme = static_cast<double>(me);
+        int n, i;
+        std::vector<gridpack::component::DataCollection>recvV;
+        // distribute buses
+        if (me == 0) {
+          for (n=0; n<nprocs; n++) {
+            double rn = static_cast<double>(n);
+            int istart = static_cast<int>(static_cast<double>(nbus)*rn/rprocs);
+            int iend = static_cast<int>(static_cast<double>(nbus)*(rn+1.0)/rprocs);
+            if (n != 0) {
+              p_timer->start(t_serial);
+              std::vector<gridpack::component::DataCollection> sendV;
+              for (i=istart; i<iend; i++) {
+                sendV.push_back(*(p_busData[i]));
+              }
+              p_timer->stop(t_serial);
+              static_cast<boost::mpi::communicator>(p_network->communicator()).send(n,n,sendV);
+            } else {
+              p_timer->start(t_serial);
+              for (i=istart; i<iend; i++) {
+                recvV.push_back(*(p_busData[i]));
+              }
+              p_timer->stop(t_serial);
+            }
+          }
+        } else {
+          int istart = static_cast<int>(static_cast<double>(nbus)*rme/rprocs);
+          int iend = static_cast<int>(static_cast<double>(nbus)*(rme+1.0)/rprocs)-1;
+          static_cast<boost::mpi::communicator>(p_network->communicator()).recv(0,me,recvV);
+        }
+        int nsize = recvV.size();
+        p_busData.clear();
+        p_timer->start(t_serial);
+        for (i=0; i<nsize; i++) {
+          boost::shared_ptr<gridpack::component::DataCollection> data(new
+              gridpack::component::DataCollection);
+          *data = recvV[i];
+          p_busData.push_back(data);
+        }
+        p_timer->stop(t_serial);
+        recvV.clear();
+        // distribute branches
+        if (me == 0) {
+          for (n=0; n<nprocs; n++) {
+            double rn = static_cast<double>(n);
+            int istart = static_cast<int>(static_cast<double>(nbranch)*rn/rprocs);
+            int iend = static_cast<int>(static_cast<double>(nbranch)*(rn+1.0)/rprocs);
+            if (n != 0) {
+              p_timer->start(t_serial);
+              std::vector<gridpack::component::DataCollection> sendV;
+              for (i=istart; i<iend; i++) {
+                sendV.push_back(*(p_branchData[i]));
+              }
+              p_timer->stop(t_serial);
+              static_cast<boost::mpi::communicator>(p_network->communicator()).send(n,n,sendV);
+            } else {
+              p_timer->start(t_serial);
+              for (i=istart; i<iend; i++) {
+                recvV.push_back(*(p_branchData[i]));
+              }
+              p_timer->stop(t_serial);
+            }
+          }
+        } else {
+          int istart = static_cast<int>(static_cast<double>(nbranch)*rme/rprocs);
+          int iend = static_cast<int>(static_cast<double>(nbranch)*(rme+1.0)/rprocs)-1;
+          static_cast<boost::mpi::communicator>(p_network->communicator()).recv(0,me,recvV);
+        }
+        nsize = recvV.size();
+        p_branchData.clear();
+        p_timer->start(t_serial);
+        for (i=0; i<nsize; i++) {
+          boost::shared_ptr<gridpack::component::DataCollection> data(new
+              gridpack::component::DataCollection);
+          *data = recvV[i];
+          p_branchData.push_back(data);
+        }
+        p_timer->stop(t_serial);
+#if 0
+        // debug
+        printf("p[%d] BUS data size: %d\n",me,p_busData.size());
+        for (i=0; i<p_busData.size(); i++) {
+          printf("p[%d] Dumping bus: %d\n",me,i);
+          p_busData[i]->dump();
+        }
+        printf("p[%d] BRANCH data size: %d\n",me,p_branchData.size());
+        for (i=0; i<p_branchData.size(); i++) {
+          printf("p[%d] Dumping branch: %d\n",me,i);
+          p_branchData[i]->dump();
+        }
+#endif
+        p_timer->stop(t_brdcst);
+      }
+
     private:
-      /*
+      /**
        * Test to see if string terminates a section
        * @return: false if first non-blank character is TERM_CHAR
        */
@@ -1335,6 +1502,21 @@ class PTI23_parser
           return true;
         }
 #endif
+      }
+
+      /**
+       * Test to see if string is a comment line. Check to see if first
+       * non-blank characters are "//"
+       */
+      bool check_comment(std::string &str) const
+      {
+        int ntok = str.find_first_not_of(' ',0);
+        if (ntok != std::string::npos && ntok+1 != std::string::npos &&
+            str[ntok] == '/' && str[ntok+1] == '/') {
+          return true;
+        } else {
+          return false;
+        }
       }
       /*
        * The case_data is the collection of all data points in the case file.

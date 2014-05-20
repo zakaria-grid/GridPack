@@ -295,11 +295,15 @@ class BaseFactory {
       // Buffers have been allocated in network. Now associate buffers from network
       // back to individual components
       int i;
-      for (i=0; i<nbus; i++) {
-        p_network->getBus(i)->setXCBuf(p_network->getXCBusBuffer(i));
+      if (busXCSize > 0) {
+        for (i=0; i<nbus; i++) {
+          p_network->getBus(i)->setXCBuf(p_network->getXCBusBuffer(i));
+        }
       }
-      for (i=0; i<nbranch; i++) {
-        p_network->getBranch(i)->setXCBuf(p_network->getXCBranchBuffer(i));
+      if (branchXCSize > 0) {
+        for (i=0; i<nbranch; i++) {
+          p_network->getBranch(i)->setXCBuf(p_network->getXCBranchBuffer(i));
+        }
       }
       timer->stop(t_setx);
       timer->configTimer(true);
@@ -340,7 +344,7 @@ class BaseFactory {
       }
       int grp = p_network->communicator().getGroup();
       int nprocs = GA_Pgroup_nnodes(grp);
-      GA_Pgroup_igop(grp,&iok,nprocs,"+");
+      GA_Pgroup_igop(grp,&iok,1,"+");
       if (iok == nprocs) {
         return true;
       } else {

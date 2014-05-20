@@ -32,7 +32,7 @@ if [ $host == "flophouse" ]; then
         -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
         -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
         -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
-        -D CMAKE_INSTALL_PREFIX:PATH="/home/d3g096/tmp/gridpack" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
     
 elif [ $host == "pe10900" ]; then
