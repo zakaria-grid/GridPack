@@ -22,7 +22,7 @@
 
 #include "pf_app2.hpp"
 #include "gridpack/configuration/configuration.hpp"
-#include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/parser/GOSS_parser.hpp"
 #include "gridpack/math/math.hpp"
 #include "gridpack/math/newton_raphson_solver.hpp"
 #include "gridpack/math/nonlinear_solver.hpp"
@@ -234,9 +234,9 @@ PFApp2::execute(void)
   // load input file
   utility::CoarseTimer *timer =
     utility::CoarseTimer::instance();
-  int t_pti = timer->createCategory("PTI Parser");
+  int t_pti = timer->createCategory("GOSS Parser");
   timer->start(t_pti);
-  parser::PTI23_parser<PFNetwork> parser(network);
+  parser::GOSS_parser<PFNetwork> parser(network);
   parser.parse(filename.c_str());
   timer->stop(t_pti);
 

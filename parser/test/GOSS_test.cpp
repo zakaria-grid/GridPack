@@ -4,11 +4,11 @@
  *     in the LICENSE file in the top level directory of this distribution.
  */
 /**
- * @file   PTI23_test.cpp
+ * @file   GOSS_test.cpp
  * @author Kevin Glass
  * @date   2014-02-11 10:28:46 d3g096
  * 
- * @brief  Test PTI23_parser capability. Currently not implemented.
+ * @brief  Test GOSS_parser capability. Currently not implemented.
  * 
  * 
  */
@@ -18,7 +18,7 @@
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <boost/mpi/collectives.hpp>
-#include <gridpack/parser/PTI23_parser.hpp>
+#include <gridpack/parser/GOSS_parser.hpp>
 #include <gridpack/configuration/configuration.hpp>
 #include <gridpack/timer/coarse_timer.hpp>
 
@@ -730,7 +730,7 @@ BOOST_AUTO_TEST_CASE( DataCompletenessTest )
     // Create network
     gridpack::parallel::Communicator world;
     gridpack::network::BaseNetwork<TestBus, TestBranch> network(world);
-    gridpack::parser::PTI23_parser<gridpack::network::BaseNetwork<TestBus, TestBranch> parser(network);
+    gridpack::parser::GOSS_parser<gridpack::network::BaseNetwork<TestBus, TestBranch> parser(network);
 
     // only let proc 0 read
     if (me == 0) {

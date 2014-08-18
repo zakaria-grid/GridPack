@@ -20,7 +20,7 @@
 #include "gridpack/math/linear_solver.hpp"
 #include "gridpack/math/linear_matrix_solver.hpp"
 #include "gridpack/applications/dynamic_simulation/ds_app.hpp"
-#include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/parser/GOSS_parser.hpp"
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
@@ -89,7 +89,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
      faults = setFaultEvents(events); 
 
   // load input file
-  gridpack::parser::PTI23_parser<DSNetwork> parser(network);
+  gridpack::parser::GOSS_parser<DSNetwork> parser(network);
   parser.parse(filename.c_str());
   timer->stop(t_setup);
 

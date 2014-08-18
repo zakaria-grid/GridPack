@@ -19,7 +19,7 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "hw_app.hpp"
 #include "hw_factory.hpp"
-#include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/parser/GOSS_parser.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
 
 
@@ -54,7 +54,7 @@ void gridpack::hello_world::HWApp::execute(int argc, char** argv)
   std::string filename = "10x10.raw";
 
   // Read in external PTI file with network configuration
-  gridpack::parser::PTI23_parser<HWNetwork> parser(network);
+  gridpack::parser::GOSS_parser<HWNetwork> parser(network);
   parser.parse(filename.c_str());
 
   // partition network

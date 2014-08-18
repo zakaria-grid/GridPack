@@ -22,7 +22,7 @@
 #include "gridpack/math/newton_raphson_solver.hpp"
 #include "gridpack/math/nonlinear_solver.hpp"
 #include "ca_app.hpp"
-#include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/parser/GOSS_parser.hpp"
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
@@ -78,7 +78,7 @@ void gridpack::contingency_analysis::CAApp::init(int argc, char** argv)
       "No network configuration specified");
 
   // load input file
-  gridpack::parser::PTI23_parser<CANetwork> parser(p_network);
+  gridpack::parser::GOSS_parser<CANetwork> parser(p_network);
   parser.parse(filename.c_str());
   timer->stop(t_parse);
 

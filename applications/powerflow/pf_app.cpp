@@ -22,7 +22,7 @@
 #include "gridpack/math/newton_raphson_solver.hpp"
 #include "gridpack/math/nonlinear_solver.hpp"
 #include "pf_app.hpp"
-#include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/parser/GOSS_parser.hpp"
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
@@ -84,9 +84,9 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   int max_iteration = cursor->get("maxIteration",50);
   ComplexType tol;
 
-  int t_pti = timer->createCategory("PTI Parser");
+  int t_pti = timer->createCategory("GOSS Parser");
   timer->start(t_pti);
-  gridpack::parser::PTI23_parser<PFNetwork> parser(network);
+  gridpack::parser::GOSS_parser<PFNetwork> parser(network);
   parser.parse(filename.c_str());
   timer->stop(t_pti);
 

@@ -4,14 +4,14 @@
  *     in the LICENSE file in the top level directory of this distribution.
  */
 /*
- * PTI23parser.hpp
+ * GOSS_parser.hpp
  *
  *  Created on: May 23, 2013
  *      Author: Kevin Glass, Bruce Palmer
  */
 
-#ifndef PTI23_PARSER_HPP_
-#define PTI23_PARSER_HPP_
+#ifndef GOSS_PARSER_HPP_
+#define GOSS_PARSER_HPP_
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -51,7 +51,7 @@ namespace parser {
 enum XML_TYPE {BOOLEAN, INTEGER, DOUBLE, CHARACTER, STRING};
 
 template <class _network>
-class PTI23_parser
+class GOSS_parser
 {
 public:
     /// Constructor
@@ -60,12 +60,12 @@ public:
      * @param network network object that will be filled with contents
      * of network configuration file (must be child of network::BaseNetwork<>)
      */
-    explicit PTI23_parser(boost::shared_ptr<_network> network) : p_network(network){ }
+    explicit GOSS_parser(boost::shared_ptr<_network> network) : p_network(network){ }
 
     /**
      * Destructor
      */
-    virtual ~PTI23_parser()
+    virtual ~GOSS_parser()
     {
         p_busData.clear();      // unnecessary
         p_branchData.clear();
@@ -89,7 +89,7 @@ public:
     }
 
     /*
-     * A case is the collection of all data associated with a PTI23 file.
+     * A case is the collection of all data associated with a GOSS file.
      * Each case is a a vector of data_set objects the contain all the data
      * associated with a partition of the PTI file. For example, the bus
      * data in the file constitutes a data_set. Each data_set is a vector of
@@ -584,7 +584,7 @@ void readBus(boost::property_tree::ptree::value_type const& busesAttr, int index
             BOOST_FOREACH( boost::property_tree::ptree::value_type loadAttr, busAttr.second.get_child("Load"))
             {
                 loadCollection(data, loadAttr,nLoads);
-                ++nLoads
+                ++nLoads;
             }
         } else {
             loadCollection(data, busAttr);
@@ -846,6 +846,6 @@ private:
 
 } /* namespace parser */
 } /* namespace gridpack */
-#endif /* PTI23PARSER_HPP_ */
+#endif /* GOSSPARSER_HPP_ */
 
 

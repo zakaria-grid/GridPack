@@ -20,7 +20,7 @@
 #include "gridpack/math/vector.hpp"
 #include "gridpack/math/linear_solver.hpp"
 #include "gridpack/math/linear_matrix_solver.hpp"
-#include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/parser/GOSS_parser.hpp"
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"

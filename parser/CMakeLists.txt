@@ -31,7 +31,7 @@ endif()
 # TEST: greetings
 # A simple MPI program
 # -------------------------------------------------------------
-add_executable(test_parser test/PTI23_test.cpp)
+add_executable(test_parser test/GOSS_test.cpp)
 target_link_libraries(test_parser ${target_libraries})
 
 add_custom_target(test_parser_input
@@ -80,6 +80,6 @@ add_test(test_parser_serial test_parser)
 # -------------------------------------------------------------
 install(FILES 
   dictionary.hpp
-  PTI23_parser.hpp
+  GOSS_parser.hpp
   DESTINATION include/gridpack/parser
 )

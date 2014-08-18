@@ -19,7 +19,7 @@
 #include "gridpack/math/matrix.hpp"
 #include "gridpack/math/vector.hpp"
 #include "gridpack/math/linear_solver.hpp"
-#include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/parser/GOSS_parser.hpp"
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
@@ -61,7 +61,7 @@ void gridpack::resistor_grid::RGApp::execute(int argc, char** argv)
 
   // create network and read in external PTI file with network configuration
   boost::shared_ptr<RGNetwork> network(new RGNetwork(world));
-  gridpack::parser::PTI23_parser<RGNetwork> parser(network);
+  gridpack::parser::GOSS_parser<RGNetwork> parser(network);
   std::string filename;
   if (!cursor->get("networkConfiguration",&filename)) {
     filename = "small.raw";
