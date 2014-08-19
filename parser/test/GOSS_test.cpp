@@ -40,7 +40,7 @@ struct TestBranch
     int                      _BRANCH_TOBUS;
     int                      elementIndex;
     int                      _BRANCH_INDEX;
-    int                      mrid;
+    char *                    mrid;
     double                   _BRANCH_FLOW_P;
     double                   _BRANCH_FLOW_Q;
     double                   _BRANCH_R;
@@ -55,7 +55,7 @@ struct TestBranch
     double                   _BRANCH_SHUNT_ADMTTNC_BJ;
     double                   _BRANCH_SHUNT_ADMTTNC_GI;
     double                   _BRANCH_SHUNT_ADMTTNC_GJ;
-}
+};
        /* bus data consists of:
          *    BUS_AREA
          *    BUS_BASEKV
@@ -128,8 +128,8 @@ struct TestBus
     double                   _GENERATOR_PMAX;
     double                   _GENERATOR_PMIN;
     char *                   _GENERATOR_OWNER;
-    double                   _BUS__LOAD_PL;
-    double                   _BUS__LOAD_QL;
+    double                   _BUS_LOAD_PL;
+    double                   _BUS_LOAD_QL;
     int                      _LOAD_BUSNUMBER;
     int                      _LOAD_STATUS;
     int                      _LOAD_AREA;
@@ -193,161 +193,154 @@ void verifyBranchMaps(gridpack::network::BaseNetwork<TestBus, TestBranch> & netw
     */
 }
 
-void verifyBranchData(gridpack::network::BaseNetwork<TestBus, TestBranch> & network, int branch, TestBus & testBranch)
+void verifyBranchData(gridpack::network::BaseNetwork<TestBus, TestBranch> & network, int branch, TestBranch & testBranch)
 {
-    boost::shared_ptr<component::DataCollection>    branchCollection  = network.getBranch(branch);
+    boost::shared_ptr<gridpack::component::DataCollection>    branchCollection  = network.getBranch(branch);
 
     // get data collection object for "branch" in "network"
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_FROMBUS, branchCollection->getValue(BRANCH_FROMBUS));
+    int                      integerValue   = 0;
+    double                   doubleValue    = 0.0;
+    char                     charValue      = '\0';
+    char *                   stringValue    = "\0";
+
+    bool                     correct        = true;
+    branchCollection->getValue((const char *)(const char *)BRANCH_FROMBUS, &integerValue);
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_FROMBUS, integerValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Branch %d: BRANCH_FROMBUS should have been %d, but was stored as %d\n", branch,
-                testBranch._BRANCH_FROMBUS, branchCollection->getValue(BRANCH_FROMBUS));
+        printf("Branch %d: BRANCH_FROMBUS should have been %d, but was stored as %d\n", branch, testBranch._BRANCH_FROMBUS, integerValue);
+
+    }
+    branchCollection->getValue((const char *)BRANCH_TOBUS, &integerValue)
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_TOBUS, integerValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Bus %d: BRANCH_TOBUS should have been %d, but was stored as %d\n", branch,testBranch._BRANCH_TOBUS, integerValue);
+
+    }
+    branchCollection->getValue("elementIndex", &integerValue);
+    BOOST_CHECK_EQUAL(testBranch.elementIndex, integerValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Branch %d: elementIndex should have been %d, but was stored as %d\n", branch,testBranch.elementIndex, integerValue);
+
+    }
+    branchCollection->getValue((const char *)BRANCH_INDEX, &integerValue);
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_INDEX, integerValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Branch %d: BRANCH_INDEX should have been %d, but was stored as %d\n", branch, testBranch._BRANCH_INDEX, integerValue);
+
+    }
+    branchCollection->getValue((const char *)mrid, stringValue);
+    BOOST_CHECK_EQUAL(testBranch.mrid, stringValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Branch %d: mrid should have been %d, but was stored as %d\n", branch,testBranch.mrid, stringValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_TOBUS, branchCollection->getValue(BRANCH_TOBUS));
+    branchCollection->getValue((const char *)BRANCH_FLOW_P, &doubleValue)
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_FLOW_P, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Bus %d: BRANCH_TOBUS should have been %d, but was stored as %d\n", branch,
-                testBranch._BRANCH_TOBUS, branchCollection->getValue(BRANCH_TOBUS));
+        printf("Branch %d: BRANCH_FLOW_P should have been %f, but was stored as %f\n", branch,testBranch._BRANCH_FLOW_P, doubleValue);
+
+    }
+    branchCollection->getValue((const char *)BRANCH_FLOW_Q, &doubleValue);
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_FLOW_Q, doubleValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Branch %d: BRANCH_FLOW_Q should have been %f, but was stored as %f\n", branch,testBranch._BRANCH_FLOW_Q, doubleValue);
+
+    }
+    branchCollection->getValue((const char *)BRANCH_R, &doubleValue);
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_R, doubleValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Branch %d: BRANCH_R should have been %f, but was stored as %f\n", branch,testBranch._BRANCH_R, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBranch.elementIndex, branchCollection->getValue(elementIndex));
+    branchCollection->getValue((const char *)BRANCH_RATING_A, &doubleValue);
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_RATING_A, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Branch %d: elementIndex should have been %d, but was stored as %d\n", branch,
-                testBranch.elementIndex, branchCollection->getValue(elementIndex));
+        printf("Branch %d: _BRANCH_RATING_A should have been %f, but was stored as %f\n", branch,testBranch._BRANCH_RATING_A, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_INDEX, branchCollection->getValue(BRANCH_INDEX));
+    branchCollection->getValue((const char *)BRANCH_RATING_B, &doubleValue);
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_RATING_B, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Branch %d: BRANCH_INDEX should have been %d, but was stored as %d\n", branch,
-                testBranch._BRANCH_INDEX, branchCollection->getValue(BRANCH_INDEX));
+        printf("Branch %d: _BRANCH_RATING_B should have been %f, but was stored as %f\n", branch,testBranch._BRANCH_RATING_B, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBranch.mrid, branchCollection->getValue(mrid));
+    branchCollection->getValue((const char *)BRANCH_RATING_C, &doubleValue);
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_RATING_C, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Branch %d: mrid should have been %d, but was stored as %d\n", branch,
-                testBranch.mrid, branchCollection->getValue(mrid));
+        printf("Branch %d: _BRANCH_RATING_C should have been %f, but was stored as %f\n", branch,testBranch._BRANCH_RATING_C, doubleValue);
 
     }
 
-
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_FLOW_P, branchCollection->getValue(BRANCH_FLOW_P));
+    branchCollection->getValue((const char *)BRANCH_RATING, &doubleValue);
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_RATING, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Branch %d: BRANCH_FLOW_P should have been %f, but was stored as %f\n", branch,
-                testBranch._BRANCH_FLOW_P, branchCollection->getValue(BRANCH_FLOW_P));
+        printf("Branch %d: _BRANCH_RATING should have been %f, but was stored as %f\n", branch,testBranch._BRANCH_RATING, doubleValue);
+
+    }
+    branchCollection->getValue((const char *)BRANCH_STATUS, &integerValue);
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_STATUS, integerValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Branch %d: _BRANCH_STATUS should have been %d, but was stored as %d\n", branch,testBranch._BRANCH_STATUS, integerValue);
+
+    }
+    branchCollection->getValue((const char *)BRANCH_X, &doubleValue)
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_X,doubleValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Branch %d: _BRANCH_X should have been %f, but was stored as %f\n", branch,testBranch._BRANCH_X,doubleValue);
+
+    }
+    branchCollection->getValue((const char *)BRANCH_B, &doubleValue)
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_B, doubleValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Branch %d: _BRANCH_B should have been %f, but was stored as %f\n", branch,testBranch._BRANCH_B, doubleValue);
+
+    }
+    branchCollection->getValue((const char *)BRANCH_SHUNT_ADMTTNC_BI, &doubleValue)
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_SHUNT_ADMTTNC_BI, doubleValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Branch %d: _BRANCH_SHUNT_ADMTTNC_BI should have been %f, but was stored as %f\n", branch,testBranch._BRANCH_SHUNT_ADMTTNC_BI, doubleValue);
+
+    }
+    branchCollection->getValue((const char *)BRANCH_SHUNT_ADMTTNC_BJ, &doubleValue);
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_SHUNT_ADMTTNC_BJ, doubleValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Branch %d: _BRANCH_SHUNT_ADMTTNC_BJ should have been %f, but was stored as %f\n", branch,testBranch._BRANCH_SHUNT_ADMTTNC_BJ, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_FLOW_Q, branchCollection->getValue(BRANCH_FLOW_Q));
+    branchCollection->getValue((const char *)BRANCH_SHUNT_ADMTTNC_GI, &doubleValue);
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_SHUNT_ADMTTNC_GI, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Branch %d: BRANCH_FLOW_Q should have been %f, but was stored as %f\n", branch,
-                testBranch._BRANCH_FLOW_Q, branchCollection->getValue(BRANCH_FLOW_Q));
+        printf("Branch %d: _BRANCH_SHUNT_ADMTTNC_GI should have been %f, but was stored as %f\n", branch,testBranch._BRANCH_SHUNT_ADMTTNC_GI, doubleValue);
 
     }
-
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_R, branchCollection->getValue(BRANCH_R));
+    branchCollection->getValue((const char *)BRANCH_SHUNT_ADMTTNC_GJ, &doubleValue);
+    BOOST_CHECK_EQUAL(testBranch._BRANCH_SHUNT_ADMTTNC_GJ, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Branch %d: BRANCH_R should have been %f, but was stored as %f\n", branch,
-                testBranch._BRANCH_R, branchCollection->getValue(BRANCH_R));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_RATING_A, branchCollection->getValue(BRANCH_RATING_A));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Branch %d: _BRANCH_RATING_A should have been %f, but was stored as %f\n", branch,
-                testBranch._BRANCH_RATING_A, branchCollection->getValue(BRANCH_RATING_A));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_RATING_B, branchCollection->getValue(BRANCH_RATING_B));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Branch %d: _BRANCH_RATING_B should have been %f, but was stored as %f\n", branch,
-                testBranch._BRANCH_RATING_B, branchCollection->getValue(BRANCH_RATING_B));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_RATING_C, branchCollection->getValue(BRANCH_RATING_C));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Branch %d: _BRANCH_RATING_C should have been %f, but was stored as %f\n", branch,
-                testBranch._BRANCH_RATING_C, branchCollection->getValue(BRANCH_RATING_C));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_RATING, branchCollection->getValue(BRANCH_RATING));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Branch %d: _BRANCH_RATING should have been %f, but was stored as %f\n", branch,
-                testBranch._BRANCH_RATING, branchCollection->getValue(BRANCH_RATING));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_STATUS, branchCollection->getValue(BRANCH_STATUS));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Branch %d: _BRANCH_STATUS should have been %d, but was stored as %d\n", branch,
-                testBranch._BRANCH_STATUS, branchCollection->getValue(BRANCH_STATUS));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_X, branchCollection->getValue(BRANCH_X));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Branch %d: _BRANCH_X should have been %f, but was stored as %f\n", branch,
-                testBranch._BRANCH_X, branchCollection->getValue(BRANCH_X));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_B, branchCollection->getValue(BRANCH_B));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Branch %d: _BRANCH_B should have been %f, but was stored as %f\n", branch,
-                testBranch._BRANCH_B, branchCollection->getValue(BRANCH_B));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_SHUNT_ADMTTNC_BI, branchCollection->getValue(BRANCH_SHUNT_ADMTTNC_BI));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Branch %d: _BRANCH_SHUNT_ADMTTNC_BI should have been %f, but was stored as %f\n", branch,
-                testBranch._BRANCH_SHUNT_ADMTTNC_BI, branchCollection->getValue(BRANCH_SHUNT_ADMTTNC_BI));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_SHUNT_ADMTTNC_BJ, branchCollection->getValue(BRANCH_SHUNT_ADMTTNC_BJ));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Branch %d: _BRANCH_SHUNT_ADMTTNC_BJ should have been %f, but was stored as %f\n", branch,
-                testBranch._BRANCH_SHUNT_ADMTTNC_BJ, branchCollection->getValue(BRANCH_SHUNT_ADMTTNC_BJ));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_SHUNT_ADMTTNC_GI, branchCollection->getValue(BRANCH_SHUNT_ADMTTNC_GI));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Branch %d: _BRANCH_SHUNT_ADMTTNC_GI should have been %f, but was stored as %f\n", branch,
-                testBranch._BRANCH_SHUNT_ADMTTNC_GI, branchCollection->getValue(BRANCH_SHUNT_ADMTTNC_GI));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBranch._BRANCH_SHUNT_ADMTTNC_GJ, branchCollection->getValue(BRANCH_SHUNT_ADMTTNC_GJ));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Bus %d: _BRANCH_SHUNT_ADMTTNC_GJ should have been %f, but was stored as %f\n", branch,
-                testBranch._BRANCH_SHUNT_ADMTTNC_GJ, branchCollection->getValue(BRANCH_SHUNT_ADMTTNC_GJ));
+        printf("Bus %d: _BRANCH_SHUNT_ADMTTNC_GJ should have been %f, but was stored as %f\n", branch,testBranch._BRANCH_SHUNT_ADMTTNC_GJ, doubleValue);
 
     }
 }
@@ -355,359 +348,376 @@ void verifyBranchData(gridpack::network::BaseNetwork<TestBus, TestBranch> & netw
 void verifyBusData(gridpack::network::BaseNetwork<TestBus, TestBranch> & network, int bus, TestBus & testBus)
 {
     bool                      correct       = true;
-    boost::shared_ptr<component::DataCollection>  busCollection  = network.getBus(bus);
-    
-    // compare 
-    BOOST_CHECK_EQUAL(testBus._BUS_AREA, busCollection->getValue(BUS_AREA));
+    boost::shared_ptr<gridpack::component::DataCollection>  busCollection  = network.getBus(bus);
+    int                      integerValue   = 0;
+    double                   doubleValue    = 0.0;
+    char                     charValue      = '\0';
+    char *                   stringValue    = "\0";
+
+    busCollection->getValue((const char *)BUS_AREA, &integerValue);
+    BOOST_CHECK_EQUAL(testBus._BUS_AREA, integerValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Bus %d : _BUS_AREA should have been %d, but was stored as %d\n", bus,
-                testBus._BUS_AREA, busCollection->getValue(BUS_AREA));
+        printf("Bus %d : _BUS_AREA should have been %d, but was stored as %d\n", bus,testBus._BUS_AREA, integerValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._BUS_BASEKV, busCollection->getValue(BUS_BASEKV));
+    busCollection->getValue((const char *)BUS_BASEKV, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._BUS_BASEKV, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Bus %d : _BUS_BASEKV should have been %f, but was stored as %f\n", bus,
-                testBus._BUS_BASEKV, busCollection->getValue(BUS_BASEKV));
+        printf("Bus %d : _BUS_BASEKV should have been %f, but was stored as %f\n", bus,testBus._BUS_BASEKV, doubleValue);
+
+    }
+    busCollection->getValue((const char *)BUS_NAME, stringValue);
+    BOOST_CHECK_EQUAL(testBus._BUS_NAME, stringValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Bus %d :_BUS_NAME should have been %s, but was stored as %c\n", bus,testBus._BUS_NAME, stringValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._BUS_NAME, busCollection->getValue(BUS_NAME));
+    busCollection->getValue((const char *)BUS_NUMBER, &integerValue);
+    BOOST_CHECK_EQUAL(testBus._BUS_NUMBER, integerValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Bus %d :_BUS_NAME should have been %s, but was stored as %c\n", bus,
-                testBus._BUS_NAME, busCollection->getValue(BUS_NAME));
+        printf("Bus %d : _BUS_NUMBER should have been %d, but was stored as %d\n", bus,testBus._BUS_NUMBER, integerValue);
+
+    }
+    busCollection->getValue((const char *)BUS_TYPE, &integerValue);
+    BOOST_CHECK_EQUAL(testBus._BUS_TYPE, integerValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Bus %d :_BUS_TYPE should have been %d, but was stored as %d\n", bus,testBus._BUS_TYPE, integerValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._BUS_NUMBER, busCollection->getValue(BUS_NUMBER));
+    busCollection->getValue((const char *)GENERATOR_BUSNUMBER, &integerValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_BUSNUMBER, integerValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Bus %d : _BUS_NUMBER should have been %d, but was stored as %d\n", bus,
-                testBus._BUS_NUMBER, busCollection->getValue(BUS_NUMBER));
+        printf("Bus %d : _GENERATOR_BUSNUMBER should have been %d, but was stored as %d\n", bus,testBus._GENERATOR_BUSNUMBER, integerValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._BUS_TYPE, busCollection->getValue(BUS_TYPE));
+    busCollection->getValue((const char *)GENERATOR_ID, &integerValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_ID, integerValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Bus %d :_BUS_TYPE should have been %d, but was stored as %d\n", bus,
-                testBus._BUS_TYPE, busCollection->getValue(BUS_TYPE));
+        printf("Bus %d :_GENERATOR_ID should have been %d, but was stored as %d\n", bus,testBus._GENERATOR_ID, integerValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_BUSNUMBER, busCollection->getValue(GENERATOR_BUSNUMBER));
+    busCollection->getValue((const char *)GENERATOR_PG, &doubleValue)
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_PG, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Bus %d : _GENERATOR_BUSNUMBER should have been %d, but was stored as %d\n", bus,
-                testBus._GENERATOR_BUSNUMBER, busCollection->getValue(GENERATOR_BUSNUMBER));
+        printf("Bus %d : _GENERATOR_PG should have been %f, but was stored as %f\n", bus,testBus._GENERATOR_PG, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_ID, busCollection->getValue(GENERATOR_ID));
+    busCollection->getValue((const char *)GENERATOR_QG, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_QG, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Bus %d :_GENERATOR_ID should have been %d, but was stored as %d\n", bus,
-                testBus._GENERATOR_ID, busCollection->getValue(GENERATOR_ID));
+        printf("Bus %d : _GENERATOR_QG should have been %f, but was stored as %f\n", bus,testBus._GENERATOR_QG, doubleValue);
+
+    }
+    busCollection->getValue((const char *)GENERATOR_QMAX, &doubleValue)
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_QMAX, doubleValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Bus %d : _GENERATOR_QMAX should have been %f, but was stored as %f\n", bus,testBus._GENERATOR_QMAX, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_PG, busCollection->getValue(GENERATOR_PG));
+    busCollection->getValue((const char *)GENERATOR_QMIN, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_QMIN, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Bus %d : _GENERATOR_PG should have been %f, but was stored as %f\n", bus,
-                testBus._GENERATOR_PG, busCollection->getValue(GENERATOR_PG));
+        printf("Bus %d : _GENERATOR_QMIN should have been %f, but was stored as %f\n", bus,testBus._GENERATOR_QMIN, doubleValue);
+
+    }
+    busCollection->getValue((const char *)GENERATOR_VS, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_VS, doubleValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Bus %d : _GENERATOR_VS should have been %f, but was stored as %f\n", bus,testBus._GENERATOR_VS, doubleValue);
+
+    }
+    busCollection->getValue((const char *)GENERATOR_IREG, &integerValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_IREG, integerValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Bus %d : _GENERATOR_IREG should have been %d, but was stored as %d\n", bus,testBus._GENERATOR_IREG, integerValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_QG, busCollection->getValue(GENERATOR_QG));
+    busCollection->getValue((const char *)GENERATOR_MBASE, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_MBASE, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Bus %d : _GENERATOR_QG should have been %f, but was stored as %f\n", bus,
-                testBus._GENERATOR_QG, busCollection->getValue(GENERATOR_QG));
+        printf("Bus %d : _GENERATOR_MBASE should have been %f, but was stored as %f\n", bus,testBus._GENERATOR_MBASE, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_QMAX, busCollection->getValue(GENERATOR_QMAX));
+    busCollection->getValue((const char *)GENERATOR_ZR, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_ZR, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Bus %d : _GENERATOR_QMAX should have been %f, but was stored as %f\n", bus,
-                testBus._GENERATOR_QMAX, busCollection->getValue(GENERATOR_QMAX));
+        printf("Bus %d : _GENERATOR_ZR should have been %f, but was stored as %f\n", bus,testBus._GENERATOR_ZR, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_QMIN, busCollection->getValue(GENERATOR_QMIN));
+    busCollection->getValue((const char *)GENERATOR_ZX, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_ZX, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Bus %d : _GENERATOR_QMIN should have been %f, but was stored as %f\n", bus,
-                testBus._GENERATOR_QMIN, busCollection->getValue(GENERATOR_QMIN));
+        printf("Bus %d : _GENERATOR_ZX should have been %f, but was stored as %f\n", bus,testBus._GENERATOR_ZX, doubleValue);
+
+    }
+    busCollection->getValue((const char *)GENERATOR_RT, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_RT, doubleValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Bus %d : _GENERATOR_RT should have been %f, but was stored as %f\n", bus,testBus._GENERATOR_RT, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_VS, busCollection->getValue(GENERATOR_VS));
+    busCollection->getValue((const char *)GENERATOR_XT, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_XT, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Bus %d : _GENERATOR_VS should have been %f, but was stored as %f\n", bus,
-                testBus._GENERATOR_VS, busCollection->getValue(GENERATOR_VS));
+        printf("Bus %d : _GENERATOR_XT should have been %f, but was stored as %f\n", bus,testBus._GENERATOR_XT, doubleValue);
+    }
+
+    busCollection->getValue((const char *)GENERATOR_GTAP, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_GTAP, doubleValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Bus %d : _GENERATOR_GTAP should have been %f, but was stored as %f\n", bus,testBus._GENERATOR_GTAP, doubleValue);
+    }
+
+    busCollection->getValue((const char *)GENERATOR_STAT, &integerValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_STAT, integerValue);
+    BOOST_CHECK(correct);
+    if (!correct) {
+        printf("Bus %d : _GENERATOR_STAT should have been %d, but was stored as %d\n", bus,testBus._GENERATOR_STAT, integerValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_IREG, busCollection->getValue(GENERATOR_IREG));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Bus %d : _GENERATOR_IREG should have been %d, but was stored as %d\n", bus,
-                testBus._GENERATOR_IREG, busCollection->getValue(GENERATOR_IREG));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_MBASE, busCollection->getValue(GENERATOR_MBASE));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Bus %d : _GENERATOR_MBASE should have been %f, but was stored as %f\n", bus,
-                testBus._GENERATOR_MBASE, busCollection->getValue(GENERATOR_MBASE));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_ZR, busCollection->getValue(GENERATOR_ZR));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Bus %d : _GENERATOR_ZR should have been %f, but was stored as %f\n", bus,
-                testBus._GENERATOR_ZR, busCollection->getValue(GENERATOR_ZR));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_ZX, busCollection->getValue(GENERATOR_ZX));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Bus %d : _GENERATOR_ZX should have been %f, but was stored as %f\n", bus,
-                testBus._GENERATOR_ZX, busCollection->getValue(GENERATOR_ZX));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_RT, busCollection->getValue(GENERATOR_RT));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Bus %d : _GENERATOR_RT should have been %f, but was stored as %f\n", bus,
-                testBus._GENERATOR_RT, busCollection->getValue(GENERATOR_RT));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_XT, busCollection->getValue(GENERATOR_XT));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Bus %d : _GENERATOR_XT should have been %f, but was stored as %f\n", bus,
-                testBus._GENERATOR_XT, busCollection->getValue(GENERATOR_XT));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_GTAP, busCollection->getValue(GENERATOR_GTAP));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Bus %d : _GENERATOR_GTAP should have been %f, but was stored as %f\n", bus,
-                testBus._GENERATOR_GTAP, busCollection->getValue(GENERATOR_GTAP));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_STAT, busCollection->getValue(GENERATOR_STAT));
-    BOOST_CHECK(correct);
-    if (!correct) {
-        printf("Bus %d : _GENERATOR_STAT should have been %d, but was stored as %d\n", bus,
-                testBus._GENERATOR_STAT, busCollection->getValue(GENERATOR_STAT));
-
-    }
-
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_RMPCT, busCollection->getValue(GENERATOR_RMPCT));
+    busCollection->getValue((const char *)GENERATOR_RMPCT, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_RMPCT, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _GENERATOR_RMPCT should have been %f, but was stored as %f\n", bus,
-                testBus._GENERATOR_RMPCT, busCollection->getValue(GENERATOR_RMPCT));
+                testBus._GENERATOR_RMPCT, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_PMAX, busCollection->getValue(GENERATOR_PMAX));
+    busCollection->getValue((const char *)GENERATOR_PMAX, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_PMAX, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _GENERATOR_PMAX should have been %f, but was stored as %f\n", bus,
-                testBus._GENERATOR_PMAX, busCollection->getValue(GENERATOR_PMAX));
+                testBus._GENERATOR_PMAX, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_PMIN, busCollection->getValue(GENERATOR_PMIN));
+    busCollection->getValue((const char *)GENERATOR_PMIN, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_PMIN, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _GENERATOR_PMIN should have been %f, but was stored as %f\n", bus,
-                testBus._GENERATOR_PMIN, busCollection->getValue(GENERATOR_PMIN));
+                testBus._GENERATOR_PMIN, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._GENERATOR_OWNER, busCollection->getValue(GENERATOR_OWNER));
+    busCollection->getValue((const char *)GENERATOR_OWNER, stringValue);
+    BOOST_CHECK_EQUAL(testBus._GENERATOR_OWNER, stringValue);
     BOOST_CHECK(correct);
     if (!correct) {
-        printf("Bus %d : _GENERATOR_OWNER should have been %s, but was stored as %c\n", bus,
-                testBus._GENERATOR_OWNER, busCollection->getValue(GENERATOR_OWNER));
+        printf("Bus %d : _GENERATOR_OWNER should have been %s, but was stored as %s\n", bus,
+                testBus._GENERATOR_OWNER, stringValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._BUS_LOAD_PL, busCollection->getValue(BUS_LOAD_PL));
+    busCollection->getValue((const char *)BUS_LOAD_PL, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._BUS_LOAD_PL, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _BUS_LOAD_PL should have been %f, but was stored as %f\n", bus,
-                testBus._BUS_LOAD_PL, busCollection->getValue(BUS_LOAD_PL));
+                testBus._BUS_LOAD_PL, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._BUS_LOAD_QL, busCollection->getValue(BUS_LOAD_QL));
+    busCollection->getValue((const char *)BUS_LOAD_QL, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._BUS_LOAD_QL, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _BUS_LOAD_QL should have been %f, but was stored as %f\n", bus,
-                testBus._BUS_LOAD_QL, busCollection->getValue(BUS_LOAD_QL));
+                testBus._BUS_LOAD_QL, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._LOAD_BUSNUMBER, busCollection->getValue(LOAD_BUSNUMBER));
+    busCollection->getValue((const char *)LOAD_BUSNUMBER, &integerValue);
+    BOOST_CHECK_EQUAL(testBus._LOAD_BUSNUMBER, integerValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d :_LOAD_BUSNUMBER should have been %d, but was stored as %d\n", bus,
-                testBus._LOAD_BUSNUMBER, busCollection->getValue(LOAD_BUSNUMBER));
+                testBus._LOAD_BUSNUMBER, integerValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._LOAD_STATUS, busCollection->getValue(LOAD_STATUS));
+    busCollection->getValue((const char *)LOAD_STATUS, &integerValue);
+    BOOST_CHECK_EQUAL(testBus._LOAD_STATUS, integerValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _LOAD_STATUS should have been %d, but was stored as %d\n", bus,
-                testBus._LOAD_STATUS, busCollection->getValue(LOAD_STATUS));
+                testBus._LOAD_STATUS, integerValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._LOAD_AREA, busCollection->getValue(LOAD_AREA));
+    busCollection->getValue((const char *)LOAD_AREA, &integerValue);
+    BOOST_CHECK_EQUAL(testBus._LOAD_AREA, integerValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d :_LOAD_AREA should have been %d, but was stored as %d\n", bus,
-                testBus._LOAD_AREA, busCollection->getValue(LOAD_AREA));
+                testBus._LOAD_AREA, integerValue);
 
     }
-
-    BOOST_CHECK_EQUAL(testBus._LOAD_ZONE, busCollection->getValue(LOAD_ZONE));
+    busCollection->getValue((const char *)LOAD_ZONE, &integerValue);
+    BOOST_CHECK_EQUAL(testBus._LOAD_ZONE, integerValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _LOAD_ZONE should have been %d, but was stored as %d\n", bus,
-                testBus._LOAD_ZONE, busCollection->getValue(LOAD_ZONE));
+                testBus._LOAD_ZONE, integerValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._LOAD_PL, busCollection->getValue(LOAD_PL));
+    busCollection->getValue((const char *)LOAD_PL, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._LOAD_PL, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _LOAD_PL should have been %f, but was stored as %f\n", bus,
-                testBus._LOAD_PL, busCollection->getValue(LOAD_PL));
+                testBus._LOAD_PL, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._LOAD_QL, busCollection->getValue(LOAD_QL));
+    busCollection->getValue((const char *)LOAD_QL, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._LOAD_QL, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _LOAD_QL should have been %f, but was stored as %f\n", bus,
-                testBus._LOAD_QL, busCollection->getValue(LOAD_QL));
+                testBus._LOAD_QL, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._LOAD_IP, busCollection->getValue(LOAD_IP));
+    busCollection->getValue((const char *)LOAD_IP, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._LOAD_IP, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _LOAD_IP should have been %f, but was stored as %f\n", bus,
-                testBus._LOAD_IP, busCollection->getValue(LOAD_IP));
+                testBus._LOAD_IP, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._LOAD_IQ, busCollection->getValue(LOAD_IQ));
+    busCollection->getValue((const char *)LOAD_IQ, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._LOAD_IQ, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _LOAD_IQ should have been %f, but was stored as %f\n", bus,
-                testBus._LOAD_IQ, busCollection->getValue(LOAD_IQ));
+                testBus._LOAD_IQ, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._LOAD_YP, busCollection->getValue(LOAD_YP));
+    busCollection->getValue((const char *)LOAD_YP, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._LOAD_YP, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d :_LOAD_YP should have been %f, but was stored as %f\n", bus,
-                testBus._LOAD_YP, busCollection->getValue(LOAD_YP));
+                testBus._LOAD_YP, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._LOAD_YQ, busCollection->getValue(LOAD_YQ));
+    busCollection->getValue((const char *)LOAD_YQ, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._LOAD_YQ, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _LOAD_YQ should have been %f, but was stored as %f\n", bus,
-                testBus._LOAD_YQ, busCollection->getValue(LOAD_YQ));
+                testBus._LOAD_YQ, doubleValue);
 
     }
 
-
-    BOOST_CHECK_EQUAL(testBus._LOAD_OWNER, busCollection->getValue(LOAD_OWNER));
+    busCollection->getValue((const char *)LOAD_OWNER, stringValue);
+    BOOST_CHECK_EQUAL(testBus._LOAD_OWNER, stringValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _LOAD_OWNER should have been %s, but was stored as %c\n", bus,
-                testBus._LOAD_OWNER, busCollection->getValue(LOAD_OWNER));
+                testBus._LOAD_OWNER, stringValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._BUS_OWNER, busCollection->getValue(BUS_OWNER));
+    busCollection->getValue((const char *)BUS_OWNER, stringValue);
+    BOOST_CHECK_EQUAL(testBus._BUS_OWNER, stringValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _BUS_OWNER should have been %s, but was stored as %c\n", bus,
-                testBus._BUS_OWNER, busCollection->getValue(BUS_OWNER));
+                testBus._BUS_OWNER, stringValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus.powerGridId, busCollection->getValue(powerGridId));
+    busCollection->getValue((const char *)powerGridId, &integerValue);
+    BOOST_CHECK_EQUAL(testBus.powerGridId, integerValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : powerGridId should have been %d, but was stored as %d\n", bus,
-                testBus.powerGridId, busCollection->getValue(powerGridId));
+                testBus.powerGridId, integerValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._BUS_SHUNT_BL, busCollection->getValue(BUS_SHUNT_BL));
+    busCollection->getValue((const char *)BUS_SHUNT_BL, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._BUS_SHUNT_BL, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _BUS_SHUNT_BL should have been %f, but was stored as %f\n", bus,
-                testBus._BUS_SHUNT_BL, busCollection->getValue(BUS_SHUNT_BL));
+                testBus._BUS_SHUNT_BL, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._BUS_SHUNT_GL, busCollection->getValue(BUS_SHUNT_GL));
+    busCollection->getValue((const char *)BUS_SHUNT_GL, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._BUS_SHUNT_GL, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _BUS_SHUNT_GL should have been %f, but was stored as %f\n", bus,
-                testBus._BUS_SHUNT_GL, busCollection->getValue(BUS_SHUNT_GL));
+                testBus._BUS_SHUNT_GL, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._BUS_VOLTAGE_ANG, busCollection->getValue(BUS_VOLTAGE_ANG));
+    busCollection->getValue((const char *)BUS_VOLTAGE_ANG, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._BUS_VOLTAGE_ANG, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _BUS_VOLTAGE_ANG should have been %f, but was stored as %f\n", bus,
-                testBus._BUS_VOLTAGE_ANG, busCollection->getValue(BUS_VOLTAGE_ANG));
+                testBus._BUS_VOLTAGE_ANG, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._BUS_VOLTAGE_MAG, busCollection->getValue(BUS_VOLTAGE_MAG));
+    busCollection->getValue((const char *)BUS_VOLTAGE_MAG, &doubleValue);
+    BOOST_CHECK_EQUAL(testBus._BUS_VOLTAGE_MAG, doubleValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _BUS_VOLTAGE_MAG should have been %f, but was stored as %f\n", bus,
-                testBus._BUS_VOLTAGE_MAG, busCollection->getValue(BUS_VOLTAGE_MAG));
+                testBus._BUS_VOLTAGE_MAG, doubleValue);
 
     }
 
-    BOOST_CHECK_EQUAL(testBus._BUS_ZONE, busCollection->getValue(BUS_ZONE));
+    busCollection->getValue((const char *)BUS_ZONE, &integerValue);
+    BOOST_CHECK_EQUAL(testBus._BUS_ZONE, integerValue);
     BOOST_CHECK(correct);
     if (!correct) {
         printf("Bus %d : _BUS_ZONE should have been %d, but was stored as %d\n", bus,
-                testBus._BUS_ZONE, busCollection->getValue(BUS_ZONE));
+                testBus._BUS_ZONE, integerValue);
 
     }
 }
