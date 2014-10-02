@@ -10,10 +10,11 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-03-14 13:29:06 d3g096
+# Last Change: 2014-10-02 13:35:38 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries 
+  gridpack_timer
   ${PETSC_LIBRARIES}
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 

@@ -9,14 +9,15 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 17, 2013 by William A. Perkins
-# Last Change: 2014-03-14 13:29:26 d3g096
+# Last Change: 2014-10-02 14:02:15 d3g096
 # -------------------------------------------------------------
 
 set(gridpack_partition_sources)
 
 set(target_libraries
-  ${PETSC_LIBRARIES}
+  gridpack_math
   gridpack_timer
+  ${PETSC_LIBRARIES}
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
   ${MPI_CXX_LIBRARIES}

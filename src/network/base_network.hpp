@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2014-03-06 09:40:19 d3g096
+ * @date   2014-09-29 12:00:25 d3g096
  * 
  * @brief  
  * 
@@ -23,6 +23,8 @@
 #include <vector>
 #include <map>
 #include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/serialization/singleton.hpp>
+#include <boost/serialization/extended_type_info.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/type_traits.hpp>
 #include <ga.h>
@@ -298,6 +300,12 @@ explicit BaseNetwork(const parallel::Communicator& comm)
   p_branchSndBuf = NULL;
   p_inactiveBranchIndices = NULL;
   p_branchRcvBuf = NULL;
+  p_busXCBuffers = NULL;
+  p_external_bus = false;
+  p_branchXCBuffers = NULL;
+  p_external_branch = false;
+  p_allocatedBus = false;
+  p_allocatedBranch = false;
 }
 
 /**
@@ -307,22 +315,34 @@ virtual ~BaseNetwork(void)
 {
   int i, size;
   // Clean up exchange buffers if they have been allocated
-  if (p_busXCBufSize != 0) {
-    if (p_busXCBuffers) {
-      delete [] ((char*)p_busXCBuffers);
-    } else {
-      // TODO: some kind of error
+  if (p_busXCBufSize != 0 && p_busXCBuffers != NULL) {
+    int size = p_buses.size();
+    int i;
+    if (p_allocatedBus) {
+      if (!p_external_bus) {
+        for(i=0; i<size; i++) {
+          delete static_cast<char*>(p_busXCBuffers[i]);
+        }
+      }
+      p_allocatedBus = false;
     }
+    delete [] p_busXCBuffers;
   }
-  if (p_branchXCBufSize != 0) {
-    if (p_branchXCBuffers) {
-      delete [] ((char*)p_branchXCBuffers);
-    } else {
-      // TODO: some kind of error
+  if (p_branchXCBufSize != 0 && p_branchXCBuffers != NULL) {
+    int size = p_branches.size();
+    int i;
+    if (p_allocatedBranch) {
+      if (!p_external_branch) {
+        for(i=0; i<size; i++) {
+          delete static_cast<char*>(p_branchXCBuffers[i]);
+        }
+      }
+      p_allocatedBranch = false;
     }
+    delete [] p_branchXCBuffers;
   }
   if (p_activeBusIndices) {
-    for (i=0; i<0; i<p_numActiveBuses) {
+    for (i=0; i<p_numActiveBuses; i++) {
       delete p_activeBusIndices[i];
     }
     delete [] p_activeBusIndices;
@@ -828,68 +848,44 @@ boost::shared_ptr<component::DataCollection> getBranchData(int idx)
   }
 }
 
-#if 0
-/**
- * Delete an existing bus field
- * @param name: a string representing the name of the field
- *       to be deleted
- */
-void deleteBusField(std::string name)
-{
-  std::map<std::string,
-boost::shared_ptr<gridpack::network::BusField<gridpack::component::BaseNetworkComponent> > >::iterator bus;
-  bus = p_busFields.find(name);
-  if (bus != p_busFields.end()) {
-    p_busFields.erase(bus);
-  }
-}
-
-/**
- * Delete an existing branch field
- * @param name: a string representing the name of the field
- *       to be deleted
- */
-void deleteBranchField(std::string name)
-{
-  std::map<std::string,
-boost::shared_ptr<gridpack::network::BranchField<gridpack::component::BaseNetworkComponent> > >::iterator branch;
-  branch = p_branchFields.find(name);
-  if (branch != p_branchFields.end()) {
-    p_branchFields.erase(branch);
-  }
-}
-#endif
-
 /**
  * Return list of branches connected to bus
- * @param bus local bus index
+ * @param idx local bus index
  * @return vector of local branch indices
  */
 std::vector<int> getConnectedBranches(int idx) const
 {
-  return p_buses[idx].p_branchNeighbors;
+  if (idx<0 || idx >= p_buses.size()) {
+    // TODO: Some kind of error
+  } else {
+    return p_buses[idx].p_branchNeighbors;
+  }
 }
 
 /**
  * Return list of buses connected to central bus via one branch
- * @param bus local bus index
+ * @param idx local bus index
  * @return vector of local bus indices
  */
 std::vector<int> getConnectedBuses(int idx) const
 {
-  std::vector<int> branches = p_buses[idx].p_branchNeighbors;
-  int size = branches.size();
-  std::vector<int> ret;
-  int i, j;
-  for (i=0; i<size; i++) {
-    j = branches[i];
-    if (p_branches[j].p_localBusIndex1 != idx) {
-      ret.push_back(p_branches[j].p_localBusIndex1);
-    } else {
-      ret.push_back(p_branches[j].p_localBusIndex2);
+  if (idx<0 || idx >= p_buses.size()) {
+    // TODO: Some kind of error
+  } else {
+    std::vector<int> branches = p_buses[idx].p_branchNeighbors;
+    int size = branches.size();
+    std::vector<int> ret;
+    int i, j;
+    for (i=0; i<size; i++) {
+      j = branches[i];
+      if (p_branches[j].p_localBusIndex1 != idx) {
+        ret.push_back(p_branches[j].p_localBusIndex1);
+      } else {
+        ret.push_back(p_branches[j].p_localBusIndex2);
+      }
     }
+    return ret;
   }
-  return ret;
 }
 
 
@@ -910,199 +906,210 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
   }
 }
 
-  /// Assemble local part of network
-  void assemble(void) 
-  {
+/// Assemble local part of network
+void assemble(void) 
+{
+}
+
+/**
+ * Partition the network over the available processes
+ */
+void partition(void)
+{
+  gridpack::utility::CoarseTimer *timer;
+  timer = NULL;
+  timer = gridpack::utility::CoarseTimer::instance();
+
+  int t_total, t_part, t_bus_dist, t_gbus_dist, t_branch_dist;
+
+  if (timer != NULL) {
+    t_total = timer->createCategory("BaseNetwork<>::partition(): Total");
+    t_part = timer->createCategory("BaseNetwork<>::partition(): Partitioner");
+    t_bus_dist = timer->createCategory("BaseNetwork<>::partition(): Bus Distribution");
+    t_branch_dist = timer->createCategory("BaseNetwork<>::partition(): Branch Distribution");
   }
 
-  /// Partition the network over the available processes
-  void partition(void)
-  {
-    gridpack::utility::CoarseTimer *timer;
-    timer = NULL;
-    timer = gridpack::utility::CoarseTimer::instance();
-    
-    int t_total, t_part, t_bus_dist, t_gbus_dist, t_branch_dist;
+  if (timer != NULL) timer->start(t_total);
 
-    if (timer != NULL) {
-      t_total = timer->createCategory("BaseNetwork<>::partition(): Total");
-      t_part = timer->createCategory("BaseNetwork<>::partition(): Partitioner");
-      t_bus_dist = timer->createCategory("BaseNetwork<>::partition(): Bus Distribution");
-      t_branch_dist = timer->createCategory("BaseNetwork<>::partition(): Branch Distribution");
-    }
+  if (timer != NULL) timer->start(t_part);
 
-    if (timer != NULL) timer->start(t_total);
+  // if (this->processor_size() <= 1) return;
+  GraphPartitioner partitioner(this->communicator(),
+      p_buses.size(), p_branches.size());
 
-    if (timer != NULL) timer->start(t_part);
+  for (BusIterator bus = p_buses.begin(); 
+      bus != p_buses.end(); ++bus) {
+    partitioner.add_node(bus->p_globalBusIndex,bus->p_originalBusIndex);
+  }
+  for (BranchIterator branch = p_branches.begin(); 
+      branch != p_branches.end(); ++branch) {
+    partitioner.add_edge(branch->p_globalBranchIndex, 
+        branch->p_originalBusIndex1,
+        branch->p_originalBusIndex2);
+  }
+  partitioner.partition();
+  // Recover global indices for branch ends from partitioner
+  int nbranch = p_branches.size();
+  int idx;
+  unsigned int index1, index2;
+  for (idx=0; idx<nbranch; idx++) {
+    partitioner.get_global_edge_ids(idx, &index1, &index2);
+    p_branches[idx].p_globalBusIndex1 = static_cast<int>(index1);
+    p_branches[idx].p_globalBusIndex2 = static_cast<int>(index2);
+  }
 
-    // if (this->processor_size() <= 1) return;
-    GraphPartitioner partitioner(this->communicator(),
-                                 p_buses.size(), p_branches.size());
+  if (timer != NULL) timer->stop(t_part);
 
-    for (BusIterator bus = p_buses.begin(); 
-         bus != p_buses.end(); ++bus) {
-      partitioner.add_node(bus->p_globalBusIndex);
-    }
-    for (BranchIterator branch = p_branches.begin(); 
-         branch != p_branches.end(); ++branch) {
-      partitioner.add_edge(branch->p_globalBranchIndex, 
-                           branch->p_globalBusIndex1,
-                           branch->p_globalBusIndex2);
-    }
-    partitioner.partition();
-
-    if (timer != NULL) timer->stop(t_part);
-
-    int me(this->processor_rank());
-    GraphPartitioner::IndexVector dest, gdest;
+  int me(this->processor_rank());
+  GraphPartitioner::IndexVector dest, gdest;
 
 #if 1
-    typedef parallel::Shuffler<BusData<BusType>, GraphPartitioner::Index> BusShufflerType;
-    typedef parallel::Shuffler<BranchData<BranchType>, GraphPartitioner::Index> BranchShufflerType;
+  typedef parallel::Shuffler<BusData<BusType>, GraphPartitioner::Index> BusShufflerType;
+  typedef parallel::Shuffler<BranchData<BranchType>, GraphPartitioner::Index> BranchShufflerType;
 #else 
-    typedef parallel::gaShuffler<BusData<BusType>, GraphPartitioner::Index> BusShufflerType;
-    typedef parallel::gaShuffler<BranchData<BranchType>, GraphPartitioner::Index> BranchShufflerType;
+  typedef parallel::gaShuffler<BusData<BusType>, GraphPartitioner::Index> BusShufflerType;
+  typedef parallel::gaShuffler<BranchData<BranchType>, GraphPartitioner::Index> BranchShufflerType;
 #endif
 
-    BusShufflerType bus_shuffler(this->communicator());
-    BranchShufflerType branch_shuffler(this->communicator());
+  BusShufflerType bus_shuffler(this->communicator());
+  BranchShufflerType branch_shuffler(this->communicator());
 
-    // Need to make copies of buses and branches that will be ghosted.
-    // After active bus/branch distribution, they may not be on this
-    // processor.
+  // Need to make copies of buses and branches that will be ghosted.
+  // After active bus/branch distribution, they may not be on this
+  // processor.
 
-    BusDataVector ghostbuses;
-    GraphPartitioner::MultiIndexVector gnodedest;
-    GraphPartitioner::IndexVector ghostbusdest;
-    BusIterator bus(p_buses.begin());
-    partitioner.ghost_node_destinations(gnodedest);
-    
-    for (size_t i = 0; i < gnodedest.size(); ++i, ++bus) {
-      for (GraphPartitioner::IndexVector::iterator d = gnodedest[i].begin();
-           d != gnodedest[i].end(); ++d) {
-        ghostbuses.push_back(*bus);
-        ghostbusdest.push_back(*d);
-      }
+  BusDataVector ghostbuses;
+  GraphPartitioner::MultiIndexVector gnodedest;
+  GraphPartitioner::IndexVector ghostbusdest;
+  BusIterator bus(p_buses.begin());
+  partitioner.ghost_node_destinations(gnodedest);
+
+  for (size_t i = 0; i < gnodedest.size(); ++i, ++bus) {
+    for (GraphPartitioner::IndexVector::iterator d = gnodedest[i].begin();
+        d != gnodedest[i].end(); ++d) {
+      ghostbuses.push_back(*bus);
+      ghostbusdest.push_back(*d);
     }
-
-    // Branches can only be ghosted on one other process, so they're
-    // easy.
-
-    partitioner.edge_destinations(dest);
-    partitioner.ghost_edge_destinations(gdest);
-
-    BranchDataVector ghostbranches;
-    BranchIterator branch(p_branches.begin());
-    GraphPartitioner::IndexVector ghostbranchdest;
-
-    for (size_t i = 0; i < dest.size(); ++i, ++branch) {
-      if (dest[i] != gdest[i]) {
-        ghostbranches.push_back(*branch);
-        ghostbranches.back().p_activeBranch = false;
-        ghostbranchdest.push_back(gdest[i]);
-      }
-    }
-
-
-    // distribute active nodes
-
-    // std::cout << me << ": distributing " << p_buses.size() << " active buses" << std::endl;
-
-    if (timer != NULL) timer->start(t_bus_dist);
-    partitioner.node_destinations(dest);
-    bus_shuffler(p_buses, dest);
-    if (timer != NULL) timer->stop(t_bus_dist);
-
-    // distribute active edges
-
-    if (timer != NULL) timer->start(t_branch_dist);
-    partitioner.edge_destinations(dest);
-    branch_shuffler(p_branches, dest);
-    if (timer != NULL) timer->stop(t_branch_dist);
-
-    // At this point, active buses and branches are on the proper
-    // process.  Now, we need to distribute and nodes and edges that
-    // are ghosted.  
-
-    // std::cout << me << ": distributing " << ghostbuses.size() << " ghost buses" << std::endl;
-
-    if (timer != NULL) timer->start(t_bus_dist);
-    bus_shuffler(ghostbuses, ghostbusdest);
-    for (bus = ghostbuses.begin(); bus != ghostbuses.end(); ++bus) {
-      bus->p_activeBus = false;
-      p_buses.push_back(*bus);
-    }
-    ghostbuses.clear();
-    if (timer != NULL) timer->stop(t_bus_dist);
-
-    if (timer != NULL) timer->start(t_branch_dist);
-    branch_shuffler(ghostbranches, ghostbranchdest);
-    std::copy(ghostbranches.begin(), ghostbranches.end(),
-              std::back_inserter(p_branches));
-    ghostbranches.clear();
-    if (timer != NULL) timer->stop(t_branch_dist);
-
-    // At this point, each process should have a self-contained
-    // network, update local and global indexes, etc.
-
-    // make an index of global bus index to local index and update
-    // the branch local bus indexes
-    int active_buses(0), active_branches(0);
-    {
-      std::map<int, int> busindexes;
-      int lidx(0);
-      for (BusIterator b = p_buses.begin(); b != p_buses.end(); ++b, ++lidx) {
-        clearBranchNeighbors(lidx);
-        busindexes[b->p_globalBusIndex] = lidx;
-        if (b->p_activeBus) active_buses += 1;
-      }
-      
-      // go through the branches and set the local bus indexes and pointers
-      lidx = 0;
-      for (BranchIterator b = p_branches.begin(); b != p_branches.end(); ++b, ++lidx) {
-        int gbus, lbus1, lbus2;
-        BusPtr bus1, bus2;
-
-        // set local indexes
-
-        gbus = b->p_globalBusIndex1;
-        lbus1 = busindexes[gbus];
-        bus1 = p_buses[lbus1].p_bus;
-
-        gbus = b->p_globalBusIndex2;
-        lbus2 = busindexes[gbus];
-        bus2 = p_buses[lbus2].p_bus;
-
-        b->p_localBusIndex1 = lbus1;
-        addBranchNeighbor(lbus1, lidx);
-
-        b->p_localBusIndex2 = lbus2;
-        addBranchNeighbor(lbus2, lidx);
-
-        // set component pointers
-
-        b->p_branch->setBus1(bus1);
-        b->p_branch->setBus2(bus2);
-
-        bus1->addBranch(b->p_branch);
-        bus1->addBus(bus2);
-        bus2->addBranch(b->p_branch);
-        bus2->addBus(bus1);
-
-        if (b->p_activeBranch) active_branches += 1;
-      }
-    }
-
-    std::cout << me << ": "
-              << "I have " 
-              << p_buses.size() << " buses and "
-              << p_branches.size() << " branches"
-              << std::endl;
-
-    if (timer != NULL) timer->stop(t_total);
   }
 
-  
+  // Branches can only be ghosted on one other process, so they're
+  // easy.
+
+  partitioner.edge_destinations(dest);
+  partitioner.ghost_edge_destinations(gdest);
+
+  BranchDataVector ghostbranches;
+  BranchIterator branch(p_branches.begin());
+  GraphPartitioner::IndexVector ghostbranchdest;
+
+  for (size_t i = 0; i < dest.size(); ++i, ++branch) {
+    if (dest[i] != gdest[i]) {
+      ghostbranches.push_back(*branch);
+      ghostbranches.back().p_activeBranch = false;
+      ghostbranchdest.push_back(gdest[i]);
+    }
+  }
+
+
+  // distribute active nodes
+
+  // std::cout << me << ": distributing " << p_buses.size() << " active buses" << std::endl;
+
+  if (timer != NULL) timer->start(t_bus_dist);
+  partitioner.node_destinations(dest);
+  bus_shuffler(p_buses, dest);
+  if (timer != NULL) timer->stop(t_bus_dist);
+
+  // distribute active edges
+
+  if (timer != NULL) timer->start(t_branch_dist);
+  partitioner.edge_destinations(dest);
+  branch_shuffler(p_branches, dest);
+  if (timer != NULL) timer->stop(t_branch_dist);
+
+  // At this point, active buses and branches are on the proper
+  // process.  Now, we need to distribute and nodes and edges that
+  // are ghosted.  
+
+  // std::cout << me << ": distributing " << ghostbuses.size() << " ghost buses" << std::endl;
+
+  if (timer != NULL) timer->start(t_bus_dist);
+  bus_shuffler(ghostbuses, ghostbusdest);
+  for (bus = ghostbuses.begin(); bus != ghostbuses.end(); ++bus) {
+    bus->p_activeBus = false;
+    p_buses.push_back(*bus);
+  }
+  ghostbuses.clear();
+  if (timer != NULL) timer->stop(t_bus_dist);
+
+  if (timer != NULL) timer->start(t_branch_dist);
+  branch_shuffler(ghostbranches, ghostbranchdest);
+  std::copy(ghostbranches.begin(), ghostbranches.end(),
+      std::back_inserter(p_branches));
+  ghostbranches.clear();
+  if (timer != NULL) timer->stop(t_branch_dist);
+
+  // At this point, each process should have a self-contained
+  // network, update local and global indexes, etc.
+
+  // make an index of global bus index to local index and update
+  // the branch local bus indexes
+  int active_buses(0), active_branches(0);
+  {
+    std::map<int, int> busindexes;
+    int lidx(0);
+    for (BusIterator b = p_buses.begin(); b != p_buses.end(); ++b, ++lidx) {
+      clearBranchNeighbors(lidx);
+      busindexes[b->p_globalBusIndex] = lidx;
+      if (b->p_activeBus) active_buses += 1;
+    }
+
+    // go through the branches and set the local bus indexes and pointers
+    lidx = 0;
+    for (BranchIterator b = p_branches.begin(); b != p_branches.end(); ++b, ++lidx) {
+      int gbus, lbus1, lbus2;
+      BusPtr bus1, bus2;
+
+      // set local indexes
+
+      gbus = b->p_globalBusIndex1;
+      lbus1 = busindexes[gbus];
+      bus1 = p_buses[lbus1].p_bus;
+
+      gbus = b->p_globalBusIndex2;
+      lbus2 = busindexes[gbus];
+      bus2 = p_buses[lbus2].p_bus;
+
+      b->p_localBusIndex1 = lbus1;
+      addBranchNeighbor(lbus1, lidx);
+
+      b->p_localBusIndex2 = lbus2;
+      addBranchNeighbor(lbus2, lidx);
+
+      // set component pointers
+
+      b->p_branch->setBus1(bus1);
+      b->p_branch->setBus2(bus2);
+
+      bus1->addBranch(b->p_branch);
+      bus1->addBus(bus2);
+      bus2->addBranch(b->p_branch);
+      bus2->addBus(bus1);
+
+      if (b->p_activeBranch) active_branches += 1;
+    }
+  }
+
+  std::cout << me << ": "
+    << "I have " 
+    << p_buses.size() << " buses and "
+    << p_branches.size() << " branches"
+    << std::endl;
+
+  if (timer != NULL) timer->stop(t_total);
+}
+
+
 
 /**
  * Clean all ghost buses and branches from the system. This can be used
@@ -1231,7 +1238,7 @@ void clean(void)
 }
 
 /**
- * Allocate buffers for exchanging data for ghost buses
+ * Allocate array of pointers to buffers for exchanging data for ghost buses
  * @param size size (in bytes) of buffer
  */
 void allocXCBus(int size)
@@ -1240,19 +1247,29 @@ void allocXCBus(int size)
     // TODO: some kind of error
   }
   // Clean out existing buffers if they are allocated
-  if (p_busXCBufSize != 0) {
-    if (p_busXCBuffers) {
-      delete [] ((char*)p_busXCBuffers);
-    } else {
-      // TODO: some kind of error
+  int nsize = p_buses.size();
+  int i;
+  if (p_busXCBufSize != 0 && p_busXCBuffers != NULL) {
+    if (p_allocatedBus) {
+      if (!p_external_bus) {
+        for(i=0; i<nsize; i++) {
+          delete static_cast<char*>(p_busXCBuffers[i]);
+        }
+      }
+      p_allocatedBus = false;
     }
+    delete [] p_busXCBuffers;
     p_busXCBufSize = 0;
   }
   // Allocate new buffers if size is greater than zero
-  int nsize = p_buses.size();
   if (size > 0 && nsize > 0) {
+    p_busXCBuffers = new void*[nsize];
+    for (i=0; i<nsize; i++) {
+      p_busXCBuffers[i] = static_cast<void*>(new char[size]);
+    }
     p_busXCBufSize = size;
-    p_busXCBuffers = (void*)(new char[size*nsize]);
+    p_allocatedBus = true;
+    p_external_bus = false;
   }
 }
 
@@ -1262,13 +1279,63 @@ void allocXCBus(int size)
 void freeXCBus(void)
 {
   // Clean out existing buffers if they are allocated
-  if (p_busXCBufSize != 0) {
-    if (p_busXCBuffers) {
-      delete [] ((char*)p_busXCBuffers);
-    } else {
-      // TODO: some kind of error
+  if (p_busXCBufSize != 0 && p_busXCBuffers != NULL) {
+    int i;
+    int nsize = p_buses.size();
+    if (p_allocatedBus) {
+      if (!p_external_bus) {
+        for(i=0; i<nsize; i++) {
+          delete static_cast<char*>(p_busXCBuffers[i]);
+        }
+      }
+      p_allocatedBus = false;
     }
+    delete [] p_busXCBuffers;
+    p_external_bus = false;
     p_busXCBufSize = 0;
+  }
+}
+
+/**
+ * Allocate buffers for exchanging data for ghost buses
+ * @param size size of buffers that will be assigned to pointers
+ */
+void allocXCBusPointers(int size)
+{
+  // Clean out existing buffers if they are allocated
+  int nsize = p_buses.size();
+  int i;
+  if (p_busXCBufSize != 0 && p_busXCBuffers != NULL) {
+    if (p_allocatedBus) {
+      if (!p_external_bus) {
+        for(i=0; i<nsize; i++) {
+          delete static_cast<char*>(p_busXCBuffers[i]);
+        }
+      }
+      p_allocatedBus = false;
+    }
+    delete [] p_busXCBuffers;
+    p_busXCBufSize = 0;
+  }
+  // Allocate array of pointers
+  if (size > 0) {
+    p_busXCBuffers = new void*[nsize];
+    p_busXCBufSize = size;
+  }
+  p_external_bus = true;
+}
+
+/**
+ * Store location of externally allocated buffer within a network
+ * @param idx local index of bus associated with buffer
+ * @param ptr location of buffer
+ */
+void setXCBusBuffer(int idx, void* ptr)
+{
+  if (p_busXCBuffers != NULL && idx >= 0 && idx < p_buses.size()) {
+    p_busXCBuffers[idx] = static_cast<char*>(ptr);
+  } else {
+    // TODO: Some kind of error
   }
 }
 
@@ -1283,7 +1350,7 @@ void* getXCBusBuffer(int idx)
     // TODO: some kind of error
     return NULL;
   } else {
-    return (void*)(((char*)p_busXCBuffers)+idx*p_busXCBufSize);
+    return static_cast<void*>(p_busXCBuffers[idx]);
   }
 }
 
@@ -1297,19 +1364,29 @@ void allocXCBranch(int size)
     // TODO: some kind of error
   }
   // Clean out existing buffers if they are allocated
-  if (p_branchXCBufSize != 0) {
-    if (p_branchXCBuffers) {
-      delete [] ((char*)p_branchXCBuffers);
-    } else {
-      // TODO: some kind of error
+  int nsize = p_branches.size();
+  int i;
+  if (p_branchXCBufSize != 0 && p_branchXCBuffers != NULL) {
+    if (p_allocatedBranch) {
+      if (!p_external_branch) {
+        for(i=0; i<nsize; i++) {
+          delete static_cast<char*>(p_branchXCBuffers[i]);
+        }
+      }
+      p_allocatedBranch = false;
     }
+    delete [] p_branchXCBuffers;
     p_branchXCBufSize = 0;
+    p_external_branch = true;
   }
   // Allocate new buffers if size is greater than zero
-  int nsize = p_branches.size();
   if (size > 0 && nsize > 0) {
+    p_branchXCBuffers = new void*[nsize];
+    for (i=0; i<nsize; i++) {
+      p_branchXCBuffers[i] = static_cast<void*>(new char[size]);
+    }
+    p_allocatedBranch = true;
     p_branchXCBufSize = size;
-    p_branchXCBuffers = (void*)(new char[size*nsize]);
   }
 }
 
@@ -1319,13 +1396,20 @@ void allocXCBranch(int size)
 void freeXCBranch(void)
 {
   // Clean out existing buffers if they are allocated
-  if (p_branchXCBufSize != 0) {
-    if (p_branchXCBuffers) {
-      delete [] ((char*)p_branchXCBuffers);
-    } else {
-      // TODO: some kind of error
+  if (p_branchXCBufSize != 0 && p_branchXCBuffers != NULL) {
+    int size = p_branches.size();
+    int i;
+    if (p_allocatedBranch) {
+      if (!p_external_branch) {
+        for(i=0; i<size; i++) {
+          delete static_cast<char*>(p_branchXCBuffers[i]);
+        }
+      }
+      p_allocatedBranch = false;
     }
+    delete [] p_branchXCBuffers;
     p_branchXCBufSize = 0;
+    p_external_branch = false;
   }
 }
 
@@ -1340,7 +1424,50 @@ void* getXCBranchBuffer(int idx)
     // TODO: some kind of error
     return NULL;
   } else {
-    return (void*)(((char*)p_branchXCBuffers)+idx*p_branchXCBufSize);
+    return static_cast<void*>(p_branchXCBuffers[idx]);
+  }
+}
+
+/**
+ * Allocate array of pointers to buffers for exchanging data for ghost branchs
+ * @param size size of buffers that will be assigned to pointers
+ */
+void allocXCBranchPointers(int size)
+{
+  // Clean out existing buffers if they are allocated
+  int nsize = p_branches.size();
+  int i;
+  if (p_branchXCBufSize != 0 && p_branchXCBuffers != NULL) {
+    if (p_allocatedBranch) {
+      if (!p_external_branch) {
+        for(i=0; i<nsize; i++) {
+          delete static_cast<char*>(p_branchXCBuffers[i]);
+        }
+      }
+      p_allocatedBranch = false;
+    }
+    delete [] p_branchXCBuffers;
+    p_branchXCBufSize = 0;
+  }
+  // Allocate array of pointers and set size
+  if (size > 0) {
+    p_branchXCBuffers = new void*[nsize];
+    p_branchXCBufSize = size;
+  }
+  p_external_branch = true;
+}
+
+/**
+ * Store location of externally allocated buffer within a network
+ * @param idx local index of branch associated with buffer
+ * @param ptr location of buffer
+ */
+void setXCBranchBuffer(int idx, void* ptr)
+{
+  if (p_branchXCBuffers != NULL && idx >= 0 && idx < p_branches.size()) {
+    p_branchXCBuffers[idx] = static_cast<char*>(ptr);
+  } else {
+    // TODO: Some kind of error
   }
 }
 
@@ -1485,7 +1612,7 @@ void updateBuses(void)
     if (getActiveBus(i)) {
       xc_off = i*p_busXCBufSize;
       rs_off = icnt*p_busXCBufSize;
-      xc_ptr = ((char*)p_busXCBuffers)+xc_off;
+      xc_ptr = static_cast<char*>(p_busXCBuffers[i]);
       rs_ptr = ((char*)p_busSndBuf)+rs_off;
       memcpy(rs_ptr, xc_ptr, p_busXCBufSize);
       //    for (j=0; j<p_busXCBufSize; j++) {
@@ -1511,7 +1638,7 @@ void updateBuses(void)
     if (!getActiveBus(i)) {
       xc_off = i*p_busXCBufSize;
       rs_off = icnt*p_busXCBufSize;
-      xc_ptr = ((char*)p_busXCBuffers)+xc_off;
+      xc_ptr = static_cast<char*>(p_busXCBuffers[i]);
       rs_ptr = ((char*)p_busRcvBuf)+rs_off;
       memcpy(xc_ptr, rs_ptr, p_busXCBufSize);
       //    for (j=0; j<p_busXCBufSize; j++) {
@@ -1596,7 +1723,6 @@ void initBranchUpdate(void)
     GA_Set_pgroup(p_branchGA, grp);
     GA_Allocate(p_branchGA);
     p_branchGASet = true;
-
     // Sort buses into local and ghost lists
     int idx, icnt = 0, lcnt=0;
     for (i=0; i<size; i++) {
@@ -1654,7 +1780,7 @@ void updateBranches(void)
     if (getActiveBranch(i)) {
       xc_off = i*p_branchXCBufSize;
       rs_off = icnt*p_branchXCBufSize;
-      xc_ptr = ((char*)p_branchXCBuffers)+xc_off;
+      xc_ptr = static_cast<char*>(p_branchXCBuffers[i]);
       rs_ptr = ((char*)p_branchSndBuf)+rs_off;
       memcpy(rs_ptr, xc_ptr, p_branchXCBufSize);
       //    for (j=0; j<p_branchXCBufSize; j++) {
@@ -1680,7 +1806,7 @@ void updateBranches(void)
     if (!getActiveBranch(i)) {
       xc_off = i*p_branchXCBufSize;
       rs_off = icnt*p_branchXCBufSize;
-      xc_ptr = ((char*)p_branchXCBuffers)+xc_off;
+      xc_ptr = static_cast<char*>(p_branchXCBuffers[i]);
       rs_ptr = ((char*)p_branchRcvBuf)+rs_off;
       memcpy(xc_ptr, rs_ptr, p_branchXCBufSize);
       //    for (j=0; j<p_branchXCBufSize; j++) {
@@ -1692,110 +1818,113 @@ void updateBranches(void)
   GA_Pgroup_sync(grp);
 }
 
-void
-writeGraph(const std::string& outname) 
-  {
-    static const bool internal_indexes(false);
-    std::ofstream out;
-    if (this->processor_rank() == 0) {
-      out.open(outname.c_str(), std::ofstream::out | std::ofstream::trunc);
-      out << "digraph {" << std::endl;
-      out.close();
-    }
+/**
+ * Print out network topology to a file using Matlab format
+ * @param outname name of file containing network topology
+ */
+void writeGraph(const std::string& outname) 
+{
+  static const bool internal_indexes(false);
+  std::ofstream out;
+  if (this->processor_rank() == 0) {
+    out.open(outname.c_str(), std::ofstream::out | std::ofstream::trunc);
+    out << "digraph {" << std::endl;
+    out.close();
+  }
 
-    // write out the (active) buses as nodes, one cluster per processor
-    for (int p = 0; p < this->processor_size(); ++p) {
-      if (p == this->processor_rank()) {
-        out.open(outname.c_str(), std::ofstream::out | std::ofstream::app);
-        out << "subgraph cluster_" << p << " {" << std::endl;
-        out << "color=red" << std::endl;
-        out << "label=" << p << ";" << std::endl;
-        BusIterator bus;
-        for (bus = p_buses.begin(); bus != p_buses.end(); ++bus) {
-          if (bus->p_activeBus) {
-            int bidx(internal_indexes ? bus->p_globalBusIndex : bus->p_originalBusIndex);
-            out << " n" << bidx << "[label=" << bidx << "];" << std::endl;
-          }
-        }
-        out << "}" << std::endl;
-        out.close();
-      }
-      this->communicator().barrier();
-    }
-
-    // write out the (both active and inactive) branches as edges
-    for (int p = 0; p < this->processor_size(); ++p) {
-      if (p == this->processor_rank()) {
-        out.open(outname.c_str(), std::ofstream::out | std::ofstream::app);
-        BranchIterator branch;
-        for (branch = p_branches.begin(); branch != p_branches.end(); ++branch) {
-          if (branch->p_activeBranch) {
-            int bidx1(internal_indexes ? branch->p_globalBusIndex1 : branch->p_originalBusIndex1);
-            int bidx2(internal_indexes ? branch->p_globalBusIndex2 : branch->p_originalBusIndex2);
-            out << "n" << bidx1 << " -> " 
-                << "n" << bidx2 << ";" 
-                << std::endl;
-          }
-        }
-        out.close();
-      }
-      this->communicator().barrier();
-    }
-
-    this->communicator().barrier();
-    if (this->processor_rank() == 0) {
+  // write out the (active) buses as nodes, one cluster per processor
+  for (int p = 0; p < this->processor_size(); ++p) {
+    if (p == this->processor_rank()) {
       out.open(outname.c_str(), std::ofstream::out | std::ofstream::app);
-      out << "   } /* end */" << std::endl;
+      out << "subgraph cluster_" << p << " {" << std::endl;
+      out << "color=red" << std::endl;
+      out << "label=" << p << ";" << std::endl;
+      BusIterator bus;
+      for (bus = p_buses.begin(); bus != p_buses.end(); ++bus) {
+        if (bus->p_activeBus) {
+          int bidx(internal_indexes ? bus->p_globalBusIndex : bus->p_originalBusIndex);
+          out << " n" << bidx << "[label=" << bidx << "];" << std::endl;
+        }
+      }
+      out << "}" << std::endl;
       out.close();
     }
+    this->communicator().barrier();
+  }
 
-    // write a graph of each processors local network
-    for (int p = 0; p < this->processor_size(); ++p) {
-      if (p == this->processor_rank()) {
-        out.open(outname.c_str(), std::ofstream::out | std::ofstream::app);
-        out << "digraph \"" << p << "\" {" << std::endl;
-        out << "label=\"Process " << p << "\";" << std::endl;
-        out << "node [color=lightgrey];" << std::endl;
-        BusIterator bus;
-        for (bus = p_buses.begin(); bus != p_buses.end(); ++bus) {
-          std::string color("black");
-          std::string style("\"\"");
-          if (!bus->p_activeBus) {
-            color = "red";
-            style = "dotted";
-          }
-          int bidx(internal_indexes ? bus->p_globalBusIndex : bus->p_originalBusIndex);
-          out << " n" << bidx
-              << " ["
-              << "label=" << bidx << ", "
-              << "color=" << color << ", "
-              << "style=" << style 
-              << "];" << std::endl;
-        }
-        BranchIterator branch;
-        for (branch = p_branches.begin(); branch != p_branches.end(); ++branch) {
-          std::string color("black");
-          std::string style("solid");
-          if (!branch->p_activeBranch) {
-            color = "red";
-            style = "dotted";
-          }
+  // write out the (both active and inactive) branches as edges
+  for (int p = 0; p < this->processor_size(); ++p) {
+    if (p == this->processor_rank()) {
+      out.open(outname.c_str(), std::ofstream::out | std::ofstream::app);
+      BranchIterator branch;
+      for (branch = p_branches.begin(); branch != p_branches.end(); ++branch) {
+        if (branch->p_activeBranch) {
           int bidx1(internal_indexes ? branch->p_globalBusIndex1 : branch->p_originalBusIndex1);
           int bidx2(internal_indexes ? branch->p_globalBusIndex2 : branch->p_originalBusIndex2);
           out << "n" << bidx1 << " -> " 
-              << "n" << bidx2 << " " 
-              << "[" 
-              << "color=" << color << ", "
-              << "style=" << style 
-              << "]" << ";"
-              << std::endl;
+            << "n" << bidx2 << ";" 
+            << std::endl;
         }
-        out << "} /* end process " << p << " */" << std::endl;
-        out.close();
       }
-      this->communicator().barrier();
+      out.close();
     }
+    this->communicator().barrier();
   }
+
+  this->communicator().barrier();
+  if (this->processor_rank() == 0) {
+    out.open(outname.c_str(), std::ofstream::out | std::ofstream::app);
+    out << "   } /* end */" << std::endl;
+    out.close();
+  }
+
+  // write a graph of each processors local network
+  for (int p = 0; p < this->processor_size(); ++p) {
+    if (p == this->processor_rank()) {
+      out.open(outname.c_str(), std::ofstream::out | std::ofstream::app);
+      out << "digraph \"" << p << "\" {" << std::endl;
+      out << "label=\"Process " << p << "\";" << std::endl;
+      out << "node [color=lightgrey];" << std::endl;
+      BusIterator bus;
+      for (bus = p_buses.begin(); bus != p_buses.end(); ++bus) {
+        std::string color("black");
+        std::string style("\"\"");
+        if (!bus->p_activeBus) {
+          color = "red";
+          style = "dotted";
+        }
+        int bidx(internal_indexes ? bus->p_globalBusIndex : bus->p_originalBusIndex);
+        out << " n" << bidx
+          << " ["
+          << "label=" << bidx << ", "
+          << "color=" << color << ", "
+          << "style=" << style 
+          << "];" << std::endl;
+      }
+      BranchIterator branch;
+      for (branch = p_branches.begin(); branch != p_branches.end(); ++branch) {
+        std::string color("black");
+        std::string style("solid");
+        if (!branch->p_activeBranch) {
+          color = "red";
+          style = "dotted";
+        }
+        int bidx1(internal_indexes ? branch->p_globalBusIndex1 : branch->p_originalBusIndex1);
+        int bidx2(internal_indexes ? branch->p_globalBusIndex2 : branch->p_originalBusIndex2);
+        out << "n" << bidx1 << " -> " 
+          << "n" << bidx2 << " " 
+          << "[" 
+          << "color=" << color << ", "
+          << "style=" << style 
+          << "]" << ";"
+          << std::endl;
+      }
+      out << "} /* end process " << p << " */" << std::endl;
+      out.close();
+    }
+    this->communicator().barrier();
+  }
+}
 
 protected:
 
@@ -1837,13 +1966,17 @@ private:
    * Vector of buffers for exchange of bus data to ghost buses
    */
   int p_busXCBufSize;
-  void *p_busXCBuffers;
+  void **p_busXCBuffers;
+  bool p_allocatedBus;
+  bool p_external_bus;
 
   /**
    * Vector of buffers for exchange of branch data to ghost branches
    */
   int p_branchXCBufSize;
-  void *p_branchXCBuffers;
+  void **p_branchXCBuffers;
+  bool p_allocatedBranch;
+  bool p_external_branch;
 
   /**
    * Global array handle and other parameters used for bus exchanges

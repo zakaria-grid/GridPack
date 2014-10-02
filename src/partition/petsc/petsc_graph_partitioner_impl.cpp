@@ -8,7 +8,7 @@
 /**
  * @file   petsc_graph_partitioner_impl.cpp
  * @author William A. Perkins
- * @date   2014-02-14 11:51:41 d3g096
+ * @date   2014-10-02 13:50:13 d3g096
  * 
  * @brief  
  * 
@@ -127,7 +127,7 @@ PETScGraphPartitionerImpl::p_partition(void)
     ierr = MatPartitioningDestroy(&part); CHKERRXX(ierr);
     ierr = MatDestroy(&adjacency); CHKERRXX(ierr);
     
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw math::PETScException(ierr, e);
   }
 }

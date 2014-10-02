@@ -616,8 +616,8 @@ void gridpack::dynamic_simulation::DSBus::load(
       qg /= p_sbase;
 
       lgen = lgen && data->getValue(GENERATOR_MBASE, &mva, i); 
-      lgen = lgen && data->getValue(GENERATOR_RESISTANCE, &r, i); // r
-      lgen = lgen && data->getValue(GENERATOR_SUBTRANSIENT_REACTANCE, &dstr,i); // dstr
+      if (!data->getValue(GENERATOR_RESISTANCE, &r, i)) r=0.0; // r
+      if (!data->getValue(GENERATOR_SUBTRANSIENT_REACTANCE, &dstr,i)) dstr = 0.0; // dstr
       lgen = lgen && data->getValue(GENERATOR_TRANSIENT_REACTANCE, &dtr,i); // dtr
       // SJin: need to be added to parser
       lgen = lgen && data->getValue(GENERATOR_INERTIA_CONSTANT_H, &h, i); // h
@@ -742,24 +742,28 @@ void gridpack::dynamic_simulation::DSBus::clearEvent()
 /**
  * Write output from buses to standard out
  * @param string (output) string with information to be printed out
+ * @param bufsize size of string buffer in bytes
  * @param signal an optional character string to signal to this
  * routine what about kind of information to write
  * @return true if bus is contributing string to output, false otherwise
  */
-bool gridpack::dynamic_simulation::DSBus::serialWrite(char *string, const char *signal)
+bool gridpack::dynamic_simulation::DSBus::serialWrite(char *string,
+    const int bufsize, const char *signal)
 {
   if (p_ngen == 0) return false;
   int i;
   char buf[128];
   char *ptr = string;
   int idx = getOriginalIndex();
+  int len = 0;
   for (i=0; i<p_ngen; i++) {
     sprintf(buf,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f\n",
       idx,p_genid[i].c_str(),real(p_mac_ang_final[i]),real(p_mac_spd_final[i]),
       real(p_mech_final[i]),real(p_elect_final[i]));
-    int len =strlen(buf);
-    sprintf(ptr,"%s",buf);
-    ptr += len;
+    int slen = strlen(buf);
+    len += slen;
+    if (len < bufsize) sprintf(ptr,"%s",buf);
+    ptr += slen;
   }
   return true;
 }

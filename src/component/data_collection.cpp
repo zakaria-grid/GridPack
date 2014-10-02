@@ -42,44 +42,44 @@ gridpack::component::DataCollection & gridpack::component::DataCollection::opera
  *  @param name name given to data element
  *  @param value value of data element
  */
-void gridpack::component::DataCollection::addValue(char *name, int value)
+void gridpack::component::DataCollection::addValue(const char *name, const int value)
 {
   std::string str = name;
   p_ints.insert(std::pair<std::string, int>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, long value)
+void gridpack::component::DataCollection::addValue(const char *name, const long value)
 {
   std::string str = name;
   p_longs.insert(std::pair<std::string, long>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, bool value)
+void gridpack::component::DataCollection::addValue(const char *name, const bool value)
 {
   std::string str = name;
   p_bools.insert(std::pair<std::string, bool>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, char *value)
+void gridpack::component::DataCollection::addValue(const char *name, const char *value)
 {
   std::string str = name;
   std::string val = value;
-  p_strings.insert(std::pair<std::string, std::string>(str,value));
+  p_strings.insert(std::pair<std::string, std::string>(str,val));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, float value)
+void gridpack::component::DataCollection::addValue(const char *name, const float value)
 {
   std::string str = name;
   p_floats.insert(std::pair<std::string, float>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, double value)
+void gridpack::component::DataCollection::addValue(const char *name, const double value)
 {
   std::string str = name;
   p_doubles.insert(std::pair<std::string, double>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, gridpack::ComplexType value)
+void gridpack::component::DataCollection::addValue(const char *name, const gridpack::ComplexType value)
 {
   std::string str = name;
   p_complexType.insert(std::pair<std::string, gridpack::ComplexType>(str,value));
@@ -93,8 +93,8 @@ void gridpack::component::DataCollection::addValue(char *name, gridpack::Complex
  *  @param value value of data element
  *  @param idx index of value
  */
-void gridpack::component::DataCollection::addValue(char *name, int value,
-    int idx)
+void gridpack::component::DataCollection::addValue(const char *name, const int value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -104,8 +104,8 @@ void gridpack::component::DataCollection::addValue(char *name, int value,
   p_ints.insert(std::pair<std::string, int>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, long value,
-    int idx)
+void gridpack::component::DataCollection::addValue(const char *name, const long value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -115,8 +115,8 @@ void gridpack::component::DataCollection::addValue(char *name, long value,
   p_longs.insert(std::pair<std::string, long>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, bool value,
-    int idx)
+void gridpack::component::DataCollection::addValue(const char *name, const bool value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -126,8 +126,8 @@ void gridpack::component::DataCollection::addValue(char *name, bool value,
   p_bools.insert(std::pair<std::string, bool>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, char *value,
-    int idx)
+void gridpack::component::DataCollection::addValue(const char *name, const char *value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -135,11 +135,11 @@ void gridpack::component::DataCollection::addValue(char *name, char *value,
   sprintf(buf,"%d",idx);
   str.append(buf);
   std::string val = value;
-  p_strings.insert(std::pair<std::string, std::string>(str,value));
+  p_strings.insert(std::pair<std::string, std::string>(str,val));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, float value,
-    int idx)
+void gridpack::component::DataCollection::addValue(const char *name, const float value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -149,8 +149,8 @@ void gridpack::component::DataCollection::addValue(char *name, float value,
   p_floats.insert(std::pair<std::string, float>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, double value,
-    int idx)
+void gridpack::component::DataCollection::addValue(const char *name, const double value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -160,8 +160,8 @@ void gridpack::component::DataCollection::addValue(char *name, double value,
   p_doubles.insert(std::pair<std::string, double>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name,
-    gridpack::ComplexType value, int idx)
+void gridpack::component::DataCollection::addValue(const char *name,
+    const gridpack::ComplexType value, const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -179,10 +179,14 @@ void gridpack::component::DataCollection::addValue(char *name,
  *  @return false if no element of the correct name and type exists in
  *  DataCollection object
  */
-bool gridpack::component::DataCollection::setValue(char *name, int value)
+bool gridpack::component::DataCollection::setValue(const char *name, const int value)
 {
   std::string str = name;
+#ifdef OLD_MAP
   std::map<std::string, int>::iterator it;
+#else
+  boost::unordered_map<std::string, int>::iterator it;
+#endif
   it = p_ints.find(str);
   if (it != p_ints.end()) {
     it->second = value;
@@ -192,10 +196,14 @@ bool gridpack::component::DataCollection::setValue(char *name, int value)
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, long value)
+bool gridpack::component::DataCollection::setValue(const char *name, const long value)
 {
   std::string str = name;
+#ifdef OLD_MAP
   std::map<std::string, long>::iterator it;
+#else
+  boost::unordered_map<std::string, long>::iterator it;
+#endif
   it = p_longs.find(str);
   if (it != p_longs.end()) {
     it->second = value;
@@ -205,10 +213,14 @@ bool gridpack::component::DataCollection::setValue(char *name, long value)
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, bool value)
+bool gridpack::component::DataCollection::setValue(const char *name, const bool value)
 {
   std::string str = name;
+#ifdef OLD_MAP
   std::map<std::string, bool>::iterator it;
+#else
+  boost::unordered_map<std::string, bool>::iterator it;
+#endif
   it = p_bools.find(str);
   if (it != p_bools.end()) {
     it->second = value;
@@ -218,11 +230,15 @@ bool gridpack::component::DataCollection::setValue(char *name, bool value)
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, char *value)
+bool gridpack::component::DataCollection::setValue(const char *name, const char *value)
 {
   std::string str = name;
   std::string val = value;
+#ifdef OLD_MAP
   std::map<std::string, std::string>::iterator it;
+#else
+  boost::unordered_map<std::string, std::string>::iterator it;
+#endif
   it = p_strings.find(str);
   if (it != p_strings.end()) {
     it->second = val;
@@ -232,10 +248,14 @@ bool gridpack::component::DataCollection::setValue(char *name, char *value)
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, float value)
+bool gridpack::component::DataCollection::setValue(const char *name, const float value)
 {
   std::string str = name;
+#ifdef OLD_MAP
   std::map<std::string, float>::iterator it;
+#else
+  boost::unordered_map<std::string, float>::iterator it;
+#endif
   it = p_floats.find(str);
   if (it != p_floats.end()) {
     it->second = value;
@@ -245,10 +265,14 @@ bool gridpack::component::DataCollection::setValue(char *name, float value)
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, double value)
+bool gridpack::component::DataCollection::setValue(const char *name, const double value)
 {
   std::string str = name;
+#ifdef OLD_MAP
   std::map<std::string, double>::iterator it;
+#else
+  boost::unordered_map<std::string, double>::iterator it;
+#endif
   it = p_doubles.find(str);
   if (it != p_doubles.end()) {
     it->second = value;
@@ -258,10 +282,14 @@ bool gridpack::component::DataCollection::setValue(char *name, double value)
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, gridpack::ComplexType value)
+bool gridpack::component::DataCollection::setValue(const char *name, const gridpack::ComplexType value)
 {
   std::string str = name;
+#ifdef OLD_MAP
   std::map<std::string, gridpack::ComplexType>::iterator it;
+#else
+  boost::unordered_map<std::string, gridpack::ComplexType>::iterator it;
+#endif
   it = p_complexType.find(str);
   if (it != p_complexType.end()) {
     it->second = value;
@@ -281,15 +309,19 @@ bool gridpack::component::DataCollection::setValue(char *name, gridpack::Complex
  *  @return false if no element of the correct name and type exists in
  *  DataCollection object
  */
-bool gridpack::component::DataCollection::setValue(char *name, int value,
-    int idx)
+bool gridpack::component::DataCollection::setValue(const char *name, const int value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
   char buf[8];
   sprintf(buf,"%d",idx);
   str.append(buf);
+#ifdef OLD_MAP
   std::map<std::string, int>::iterator it;
+#else
+  boost::unordered_map<std::string, int>::iterator it;
+#endif
   it = p_ints.find(str);
   if (it != p_ints.end()) {
     it->second = value;
@@ -299,15 +331,19 @@ bool gridpack::component::DataCollection::setValue(char *name, int value,
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, long value,
-    int idx)
+bool gridpack::component::DataCollection::setValue(const char *name, const long value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
   char buf[8];
   sprintf(buf,"%d",idx);
   str.append(buf);
+#ifdef OLD_MAP
   std::map<std::string, long>::iterator it;
+#else
+  boost::unordered_map<std::string, long>::iterator it;
+#endif
   it = p_longs.find(str);
   if (it != p_longs.end()) {
     it->second = value;
@@ -317,15 +353,19 @@ bool gridpack::component::DataCollection::setValue(char *name, long value,
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, bool value,
-    int idx)
+bool gridpack::component::DataCollection::setValue(const char *name, const bool value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
   char buf[8];
   sprintf(buf,"%d",idx);
   str.append(buf);
+#ifdef OLD_MAP
   std::map<std::string, bool>::iterator it;
+#else
+  boost::unordered_map<std::string, bool>::iterator it;
+#endif
   it = p_bools.find(str);
   if (it != p_bools.end()) {
     it->second = value;
@@ -335,8 +375,8 @@ bool gridpack::component::DataCollection::setValue(char *name, bool value,
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, char *value,
-    int idx)
+bool gridpack::component::DataCollection::setValue(const char *name, const char *value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -344,7 +384,11 @@ bool gridpack::component::DataCollection::setValue(char *name, char *value,
   sprintf(buf,"%d",idx);
   str.append(buf);
   std::string val = value;
+#ifdef OLD_MAP
   std::map<std::string, std::string>::iterator it;
+#else
+  boost::unordered_map<std::string, std::string>::iterator it;
+#endif
   it = p_strings.find(str);
   if (it != p_strings.end()) {
     it->second = val;
@@ -354,15 +398,19 @@ bool gridpack::component::DataCollection::setValue(char *name, char *value,
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, float value,
-    int idx)
+bool gridpack::component::DataCollection::setValue(const char *name, const float value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
   char buf[8];
   sprintf(buf,"%d",idx);
   str.append(buf);
+#ifdef OLD_MAP
   std::map<std::string, float>::iterator it;
+#else
+  boost::unordered_map<std::string, float>::iterator it;
+#endif
   it = p_floats.find(str);
   if (it != p_floats.end()) {
     it->second = value;
@@ -372,15 +420,19 @@ bool gridpack::component::DataCollection::setValue(char *name, float value,
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, double value,
-    int idx)
+bool gridpack::component::DataCollection::setValue(const char *name, const double value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
   char buf[8];
   sprintf(buf,"%d",idx);
   str.append(buf);
+#ifdef OLD_MAP
   std::map<std::string, double>::iterator it;
+#else
+  boost::unordered_map<std::string, double>::iterator it;
+#endif
   it = p_doubles.find(str);
   if (it != p_doubles.end()) {
     it->second = value;
@@ -390,15 +442,19 @@ bool gridpack::component::DataCollection::setValue(char *name, double value,
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name,
-    gridpack::ComplexType value, int idx)
+bool gridpack::component::DataCollection::setValue(const char *name,
+    const gridpack::ComplexType value, const int idx)
 {
   std::string str = name;
   str.append(":");
   char buf[8];
   sprintf(buf,"%d",idx);
   str.append(buf);
+#ifdef OLD_MAP
   std::map<std::string, gridpack::ComplexType>::iterator it;
+#else
+  boost::unordered_map<std::string, gridpack::ComplexType>::iterator it;
+#endif
   it = p_complexType.find(str);
   if (it != p_complexType.end()) {
     it->second = value;
@@ -416,10 +472,14 @@ bool gridpack::component::DataCollection::setValue(char *name,
  *  @return false if no element of the correct name and type exists in
  *  DataCollection object
  */
-bool gridpack::component::DataCollection::getValue(char *name, int *value)
+bool gridpack::component::DataCollection::getValue(const char *name, int *value)
 {
   std::string str = name;
+#ifdef OLD_MAP
   std::map<std::string, int>::iterator it;
+#else
+  boost::unordered_map<std::string, int>::iterator it;
+#endif
   it = p_ints.find(str);
   if (it != p_ints.end()) {
     *value = it->second;
@@ -429,10 +489,14 @@ bool gridpack::component::DataCollection::getValue(char *name, int *value)
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, long *value)
+bool gridpack::component::DataCollection::getValue(const char *name, long *value)
 {
   std::string str = name;
+#ifdef OLD_MAP
   std::map<std::string, long>::iterator it;
+#else
+  boost::unordered_map<std::string, long>::iterator it;
+#endif
   it = p_longs.find(str);
   if (it != p_longs.end()) {
     *value = it->second;
@@ -442,10 +506,14 @@ bool gridpack::component::DataCollection::getValue(char *name, long *value)
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, bool *value)
+bool gridpack::component::DataCollection::getValue(const char *name, bool *value)
 {
   std::string str = name;
+#ifdef OLD_MAP
   std::map<std::string, bool>::iterator it;
+#else
+  boost::unordered_map<std::string, bool>::iterator it;
+#endif
   it = p_bools.find(str);
   if (it != p_bools.end()) {
     *value = it->second;
@@ -455,10 +523,14 @@ bool gridpack::component::DataCollection::getValue(char *name, bool *value)
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, std::string *value)
+bool gridpack::component::DataCollection::getValue(const char *name, std::string *value)
 {
   std::string str = name;
+#ifdef OLD_MAP
   std::map<std::string, std::string>::iterator it;
+#else
+  boost::unordered_map<std::string, std::string>::iterator it;
+#endif
   it = p_strings.find(str);
   if (it != p_strings.end()) {
     *value = it->second;
@@ -468,10 +540,14 @@ bool gridpack::component::DataCollection::getValue(char *name, std::string *valu
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, float *value)
+bool gridpack::component::DataCollection::getValue(const char *name, float *value)
 {
   std::string str = name;
+#ifdef OLD_MAP
   std::map<std::string, float>::iterator it;
+#else
+  boost::unordered_map<std::string, float>::iterator it;
+#endif
   it = p_floats.find(str);
   if (it != p_floats.end()) {
     *value = it->second;
@@ -481,10 +557,14 @@ bool gridpack::component::DataCollection::getValue(char *name, float *value)
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, double *value)
+bool gridpack::component::DataCollection::getValue(const char *name, double *value)
 {
   std::string str = name;
+#ifdef OLD_MAP
   std::map<std::string, double>::iterator it;
+#else
+  boost::unordered_map<std::string, double>::iterator it;
+#endif
   it = p_doubles.find(str);
   if (it != p_doubles.end()) {
     *value = it->second;
@@ -494,10 +574,14 @@ bool gridpack::component::DataCollection::getValue(char *name, double *value)
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, gridpack::ComplexType *value)
+bool gridpack::component::DataCollection::getValue(const char *name, gridpack::ComplexType *value)
 {
   std::string str = name;
+#ifdef OLD_MAP
   std::map<std::string, gridpack::ComplexType>::iterator it;
+#else
+  boost::unordered_map<std::string, gridpack::ComplexType>::iterator it;
+#endif
   it = p_complexType.find(str);
   if (it != p_complexType.end()) {
     *value = it->second;
@@ -517,15 +601,19 @@ bool gridpack::component::DataCollection::getValue(char *name, gridpack::Complex
  *  @return false if no element of the correct name and type exists in
  *  DataCollection object
  */
-bool gridpack::component::DataCollection::getValue(char *name, int *value,
-    int idx)
+bool gridpack::component::DataCollection::getValue(const char *name, int *value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
   char buf[8];
   sprintf(buf,"%d",idx);
   str.append(buf);
+#ifdef OLD_MAP
   std::map<std::string, int>::iterator it;
+#else
+  boost::unordered_map<std::string, int>::iterator it;
+#endif
   it = p_ints.find(str);
   if (it != p_ints.end()) {
     *value = it->second;
@@ -535,15 +623,19 @@ bool gridpack::component::DataCollection::getValue(char *name, int *value,
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, long *value,
-    int idx)
+bool gridpack::component::DataCollection::getValue(const char *name, long *value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
   char buf[8];
   sprintf(buf,"%d",idx);
   str.append(buf);
+#ifdef OLD_MAP
   std::map<std::string, long>::iterator it;
+#else
+  boost::unordered_map<std::string, long>::iterator it;
+#endif
   it = p_longs.find(str);
   if (it != p_longs.end()) {
     *value = it->second;
@@ -553,16 +645,20 @@ bool gridpack::component::DataCollection::getValue(char *name, long *value,
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, bool *value,
-    int idx)
+bool gridpack::component::DataCollection::getValue(const char *name, bool *value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
   char buf[8];
   sprintf(buf,"%d",idx);
   str.append(buf);
+#ifdef OLD_MAP
   std::map<std::string, bool>::iterator it;
   it = p_bools.find(str);
+#else
+  boost::unordered_map<std::string, bool>::iterator it;
+#endif
   if (it != p_bools.end()) {
     *value = it->second;
     return true;
@@ -571,15 +667,19 @@ bool gridpack::component::DataCollection::getValue(char *name, bool *value,
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, std::string *value,
-    int idx)
+bool gridpack::component::DataCollection::getValue(const char *name, std::string *value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
   char buf[8];
   sprintf(buf,"%d",idx);
   str.append(buf);
+#ifdef OLD_MAP
   std::map<std::string, std::string>::iterator it;
+#else
+  boost::unordered_map<std::string, std::string>::iterator it;
+#endif
   it = p_strings.find(str);
   if (it != p_strings.end()) {
     *value = it->second;
@@ -589,15 +689,19 @@ bool gridpack::component::DataCollection::getValue(char *name, std::string *valu
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, float *value,
-    int idx)
+bool gridpack::component::DataCollection::getValue(const char *name, float *value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
   char buf[8];
   sprintf(buf,"%d",idx);
   str.append(buf);
+#ifdef OLD_MAP
   std::map<std::string, float>::iterator it;
+#else
+  boost::unordered_map<std::string, float>::iterator it;
+#endif
   it = p_floats.find(str);
   if (it != p_floats.end()) {
     *value = it->second;
@@ -607,15 +711,19 @@ bool gridpack::component::DataCollection::getValue(char *name, float *value,
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, double *value,
-    int idx)
+bool gridpack::component::DataCollection::getValue(const char *name, double *value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
   char buf[8];
   sprintf(buf,"%d",idx);
   str.append(buf);
+#ifdef OLD_MAP
   std::map<std::string, double>::iterator it;
+#else
+  boost::unordered_map<std::string, double>::iterator it;
+#endif
   it = p_doubles.find(str);
   if (it != p_doubles.end()) {
     *value = it->second;
@@ -625,15 +733,19 @@ bool gridpack::component::DataCollection::getValue(char *name, double *value,
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name,
-    gridpack::ComplexType *value, int idx)
+bool gridpack::component::DataCollection::getValue(const char *name,
+    gridpack::ComplexType *value, const int idx)
 {
   std::string str = name;
   str.append(":");
   char buf[8];
   sprintf(buf,"%d",idx);
   str.append(buf);
+#ifdef OLD_MAP
   std::map<std::string, gridpack::ComplexType>::iterator it;
+#else
+  boost::unordered_map<std::string, gridpack::ComplexType>::iterator it;
+#endif
   it = p_complexType.find(str);
   if (it != p_complexType.end()) {
     *value = it->second;
@@ -649,7 +761,11 @@ bool gridpack::component::DataCollection::getValue(char *name,
 void gridpack::component::DataCollection::dump(void)
 {
   // print out integers
+#ifdef OLD_MAP
   std::map<std::string, int>::iterator int_it;
+#else
+  boost::unordered_map<std::string, int>::iterator it;
+#endif
   int_it = p_ints.begin();
   int i = 0;
   while (int_it != p_ints.end()) {
@@ -659,7 +775,11 @@ void gridpack::component::DataCollection::dump(void)
     int_it++;
   }
   // print out longs
+#ifdef OLD_MAP
   std::map<std::string, long>::iterator long_it;
+#else
+  boost::unordered_map<std::string, long>::iterator it;
+#endif
   long_it = p_longs.begin();
   while (long_it != p_longs.end()) {
     std::string key = long_it->first;
@@ -668,7 +788,11 @@ void gridpack::component::DataCollection::dump(void)
     long_it++;
   }
   // print out bools
+#ifdef OLD_MAP
   std::map<std::string, bool>::iterator bool_it;
+#else
+  boost::unordered_map<std::string, bool>::iterator it;
+#endif
   bool_it = p_bools.begin();
   while (bool_it != p_bools.end()) {
     std::string key = bool_it->first;
@@ -677,7 +801,11 @@ void gridpack::component::DataCollection::dump(void)
     bool_it++;
   }
   // print out strings
+#ifdef OLD_MAP
   std::map<std::string, std::string>::iterator str_it;
+#else
+  boost::unordered_map<std::string, std::string>::iterator it;
+#endif
   str_it = p_strings.begin();
   while (str_it != p_strings.end()) {
     std::string key = str_it->first;
@@ -686,7 +814,11 @@ void gridpack::component::DataCollection::dump(void)
     str_it++;
   }
   // print out floats
+#ifdef OLD_MAP
   std::map<std::string, float>::iterator flt_it;
+#else
+  boost::unordered_map<std::string, float>::iterator it;
+#endif
   flt_it = p_floats.begin();
   while (flt_it != p_floats.end()) {
     std::string key = flt_it->first;
@@ -695,7 +827,11 @@ void gridpack::component::DataCollection::dump(void)
     flt_it++;
   }
   // print out doubles
+#ifdef OLD_MAP
   std::map<std::string, double>::iterator dbl_it;
+#else
+  boost::unordered_map<std::string, double>::iterator it;
+#endif
   dbl_it = p_doubles.begin();
   while (dbl_it != p_doubles.end()) {
     std::string key = dbl_it->first;
@@ -704,7 +840,11 @@ void gridpack::component::DataCollection::dump(void)
     dbl_it++;
   }
   // print out complex
-  std::map<std::string, ComplexType>::iterator cmplx_it;
+#ifdef OLD_MAP
+  std::map<std::string, gridpack::ComplexType>::iterator cmplx_it;
+#else
+  boost::unordered_map<std::string, gridpack::ComplexType>::iterator it;
+#endif
   cmplx_it = p_complexType.begin();
   while (cmplx_it != p_complexType.end()) {
     std::string key = cmplx_it->first;

@@ -20,7 +20,7 @@
 
 #include "boost/smart_ptr/scoped_ptr.hpp"
 #include "pf_factory.hpp"
-#include "gridpack/timer/coarse_timer.hpp"
+#include "gridpack/include/gridpack.hpp"
 
 namespace gridpack {
 namespace powerflow {
@@ -43,7 +43,7 @@ public:
   /**
    * Execute application
    */
-  void execute(void);
+  void execute(int argc, char** argv);
   
 private:
 };

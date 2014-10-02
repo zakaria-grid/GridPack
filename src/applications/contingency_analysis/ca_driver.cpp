@@ -218,7 +218,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         int nlines = events[idx].p_from.size();
         int j;
         for (j=0; j<nlines; j++) {
-          printf(" Line: (to) %d (from) %d (line) \'%s\'\n",
+          printf(" Line: (from) %d (to) %d (line) \'%s\'\n",
               events[idx].p_from[j],events[idx].p_to[j],
               events[idx].p_ckt[j].c_str());
         }
@@ -239,13 +239,13 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
 
   // set up task manager
   gridpack::parallel::TaskManager taskmgr(world);
-  int ntasks = contingencies.size();
+  int ntasks = events.size();
   taskmgr.set(ntasks);
 
   // evaluate contingencies
   int task_id;
   while (taskmgr.nextTask(task_comm, &task_id)) {
-    printf("Executing task %d\n",task_id);
+    printf("Executing task %d on process %d\n",task_id,world.rank());
     ca_app.execute(events[task_id]);
   }
   taskmgr.printStats();
