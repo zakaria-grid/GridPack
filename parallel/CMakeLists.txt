@@ -10,13 +10,14 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-03-24 11:56:43 d3g096
+# Last Change: 2014-10-02 08:18:44 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_parallel OBJECT
   environment.cpp
   communicator.cpp
   distributed.cpp
+  index_hash.cpp
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -36,6 +37,7 @@ install(FILES
   ga_shuffler.hpp
   printit.hpp
   task_manager.hpp
+  index_hash.hpp
   DESTINATION include/gridpack/parallel
 )
 
@@ -100,3 +102,21 @@ target_link_libraries(shuffle_test
 )
 gridpack_add_unit_test(shuffle shuffle_test)
 
+# -------------------------------------------------------------
+# TEST: hash_test
+# A simple program to test the task manager
+# -------------------------------------------------------------
+add_executable(hash_test 
+  test/hash_test.cpp
+  $<TARGET_OBJECTS:gridpack_parallel>
+)
+target_link_libraries(hash_test
+  ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+
+add_test(hash_test_serial hash_test)
+add_test(hash_test_parallel 
+  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} hash_test ${MPIEXEC_POSTFLAGS})
+#set_tests_properties(hash_test_serial hash_test_parallel
+#  PROPERTIES 
+#  PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
+#)

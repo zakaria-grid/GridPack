@@ -176,12 +176,12 @@ class SerialBusIO {
       }
     }
 
-
     // Set up buffers to scatter strings to global buffer
     int **index;
     index = new int*[nwrites];
     int ones[nwrites];
-    char strbuf[nwrites*p_size];
+    char *strbuf;
+    if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
     char *ptr = strbuf;
     nwrites = 0;
     for (i=0; i<nBus; i++) {
@@ -201,6 +201,7 @@ class SerialBusIO {
       NGA_Scatter(p_stringGA,strbuf,index,nwrites);
       NGA_Scatter(p_maskGA,ones,index,nwrites);
     }
+    if (nwrites*p_size > 0) delete [] strbuf;
     GA_Pgroup_sync(p_GAgrp);
     for (i=0; i<nwrites; i++) {
       delete index[i];
@@ -422,7 +423,8 @@ class SerialBranchIO {
     int **index;
     index = new int*[nwrites];
     int ones[nwrites];
-    char strbuf[nwrites*p_size];
+    char *strbuf;
+    if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
     char *ptr = strbuf;
     nwrites = 0;
     for (i=0; i<nBranch; i++) {
@@ -442,6 +444,7 @@ class SerialBranchIO {
       NGA_Scatter(p_stringGA,strbuf,index,nwrites);
       NGA_Scatter(p_maskGA,ones,index,nwrites);
     }
+    if (nwrites*p_size > 0) delete [] strbuf;
     GA_Pgroup_sync(p_GAgrp);
     for (i=0; i<nwrites; i++) {
       delete index[i];

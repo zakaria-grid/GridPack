@@ -13,8 +13,13 @@
 #ifndef PTI23_PARSER_HPP_
 #define PTI23_PARSER_HPP_
 
+#define OLD_MAP
+
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp> // needed of is_any_of()
+#ifndef OLD_MAP
+#include <boost/unordered_map.hpp>
+#endif
 #include <vector>
 #include <map>
 #include <cstdio>
@@ -43,7 +48,7 @@ class PTI23_parser
    * of network configuration file (must be child of network::BaseNetwork<>)
    */
   PTI23_parser(boost::shared_ptr<_network> network)
-    : p_network(network)
+    : p_network(network), p_configExists(false)
   { }
 
       /**
@@ -65,13 +70,19 @@ class PTI23_parser
         p_timer->configTimer(false);
         int t_total = p_timer->createCategory("Parser:Total Elapsed Time");
         p_timer->start(t_total);
-        getCase(fileName);
-        //brdcst_data();
-        createNetwork();
+        std::string ext = getExtension(fileName);
+        if (ext == "raw") {
+          getCase(fileName);
+          //brdcst_data();
+          createNetwork();
+        } else if (ext == "dyr") {
+          getDS(fileName);
+        }
         p_timer->stop(t_total);
         p_timer->configTimer(true);
       }
 
+    protected:
       /*
        * A case is the collection of all data associated with a PTI23 file.
        * Each case is a a vector of data_set objects the contain all the data
@@ -105,8 +116,13 @@ class PTI23_parser
 
           find_case(input);
           find_buses(input);
-//          find_loads(input);
-          find_generators(input);
+          // Add a hideous hack so that it is possible to determine if a load
+          // block is present in the file. Sometimes it is and sometimes it
+          // isn't
+          bool parsed = true;
+          std::string oldline;
+//          find_loads(input,oldline,parsed);
+          find_generators(input,oldline,parsed);
           find_branches(input);
           find_transformer(input);
           find_area(input);
@@ -205,7 +221,11 @@ class PTI23_parser
           p_network->addBranch(idx1, idx2);
           p_network->setGlobalBranchIndex(i,i+offset_branch[me]);
           int g_idx1, g_idx2;
+#ifdef OLD_MAP
           std::map<int, int>::iterator it;
+#else
+          boost::unordered_map<int, int>::iterator it;
+#endif
           it = p_busMap.find(idx1);
           g_idx1 = it->second;
           it = p_busMap.find(idx2);
@@ -214,6 +234,8 @@ class PTI23_parser
           p_network->getBranchData(i)->addValue(CASE_ID,p_case_id);
           p_network->getBranchData(i)->addValue(CASE_SBASE,p_case_sbase);
         }
+        p_configExists = true;
+        printf("Number of buses: %d\n",p_network->numBuses());
 #if 0
         // debug
         printf("Number of buses: %d\n",numBus);
@@ -231,16 +253,71 @@ class PTI23_parser
         p_branchData.clear();
         p_timer->stop(t_create);
       }
-    protected:
+
+      /**
+       * This routine opens up a .dyr file with parameters for dynamic
+       * simulation. It assumes that a .raw file has already been parsed
+       */
+      void getDS(const std::string & fileName)
+      {
+
+        if (!p_configExists) return;
+        int t_ds = p_timer->createCategory("Parser:getDS");
+        p_timer->start(t_ds);
+        int me(p_network->communicator().rank());
+
+        if (me == 0) {
+          std::ifstream            input;
+          input.open(fileName.c_str());
+          if (!input.is_open()) {
+            p_timer->stop(t_ds);
+            return;
+          }
+          find_ds_par(input);
+          input.close();
+        }
+        p_timer->stop(t_ds);
+#if 0
+        int i;
+        printf("BUS data size: %d\n",p_busData.size());
+        for (i=0; i<p_network->numBuses(); i++) {
+          printf("Dumping bus: %d\n",i);
+          p_network->getBusData(i)->dump();
+        }
+#endif
+      }
 
       // Clean up 2 character tags so that single quotes are removed and single
-      // character tags are right-justified
+      // character tags are right-justified. These tags can be delimited by a
+      // pair of single quotes, a pair of double quotes, or no quotes
       std::string clean2Char(std::string string)
       {
         std::string tag = string;
-        // Find and remove single quotes
-        int ntok1 = tag.find_first_not_of('\'',0);
-        int ntok2 = tag.find('\'',ntok1);
+        // Find and remove single or double quotes
+        int ntok1 = tag.find('\'',0);
+        bool sngl_qt = true;
+        bool no_qt = false;
+        // if no single quote found, then assume double quote or no quote
+        if (ntok1 == std::string::npos) {
+          ntok1 = tag.find('\"',0);
+          // if no double quote found then assume no quote
+          if (ntok1 == std::string::npos) {
+            ntok1 = tag.find_first_not_of(' ',0);
+            no_qt = true;
+          } else {
+            sngl_qt = false;
+          }
+        }
+        int ntok2;
+        if (sngl_qt) {
+          ntok1 = tag.find_first_not_of('\'',ntok1);
+          ntok2 = tag.find('\'',ntok1);
+        } else if (no_qt) {
+          ntok2 = tag.find(' ',ntok1);
+        } else {
+          ntok1 = tag.find_first_not_of('\"',ntok1);
+          ntok2 = tag.find('\"',ntok1);
+        }
         if (ntok2 == std::string::npos) ntok2 = tag.length();
         std::string clean_tag = tag.substr(ntok1,ntok2-ntok1);
         //get rid of white space
@@ -255,6 +332,58 @@ class PTI23_parser
           clean_tag = tag;
         }
         return clean_tag;
+      }
+
+      // Tokenize a string on blanks, but ignore blanks within a text string
+      // delimited by single quotes
+      std::vector<std::string> blankTokenizer(std::string input)
+      {
+        std::vector<std::string> ret;
+        std::string line = input;
+        int ntok1 = line.find_first_not_of(' ',0);
+        int ntok2 = ntok1;
+        while (ntok1 != std::string::npos) {
+          bool quote = false;
+          if (line[ntok1] != '\'') {
+            ntok2 = line.find(' ',ntok1);
+          } else {
+            bool quote = true;
+            ntok2 = line.find('\'',ntok1);
+          }
+          if (ntok2 == std::string::npos) ntok2 = line.length();
+          if (quote) {
+            if (line[ntok2-1] == '\'') {
+              ret.push_back(line.substr(ntok1,ntok2-ntok1));
+            }
+          } else {
+            ret.push_back(line.substr(ntok1,ntok2-ntok1));
+          }
+          ntok1 = line.find_first_not_of(' ',0);
+          ntok2 = ntok1;
+        }
+      }
+
+      // Extract extension from file name and convert it to lower case
+      std::string getExtension(const std::string file)
+      {
+        std::string ret;
+        std::string line = file;
+        int ntok1 = line.find('.',0);
+        if (ntok1 == std::string::npos) return ret;
+        ntok1++;
+        int ntok2 = line.find(' ',ntok1);
+        if (ntok2 == std::string::npos) ntok2 = line.size();
+        // get extension
+        ret = line.substr(ntok1,ntok2-ntok1);
+        // convert all characters to lower case 
+        int size = ret.size();
+        int i;
+        for (i=0; i<size; i++) {
+          if (isalpha(ret[i])) {
+            ret[i] = tolower(ret[i]);
+          }
+        }
+        return ret;
       }
 
       void find_case(std::ifstream & input)
@@ -309,6 +438,7 @@ class PTI23_parser
           boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
           boost::shared_ptr<gridpack::component::DataCollection>
             data(new gridpack::component::DataCollection);
+          int nstr = split_line.size();
 
           // BUS_I               "I"                   integer
           o_idx = atoi(split_line[0].c_str());
@@ -317,59 +447,71 @@ class PTI23_parser
           p_busMap.insert(std::pair<int,int>(o_idx,index));
 
           // BUS_NAME             "NAME"                 string
-          data->addValue(BUS_NAME, (char*)split_line[9].c_str());
+          if (nstr > 9) data->addValue(BUS_NAME, split_line[9].c_str());
 
           // BUS_BASEKV           "BASKV"               float
-          data->addValue(BUS_BASEKV, atof(split_line[10].c_str()));
+          if (nstr > 10) data->addValue(BUS_BASEKV, atof(split_line[10].c_str()));
 
           // BUS_TYPE               "IDE"                   integer
-          data->addValue(BUS_TYPE, atoi(split_line[1].c_str()));
+          if (nstr > 1) data->addValue(BUS_TYPE, atoi(split_line[1].c_str()));
 
           // BUS_SHUNT_GL              "GL"                  float
-          data->addValue(BUS_SHUNT_GL, atof(split_line[4].c_str()));
+          if (nstr > 4) data->addValue(BUS_SHUNT_GL, atof(split_line[4].c_str()));
 
           // BUS_SHUNT_BL              "BL"                  float
-          data->addValue(BUS_SHUNT_BL, atof(split_line[5].c_str()));
+          if (nstr > 5) data->addValue(BUS_SHUNT_BL, atof(split_line[5].c_str()));
 
           // BUS_ZONE            "ZONE"                integer
-          data->addValue(BUS_ZONE, atoi(split_line[11].c_str()));
+          if (nstr > 11) data->addValue(BUS_ZONE, atoi(split_line[11].c_str()));
 
           // BUS_AREA            "IA"                integer
-          data->addValue(BUS_AREA, atoi(split_line[6].c_str()));
+          if (nstr > 6) data->addValue(BUS_AREA, atoi(split_line[6].c_str()));
 
           // BUS_VOLTAGE_MAG              "VM"                  float
-          data->addValue(BUS_VOLTAGE_MAG, atof(split_line[7].c_str()));
+          if (nstr > 7) data->addValue(BUS_VOLTAGE_MAG, atof(split_line[7].c_str()));
 
           // BUS_VOLTAGE_ANG              "VA"                  float
-          data->addValue(BUS_VOLTAGE_ANG, atof(split_line[8].c_str()));
+          if (nstr > 8) data->addValue(BUS_VOLTAGE_ANG, atof(split_line[8].c_str()));
 
           // BUS_OWNER              "IA"                  integer
-          data->addValue(BUS_OWNER, atoi(split_line[6].c_str()));
+          if (nstr > 6) data->addValue(BUS_OWNER, atoi(split_line[6].c_str()));
 
           // LOAD_PL                "PL"                  float
-          data->addValue(LOAD_PL, atof(split_line[2].c_str()));
+          if (nstr > 2) data->addValue(LOAD_PL, atof(split_line[2].c_str()));
 
           // LOAD_QL                "QL"                  float
-          data->addValue(LOAD_QL, atof(split_line[3].c_str()));
+          if (nstr > 3) data->addValue(LOAD_QL, atof(split_line[3].c_str()));
 
           index++;
           std::getline(input, line);
         }
       }
 
-      void find_loads(std::ifstream & input)
+      void find_loads(std::ifstream & input, std::string &oldline, bool &parsed)
       {
         std::string          line;
         std::getline(input, line); //this should be the first line of the block
 
+        parsed = true;
+        int nline = 0;
         while(test_end(line)) {
           std::vector<std::string>  split_line;
           boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+          if (nline == 0 && split_line.size() > 15) {
+            oldline = line;
+            parsed = false;
+            return;
+          }
+          nline++;
 
           // LOAD_BUSNUMBER               "I"                   integer
           int l_idx, o_idx;
           o_idx = atoi(split_line[0].c_str());
+#ifdef OLD_MAP
           std::map<int, int>::iterator it;
+#else
+          boost::unordered_map<int, int>::iterator it;
+#endif
           it = p_busMap.find(o_idx);
           if (it != p_busMap.end()) {
             l_idx = it->second;
@@ -377,49 +519,56 @@ class PTI23_parser
             std::getline(input, line);
             continue;
           }
+          int nstr = split_line.size();
+
           p_busData[l_idx]->addValue(LOAD_BUSNUMBER, atoi(split_line[0].c_str()));
 
           // LOAD_ID              "ID"                  integer
-          p_busData[l_idx]->addValue(LOAD_ID, atoi(split_line[1].c_str()));
+          std::string tag = clean2Char(split_line[1]);
+          if (nstr > 1) p_busData[l_idx]->addValue(LOAD_ID, tag.c_str());
 
           // LOAD_STATUS              "ID"                  integer
-          p_busData[l_idx]->addValue(LOAD_STATUS, atoi(split_line[1].c_str()));
+          if (nstr > 2) p_busData[l_idx]->addValue(LOAD_STATUS, atoi(split_line[2].c_str()));
 
-          // LOAD_AREA            "ZONE"                integer
-          p_busData[l_idx]->addValue(LOAD_AREA, atoi(split_line[11].c_str()));
+          // LOAD_AREA            "AREA"                integer
+          if (nstr > 3) p_busData[l_idx]->addValue(LOAD_AREA, atoi(split_line[3].c_str()));
 
           // LOAD_ZONE            "ZONE"                integer
-          p_busData[l_idx]->addValue(LOAD_ZONE, atoi(split_line[11].c_str()));
+          if (nstr > 4) p_busData[l_idx]->addValue(LOAD_ZONE, atoi(split_line[4].c_str()));
 
           // LOAD_PL              "PG"                  float
-          p_busData[l_idx]->addValue(LOAD_PL, atof(split_line[2].c_str()));
+          if (nstr > 5) p_busData[l_idx]->addValue(LOAD_PL, atof(split_line[5].c_str()));
 
           // LOAD_QL              "QG"                  float
-          p_busData[l_idx]->addValue(LOAD_QL, atof(split_line[3].c_str()));
+          if (nstr > 6) p_busData[l_idx]->addValue(LOAD_QL, atof(split_line[6].c_str()));
 
           // LOAD_IP              "QT"                  float
-          p_busData[l_idx]->addValue(LOAD_IP, atof(split_line[4].c_str()));
+          if (nstr > 7) p_busData[l_idx]->addValue(LOAD_IP, atof(split_line[7].c_str()));
 
           // LOAD_IQ              "QB"                  float
-          p_busData[l_idx]->addValue(LOAD_IQ, atof(split_line[5].c_str()));
+          if (nstr > 8) p_busData[l_idx]->addValue(LOAD_IQ, atof(split_line[8].c_str()));
 
           // LOAD_YP              "VS"                  float
-          p_busData[l_idx]->addValue(LOAD_YP, atof(split_line[6].c_str()));
+          if (nstr > 9) p_busData[l_idx]->addValue(LOAD_YP, atof(split_line[9].c_str()));
 
           // LOAD_YQ            "IREG"                integer
-          p_busData[l_idx]->addValue(LOAD_YQ, atoi(split_line[7].c_str()));
+          if (nstr > 10) p_busData[l_idx]->addValue(LOAD_YQ, atoi(split_line[10].c_str()));
 
           // LOAD_OWNER              "IA"                  integer
-          p_busData[l_idx]->addValue(LOAD_OWNER, atoi(split_line[6].c_str()));
+          if (nstr > 11) p_busData[l_idx]->addValue(LOAD_OWNER, atoi(split_line[11].c_str()));
 
           std::getline(input, line);
         }
       }
 
-      void find_generators(std::ifstream & input)
+      void find_generators(std::ifstream & input, std::string &oldline, bool &parsed)
       {
         std::string          line;
-        std::getline(input, line); //this should be the first line of the block
+        if (parsed) {
+          std::getline(input, line); //this should be the first line of the block
+        } else {
+          line = oldline;
+        }
         while(test_end(line)) {
           std::vector<std::string>  split_line;
           boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
@@ -427,7 +576,12 @@ class PTI23_parser
           // GENERATOR_BUSNUMBER               "I"                   integer
           int l_idx, o_idx;
           o_idx = atoi(split_line[0].c_str());
+#ifdef OLD_MAP
           std::map<int, int>::iterator it;
+#else
+          boost::unordered_map<int, int>::iterator it;
+#endif
+          int nstr = split_line.size();
           it = p_busMap.find(o_idx);
           if (it != p_busMap.end()) {
             l_idx = it->second;
@@ -446,103 +600,99 @@ class PTI23_parser
           // Clean up 2 character tag
           std::string tag = clean2Char(split_line[1]);
           // GENERATOR_ID              "ID"                  integer
-          p_busData[l_idx]->addValue(GENERATOR_ID, (char*)tag.c_str(), ngen);
+          p_busData[l_idx]->addValue(GENERATOR_ID, tag.c_str(), ngen);
 
           // GENERATOR_PG              "PG"                  float
-          p_busData[l_idx]->addValue(GENERATOR_PG, atof(split_line[2].c_str()),
+          if (nstr > 2) p_busData[l_idx]->addValue(GENERATOR_PG, atof(split_line[2].c_str()),
               ngen);
 
           // GENERATOR_QG              "QG"                  float
-          p_busData[l_idx]->addValue(GENERATOR_QG, atof(split_line[3].c_str()),
+          if (nstr > 3) p_busData[l_idx]->addValue(GENERATOR_QG, atof(split_line[3].c_str()),
               ngen);
 
           // GENERATOR_QMAX              "QT"                  float
-          p_busData[l_idx]->addValue(GENERATOR_QMAX,
+          if (nstr > 4) p_busData[l_idx]->addValue(GENERATOR_QMAX,
               atof(split_line[4].c_str()), ngen);
 
           // GENERATOR_QMIN              "QB"                  float
-          p_busData[l_idx]->addValue(GENERATOR_QMIN,
+          if (nstr > 5) p_busData[l_idx]->addValue(GENERATOR_QMIN,
               atof(split_line[5].c_str()), ngen);
 
           // GENERATOR_VS              "VS"                  float
-          p_busData[l_idx]->addValue(GENERATOR_VS, atof(split_line[6].c_str()),
+          if (nstr > 6) p_busData[l_idx]->addValue(GENERATOR_VS, atof(split_line[6].c_str()),
               ngen);
 
           // GENERATOR_IREG            "IREG"                integer
-          p_busData[l_idx]->addValue(GENERATOR_IREG,
+          if (nstr > 7) p_busData[l_idx]->addValue(GENERATOR_IREG,
               atoi(split_line[7].c_str()), ngen);
 
           // GENERATOR_MBASE           "MBASE"               float
-          p_busData[l_idx]->addValue(GENERATOR_MBASE,
+          if (nstr > 8) p_busData[l_idx]->addValue(GENERATOR_MBASE,
               atof(split_line[8].c_str()), ngen);
 
           // GENERATOR_ZSOURCE                                complex
-          p_busData[l_idx]->addValue(GENERATOR_ZSOURCE,
+          if (nstr > 9) p_busData[l_idx]->addValue(GENERATOR_ZSOURCE,
               gridpack::ComplexType(atof(split_line[9].c_str()),
                 atof(split_line[10].c_str())), ngen);
 
           // GENERATOR_XTRAN                              complex
-          p_busData[l_idx]->addValue(GENERATOR_XTRAN,
+          if (nstr > 11) p_busData[l_idx]->addValue(GENERATOR_XTRAN,
               gridpack::ComplexType(atof(split_line[11].c_str()),
                 atof(split_line[12].c_str())), ngen);
 
           // GENERATOR_RT              "RT"                  float
-          p_busData[l_idx]->addValue(GENERATOR_RT, atof(split_line[11].c_str()),
+          if (nstr > 11) p_busData[l_idx]->addValue(GENERATOR_RT, atof(split_line[11].c_str()),
               ngen);
 
           // GENERATOR_XT              "XT"                  float
-          p_busData[l_idx]->addValue(GENERATOR_XT, atof(split_line[12].c_str()),
+          if (nstr > 12) p_busData[l_idx]->addValue(GENERATOR_XT, atof(split_line[12].c_str()),
               ngen);
 
           // GENERATOR_GTAP              "GTAP"                  float
-          p_busData[l_idx]->addValue(GENERATOR_GTAP,
+          if (nstr > 13) p_busData[l_idx]->addValue(GENERATOR_GTAP,
               atof(split_line[13].c_str()), ngen);
 
           // GENERATOR_STAT              "STAT"                  float
-          p_busData[l_idx]->addValue(GENERATOR_STAT,
+         if (nstr > 14)  p_busData[l_idx]->addValue(GENERATOR_STAT,
               atoi(split_line[14].c_str()), ngen);
 
           // GENERATOR_RMPCT           "RMPCT"               float
-          p_busData[l_idx]->addValue(GENERATOR_RMPCT,
+          if (nstr > 15) p_busData[l_idx]->addValue(GENERATOR_RMPCT,
               atof(split_line[15].c_str()), ngen);
 
           // GENERATOR_PMAX              "PT"                  float
-          p_busData[l_idx]->addValue(GENERATOR_PMAX,
+          if (nstr > 16) p_busData[l_idx]->addValue(GENERATOR_PMAX,
               atof(split_line[16].c_str()), ngen);
 
           // GENERATOR_PMIN              "PB"                  float
-          p_busData[l_idx]->addValue(GENERATOR_PMIN,
+          if (nstr > 17) p_busData[l_idx]->addValue(GENERATOR_PMIN,
               atof(split_line[17].c_str()), ngen);
 
           // Pick up some non-standard values for Dynamic Simulation
-          if (split_line.size() >= 22) {
-            // GENERATOR_REACTANCE                             float
-            p_busData[l_idx]->addValue(GENERATOR_REACTANCE,
-                atof(split_line[18].c_str()), ngen);
+          // GENERATOR_REACTANCE                             float
+          if (nstr > 18) p_busData[l_idx]->addValue(GENERATOR_REACTANCE,
+              atof(split_line[18].c_str()), ngen);
 
-            // GENERATOR_RESISTANCE                             float
-            p_busData[l_idx]->addValue(GENERATOR_RESISTANCE,
-                atof(split_line[19].c_str()), ngen);
+          // GENERATOR_RESISTANCE                             float
+          if (nstr > 19) p_busData[l_idx]->addValue(GENERATOR_RESISTANCE,
+              atof(split_line[19].c_str()), ngen);
 
-            // GENERATOR_TRANSIENT_REACTANCE                             float
-            p_busData[l_idx]->addValue(GENERATOR_TRANSIENT_REACTANCE,
-                atof(split_line[20].c_str()), ngen);
+          // GENERATOR_TRANSIENT_REACTANCE                             float
+          if (nstr > 20) p_busData[l_idx]->addValue(GENERATOR_TRANSIENT_REACTANCE,
+              atof(split_line[20].c_str()), ngen);
 
-            // GENERATOR_SUBTRANSIENT_REACTANCE                             float
-            p_busData[l_idx]->addValue(GENERATOR_SUBTRANSIENT_REACTANCE,
-                atof(split_line[21].c_str()), ngen);
-          }
+          // GENERATOR_SUBTRANSIENT_REACTANCE                             float
+          if (nstr > 21) p_busData[l_idx]->addValue(GENERATOR_SUBTRANSIENT_REACTANCE,
+              atof(split_line[21].c_str()), ngen);
 
           // Pick up some more non-standard values for Dynamic Simulation
-          if (split_line.size() >= 24) {
-            // GENERATOR_INERTIA_CONSTANT_H                           float
-            p_busData[l_idx]->addValue(GENERATOR_INERTIA_CONSTANT_H,
-                atof(split_line[22].c_str()), ngen);
+          // GENERATOR_INERTIA_CONSTANT_H                           float
+          if (nstr > 22) p_busData[l_idx]->addValue(GENERATOR_INERTIA_CONSTANT_H,
+              atof(split_line[22].c_str()), ngen);
 
-            // GENERATOR_DAMPING_COEFFICIENT_0                           float
-            p_busData[l_idx]->addValue(GENERATOR_DAMPING_COEFFICIENT_0,
-                atof(split_line[23].c_str()), ngen);
-          }
+          // GENERATOR_DAMPING_COEFFICIENT_0                           float
+          if (nstr > 23) p_busData[l_idx]->addValue(GENERATOR_DAMPING_COEFFICIENT_0,
+              atof(split_line[23].c_str()), ngen);
 
           // Increment number of generators in data object
           if (ngen == 0) {
@@ -554,6 +704,95 @@ class PTI23_parser
           }
 
           std::getline(input, line);
+        }
+      }
+
+      void find_ds_par(std::ifstream & input)
+      {
+        std::string          line;
+        gridpack::component::DataCollection *data;
+        while(std::getline(input,line)) {
+          std::vector<std::string>  split_line;
+          boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+
+          // GENERATOR_BUSNUMBER               "I"                   integer
+          int l_idx, o_idx;
+          o_idx = atoi(split_line[0].c_str());
+#ifdef OLD_MAP
+          std::map<int, int>::iterator it;
+#else
+          boost::unordered_map<int, int>::iterator it;
+#endif
+          int nstr = split_line.size();
+          if (split_line[nstr-1] == "\\") nstr--;
+          it = p_busMap.find(o_idx);
+          if (it != p_busMap.end()) {
+            l_idx = it->second;
+          } else {
+            continue;
+          }
+          data = dynamic_cast<gridpack::component::DataCollection*>
+            (p_network->getBusData(l_idx).get());
+
+          // Find out how many generators are already on bus
+          int ngen;
+          if (!data->getValue(GENERATOR_NUMBER, &ngen)) continue;
+          // Identify index of generator to which this data applies
+          int g_id = -1;
+          // Clean up 2 character tag for generator ID
+          std::string tag = clean2Char(split_line[2]);
+          int i;
+          for (i=0; i<ngen; i++) {
+            std::string t_id;
+            data->getValue(GENERATOR_ID,&t_id,i);
+            if (tag == t_id) {
+              g_id = i;
+              break;
+            }
+          }
+          if (g_id == -1) continue;
+
+          std::string sval;
+          double rval;
+          // GENERATOR_MODEL              "MODEL"                  integer
+          if (!data->getValue(GENERATOR_MODEL,&sval,g_id)) {
+            data->addValue(GENERATOR_MODEL, split_line[1].c_str(), g_id);
+          } else {
+            data->setValue(GENERATOR_MODEL, split_line[1].c_str(), g_id);
+          }
+
+          // GENERATOR_INERTIA_CONSTANT_H                           float
+          if (nstr > 3) {
+            if (!data->getValue(GENERATOR_INERTIA_CONSTANT_H,&rval,g_id)) {
+              data->addValue(GENERATOR_INERTIA_CONSTANT_H,
+                  atof(split_line[3].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_INERTIA_CONSTANT_H,
+                  atof(split_line[3].c_str()), g_id);
+            }
+          } 
+
+          // GENERATOR_DAMPING_COEFFICIENT_0                           float
+          if (nstr > 4) {
+            if (!data->getValue(GENERATOR_DAMPING_COEFFICIENT_0,&rval,g_id)) {
+              data->addValue(GENERATOR_DAMPING_COEFFICIENT_0,
+                  atof(split_line[4].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_DAMPING_COEFFICIENT_0,
+                  atof(split_line[4].c_str()), g_id);
+            }
+          }
+
+          // GENERATOR_TRANSIENT_REACTANCE                             float
+          if (nstr > 5) {
+            if (!data->getValue(GENERATOR_TRANSIENT_REACTANCE,&rval,g_id)) {
+              data->addValue(GENERATOR_TRANSIENT_REACTANCE,
+                  atof(split_line[5].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_TRANSIENT_REACTANCE,
+                  atof(split_line[5].c_str()), g_id);
+            }
+          }
         }
       }
 
@@ -581,7 +820,11 @@ class PTI23_parser
           // Check to see if pair has already been created
           int l_idx = 0;
           branch_pair = std::pair<int,int>(o_idx1, o_idx2);
+#ifdef OLD_MAP
           std::map<std::pair<int, int>, int>::iterator it;
+#else
+          boost::unordered_map<std::pair<int, int>, int>::iterator it;
+#endif
           it = p_branchMap.find(branch_pair);
 
           bool switched = false;
@@ -631,7 +874,7 @@ class PTI23_parser
           // Clean up 2 character tag
           std::string tag = clean2Char(split_line[2]);
           // BRANCH_CKT          "CKT"                 character
-          p_branchData[l_idx]->addValue(BRANCH_CKT, (char*)tag.c_str(),
+          p_branchData[l_idx]->addValue(BRANCH_CKT, tag.c_str(),
               nelems);
 
           // BRANCH_R            "R"                   float
@@ -719,7 +962,11 @@ class PTI23_parser
           // find branch corresponding to this transformer line
           int l_idx = 0;
           branch_pair = std::pair<int,int>(fromBus, toBus);
+#ifdef OLD_MAP
           std::map<std::pair<int, int>, int>::iterator it;
+#else
+          boost::unordered_map<std::pair<int, int>, int>::iterator it;
+#endif
           it = p_branchMap.find(branch_pair);
 
           if (it != p_branchMap.end()) {
@@ -918,7 +1165,11 @@ class PTI23_parser
           // AREAINTG_ISW           "ISW"                  integer
           int l_idx, o_idx;
           o_idx = atoi(split_line[1].c_str());
+#ifdef OLD_MAP
           std::map<int, int>::iterator it;
+#else
+          boost::unordered_map<int, int>::iterator it;
+#endif
           it = p_busMap.find(o_idx);
           if (it != p_busMap.end()) {
             l_idx = it->second;
@@ -989,7 +1240,11 @@ class PTI23_parser
            */
           int l_idx, o_idx;
           l_idx = atoi(split_line[0].c_str());
+#ifdef OLD_MAP
           std::map<int, int>::iterator it;
+#else
+          boost::unordered_map<int, int>::iterator it;
+#endif
           it = p_busMap.find(l_idx);
           if (it != p_busMap.end()) {
             o_idx = it->second;
@@ -1035,7 +1290,7 @@ class PTI23_parser
            * type: string
            * #define SHUNT_RMIDNT "SHUNT_RMIDNT"
            */
-          //          p_busData[o_idx]->addValue(SHUNT_RMIDNT, (char*)split_line[5].c_str());
+          //          p_busData[o_idx]->addValue(SHUNT_RMIDNT, split_line[5].c_str());
 
           /*
            * type: real float
@@ -1232,7 +1487,7 @@ class PTI23_parser
            * #define MULTI_SEC_LINE_ID "MULTI_SEC_LINE_ID"
 
            */
-          data.addValue(MULTI_SEC_LINE_ID, (char*)split_line[0].c_str());
+          data.addValue(MULTI_SEC_LINE_ID, split_line[0].c_str());
           multi_section_instance.push_back(data);
 
           /*
@@ -1343,7 +1598,7 @@ class PTI23_parser
           data.addValue(OWNER_NUMBER, atoi(split_line[0].c_str()));
           owner_instance.push_back(data);
 
-          data.addValue(OWNER_NAME, (char*)split_line[1].c_str());
+          data.addValue(OWNER_NAME, split_line[1].c_str());
           owner_instance.push_back(data);
 
           owner.push_back(owner_instance);
@@ -1478,7 +1733,10 @@ class PTI23_parser
        */
       bool test_end(std::string &str) const
       {
-#if 0
+#if 1
+        if (str[0] == TERM_CHAR) {
+          return false;
+        }
         int len = str.length();
         int i=0;
         while (i<len && str[i] == ' ') {
@@ -1486,15 +1744,18 @@ class PTI23_parser
         }
         if (i<len && str[i] != TERM_CHAR) {
           return true;
-        }
-        i++;
-        while (i<len && str[i] == ' '){
+        } else if (i == len) {
+          return true;
+        } else if (str[i] == TERM_CHAR) {
           i++;
+          if (i>=len || str[i] == ' ' || str[i] == '\\') {
+            return false;
+          } else {
+            return true;
+          }
+        } else {
+          return true;
         }
-        if (i<len && str[i] == '/') {
-          return false;
-        }
-        return true;
 #else
         if (str[0] == '0') {
           return false;
@@ -1551,14 +1812,24 @@ class PTI23_parser
        */
       boost::shared_ptr<_network> p_network;
 
+      bool p_configExists;
+
       // Vector of bus data objects
       std::vector<boost::shared_ptr<gridpack::component::DataCollection> > p_busData;
       // Vector of branch data objects
       std::vector<boost::shared_ptr<gridpack::component::DataCollection> > p_branchData;
       // Map of PTI indices to index in p_busData
+#ifdef OLD_MAP
       std::map<int,int> p_busMap;
+#else
+      boost::unordered_map<int, int> p_busMap;
+#endif
       // Map of PTI index pair to index in p_branchData
+#ifdef OLD_MAP
       std::map<std::pair<int, int>, int> p_branchMap;
+#else
+      boost::unordered_map<std::pair<int, int>, int> p_branchMap;
+#endif
 
       // Global variables that apply to whole network
       int p_case_id;

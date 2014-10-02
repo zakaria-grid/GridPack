@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-03-24 11:44:46 d3g096
+# Last Change: 2014-10-02 08:38:16 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -19,11 +19,20 @@ set(target_libraries
     ${MPI_CXX_LIBRARIES}
 )
 
+if (PARMETIS_FOUND)
+  include_directories(BEFORE ${PARMETIS_INCLUDE_DIR})
+  set(target_libraries 
+    ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
+    ${target_libraries}
+    )
+endif()
+
 set(target_objects 
   $<TARGET_OBJECTS:gridpack_parallel>
   $<TARGET_OBJECTS:gridpack_timer>
   $<TARGET_OBJECTS:gridpack_configuration>
   $<TARGET_OBJECTS:gridpack_components>
+  $<TARGET_OBJECTS:gridpack_partition>
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -34,13 +43,17 @@ endif()
 
 
 # -------------------------------------------------------------
-# TEST: test_parser
+# TEST: parser_test
+# A simple program to check input functionality
 # -------------------------------------------------------------
-add_executable(test_parser 
-  test/PTI23_test.cpp
+#add_executable(PTI23_test test/PTI23_test.cpp)
+#target_link_libraries(PTI23_test ${target_libraries})
+
+add_executable(parser_test 
+  test/parser_test.cpp
   ${target_objects}
 )
-target_link_libraries(test_parser ${target_libraries})
+target_link_libraries(parser_test ${target_libraries})
 
 add_custom_target(test_parser_input
 
@@ -49,16 +62,22 @@ add_custom_target(test_parser_input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/parser_data.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GridPACK_SOURCE_DIR}/applications/powerflow/IEEE14.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/test/test.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/parser_data.raw
   ${GridPACK_SOURCE_DIR}/applications/powerflow/IEEE14.raw
 )
-add_dependencies(test_parser test_parser_input)
+add_dependencies(parser_test test_parser_input)
+#add_dependencies(PTI23_test test_parser_input)
 
-add_test(test_parser_serial test_parser)
+add_test(test_parser_serial parser_test)
 
 # -------------------------------------------------------------
 # installation
@@ -66,5 +85,6 @@ add_test(test_parser_serial test_parser)
 install(FILES 
   dictionary.hpp
   PTI23_parser.hpp
+  hash_distr.hpp
   DESTINATION include/gridpack/parser
 )
