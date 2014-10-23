@@ -1,0 +1,879 @@
+<application xmlns="http://wadl.dev.java.net/2009/02" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+<grammars>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" attributeFormDefault="unqualified" elementFormDefault="unqualified">
+    <xs:element name="Branch" type="gridpackBranch"/>
+    <xs:element name="Bus" type="gridpackBus"/>
+    <xs:element name="Generator" type="gridpackGenerator"/>
+    <xs:element name="GridpackPowergrid" type="gridpackPowergrid"/>
+    <xs:element name="Load" type="gridpackLoad"/>
+    <xs:element name="Shunt" type="gridpackShunt"/>
+    <xs:complexType name="gridpackBranch">
+    <xs:sequence>
+        <xs:element name="BRANCH_ANG" type="xs:double"/>
+        <xs:element name="BRANCH_ID" type="xs:int"/>
+        <xs:element minOccurs="0" name="ConnectedBuses">
+            <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" minOccurs="0" name="ConnectedBus" type="gridpackBus"/>
+            </xs:sequence>
+            </xs:complexType>
+        </xs:element>
+        <xs:element name="BRANCH_CKT" type="xs:int"/>
+        <xs:element name="BRANCH_FROMBUS" type="xs:int"/>
+        <xs:element name="TRANSFORMER_CONT1" type="xs:int"/>
+        <xs:element name="BRANCH_INDEX" type="xs:int"/>
+        <xs:element name="BRANCH_FLOW_P" type="xs:double"/>
+        <xs:element name="BRANCH_FLOW_Q" type="xs:double"/>
+        <xs:element name="BRANCH_R" type="xs:double"/>
+        <xs:element name="BRANCH_RATING_A" type="xs:double"/>
+        <xs:element name="BRANCH_RATING_B" type="xs:double"/>
+        <xs:element name="BRANCH_RATING_C" type="xs:double"/>
+        <xs:element name="BRANCH_RATING" type="xs:double"/>
+        <xs:element name="BRANCH_RATIO" type="xs:double"/>
+        <xs:element name="TRANSFORMER_RMA1" type="xs:double"/>
+        <xs:element name="TRANSFORMER_RMI1" type="xs:double"/>
+        <xs:element name="BRANCH_STATUS" type="xs:int"/>
+        <xs:element name="TRANSFORMER_TAP" type="xs:double"/>
+        <xs:element name="BRANCH_TOBUS" type="xs:int"/>
+        <xs:element name="IS_TRANSFORMER" type="xs:boolean"/>
+        <xs:element name="TRANSFORMER_VMA1" type="xs:double"/>
+        <xs:element name="BRANCH_X" type="xs:double"/>
+        <xs:element name="BRANCH_B" type="xs:double"/>
+        <xs:element name="BRANCH_SHUNT_ADMTTNC_BI" type="xs:double"/>
+        <xs:element name="BRANCH_SHUNT_ADMTTNC_BJ" type="xs:double"/>
+        <xs:element name="BRANCH_SHUNT_ADMTTNC_GI" type="xs:double"/>
+        <xs:element name="BRANCH_SHUNT_ADMTTNC_GJ" type="xs:double"/>
+    </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="gridpackBus">
+    <xs:sequence>
+        <xs:element name="BUS_AREA" type="xs:int"/>
+        <xs:element name="BUS_BASEKV" type="xs:double"/>
+        <xs:element minOccurs="0" name="BUS_NAME" type="xs:string"/>
+        <xs:element name="BUS_NUMBER" type="xs:int"/>
+        <xs:element name="BUS_TYPE" type="xs:int"/>
+        <xs:element minOccurs="0" name="Generators">
+            <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" minOccurs="0" ref="Generator"/>
+            </xs:sequence>
+            </xs:complexType>
+        </xs:element>
+        <xs:element name="BUS_LOAD_PL" type="xs:double"/>
+        <xs:element name="BUS_LOAD_QL" type="xs:double"/>
+        <xs:element minOccurs="0" name="Loads">
+            <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" minOccurs="0" ref="Load"/>
+            </xs:sequence>
+            </xs:complexType>
+        </xs:element>
+        <xs:element minOccurs="0" name="BUS_MRID" type="xs:string"/>
+        <xs:element name="BUS_OWNER" type="xs:int"/>
+        <xs:element name="powerGridId" type="xs:int"/>
+        <xs:element name="BUS_SHUNT_BL" type="xs:double"/>
+        <xs:element name="BUS_SHUNT_GL" type="xs:double"/>
+        <xs:element minOccurs="0" name="Shunts">
+            <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" minOccurs="0" ref="Shunt"/>
+            </xs:sequence>
+            </xs:complexType>
+        </xs:element>
+        <xs:element name="BUS_VOLTAGE_ANG" type="xs:double"/>
+        <xs:element name="BUS_VOLTAGE_MAG" type="xs:double"/>
+        <xs:element name="BUS_ZONE" type="xs:int"/>
+    </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="gridpackGenerator">
+    <xs:sequence>
+        <xs:element name="GENERATOR_BUSNUMBER" type="xs:int"/>
+        <xs:element minOccurs="0" name="GENERATOR_ID" type="xs:string"/>
+        <xs:element name="GENERATOR_PG" type="xs:double"/>
+        <xs:element name="GENERATOR_QG" type="xs:double"/>
+        <xs:element name="GENERATOR_QMAX" type="xs:double"/>
+        <xs:element name="GENERATOR_QMIN" type="xs:double"/>
+        <xs:element name="GENERATOR_VS" type="xs:double"/>
+        <xs:element name="GENERATOR_IREG" type="xs:int"/>
+        <xs:element name="GENERATOR_MBASE" type="xs:double"/>
+        <xs:element minOccurs="0" name="GENERATOR_ZSORCE" type="xs:string"/>
+        <xs:element minOccurs="0" name="GENERATOR_XTRAN" type="xs:string"/>
+        <xs:element name="GENERATOR_ZR" type="xs:double"/>
+        <xs:element name="GENERATOR_ZX" type="xs:double"/>
+        <xs:element name="GENERATOR_RT" type="xs:double"/>
+        <xs:element name="GENERATOR_XT" type="xs:double"/>
+        <xs:element name="GENERATOR_GTAP" type="xs:double"/>
+        <xs:element name="GENERATOR_STAT" type="xs:int"/>
+        <xs:element name="GENERATOR_RMPCT" type="xs:double"/>
+        <xs:element name="GENERATOR_PMAX" type="xs:double"/>
+        <xs:element name="GENERATOR_PMIN" type="xs:double"/>
+        <xs:element name="GENERATOR_OWNER" type="xs:int"/>
+    </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="gridpackLoad">
+    <xs:sequence>
+        <xs:element name="LOAD_BUSNUMBER" type="xs:int"/>
+        <xs:element minOccurs="0" name="LOAD_ID" type="xs:string"/>
+        <xs:element name="LOAD_STATUS" type="xs:int"/>
+        <xs:element name="LOAD_AREA" type="xs:int"/>
+        <xs:element name="LOAD_ZONE" type="xs:int"/>
+        <xs:element name="LOAD_PL" type="xs:double"/>
+        <xs:element name="LOAD_QL" type="xs:double"/>
+        <xs:element name="LOAD_IP" type="xs:double"/>
+        <xs:element name="LOAD_IQ" type="xs:double"/>
+        <xs:element name="LOAD_YP" type="xs:double"/>
+        <xs:element name="LOAD_YQ" type="xs:double"/>
+        <xs:element name="LOAD_OWNER" type="xs:int"/>
+    </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="gridpackShunt">
+    <xs:sequence>
+        <xs:element name="SHUNT_BUSNUMBER" type="xs:int"/>
+        <xs:element minOccurs="0" name="SHUNT_MODSW" type="xs:string"/>
+        <xs:element name="SHUNT_VSWHI" type="xs:double"/>
+        <xs:element name="SHUNT_VSWLO" type="xs:double"/>
+        <xs:element minOccurs="0" name="SHUNT_SWREM" type="xs:string"/>
+        <xs:element minOccurs="0" name="SHUNT_VDES" type="xs:string"/>
+        <xs:element name="SHUNT_RMPCT" type="xs:double"/>
+        <xs:element minOccurs="0" name="SHUNT_RMIDNT" type="xs:string"/>
+        <xs:element name="SHUNT_BINIT" type="xs:double"/>
+    </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="gridpackPowergrid">
+    <xs:sequence>
+        <xs:element minOccurs="0" name="Branches">
+            <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" minOccurs="0" ref="Branch"/>
+            </xs:sequence>
+            </xs:complexType>
+        </xs:element>
+        <xs:element minOccurs="0" name="Buses">
+            <xs:complexType>
+            <xs:sequence>
+                <xs:element maxOccurs="unbounded" minOccurs="0" ref="Bus"/>
+            </xs:sequence>
+            </xs:complexType>
+        </xs:element>
+    </xs:sequence>
+    </xs:complexType>
+</xs:schema>
+</grammars>
+
+<resources base="http://localhost:8181/cxf/gridpack">
+<resource path="/">
+    <resource path="{powergridName}">
+        <param name="powergridName" style="template" type="xs:string"/>
+        <method name="GET">
+            <request></request>
+            <response>
+                <representation mediaType="application/xml"/>
+                <representation mediaType="application/json"/>
+            </response>
+        </method>
+    </resource>
+    <resource path="{powergridName}/branch/count">
+        <param name="powergridName" style="template" type="xs:string"/>
+        <method name="GET"><request></request><response><representation mediaType="text/plain">
+        <param name="result" style="plain" type="xs:int"/></representation></response></method>
+    </resource>
+    <resource path="{powergridName}/branches/{numberOfBranches}">
+        <param name="powergridName" style="template" type="xs:string"/>
+        <param name="numberOfBranches" style="template" type="xs:int"/>
+        <method name="GET">
+            <request></request>
+            <response>
+                <representation mediaType="application/json"/>
+            </response>
+        </method>
+    </resource>
+    <resource path="{powergridName}/branches/{startAtIndex}/{numberOfBranches}">
+        <param name="powergridName" style="template" type="xs:string"/>
+        <param name="startAtIndex" style="template" type="xs:int"/>
+        <param name="numberOfBranches" style="template" type="xs:int"/>
+        <method name="GET">
+            <request></request>
+            <response>
+                <representation mediaType="application/json"/>
+                <representation mediaType="application/xml"/>
+            </response>
+        </method>
+    </resource>
+    <resource path="{powergridName}/bus/count"><param name="powergridName" style="template" type="xs:string"/><method name="GET"><request></request><response><representation mediaType="text/plain"><param name="result" style="plain" type="xs:int"/></representation></response></method>
+    </resource>
+    <resource path="{powergridName}/buses/{numberOfBuses}"><param name="powergridName" style="template" type="xs:string"/><param name="numberOfBuses" style="template" type="xs:int"/><method name="GET"><request></request><response><representation mediaType="application/json"/><representation mediaType="application/xml"/></response></method>
+    </resource>
+    <resource path="{powergridName}/buses/{startAtIndex}/{numberOfBuses}"><param name="powergridName" style="template" type="xs:string"/><param name="startAtIndex" style="template" type="xs:int"/><param name="numberOfBuses" style="template" type="xs:int"/><method name="GET"><request></request><response><representation mediaType="application/json"/><representation mediaType="application/xml"/></response></method>
+    </resource>
+</resource>
+</resources>
+<GridpackPowergrid>
+<Branches>
+<Branch>
+    <BRANCH_FROMBUS>1</BRANCH_FROMBUS>
+    <BRANCH_TOBUS>2</BRANCH_TOBUS>
+    <TransmissionElements>
+    <Line>
+        <elementIndex>1</elementIndex>
+        <BRANCH_INDEX>1</BRANCH_INDEX>
+        <mrid>1</mrid>
+        <BRANCH_FLOW_P>1.01</BRANCH_FLOW_P>
+        <BRANCH_FLOW_Q>1.02</BRANCH_FLOW_Q>
+        <BRANCH_R>1.03</BRANCH_R>
+        <BRANCH_RATING_A>1.04</BRANCH_RATING_A>
+        <BRANCH_RATING_B>1.05</BRANCH_RATING_B>
+        <BRANCH_RATING_C>1.06</BRANCH_RATING_C>
+        <BRANCH_RATING>1.07</BRANCH_RATING>
+        <BRANCH_STATUS>1</BRANCH_STATUS>
+        <BRANCH_X>1.08</BRANCH_X>
+        <BRANCH_B>1.09</BRANCH_B>
+        <BRANCH_SHUNT_ADMTTNC_BI>1.1</BRANCH_SHUNT_ADMTTNC_BI>
+        <BRANCH_SHUNT_ADMTTNC_BJ>1.11</BRANCH_SHUNT_ADMTTNC_BJ>
+        <BRANCH_SHUNT_ADMTTNC_GI>1.12</BRANCH_SHUNT_ADMTTNC_BJ>
+        <BRANCH_SHUNT_ADMTTNC_GJ>1.13</BRANCH_SHUNT_ADMTTNC_BJ>
+    </Line>
+    </TransmissionElements>
+</Branch>
+<Branch>
+<BRANCH_FROMBUS>3</BRANCH_FROMBUS>
+<BRANCH_TOBUS>4</BRANCH_TOBUS>
+    <TransmissionElements>
+    <Line>
+        <elementIndex>2</elementIndex>
+        <BRANCH_INDEX>2</BRANCH_INDEX>
+        <mrid>2</mrid>
+        <BRANCH_FLOW_P>2.01</BRANCH_FLOW_P>
+        <BRANCH_FLOW_Q>2.02</BRANCH_FLOW_Q>
+        <BRANCH_R>2.03</BRANCH_R>
+        <BRANCH_RATING_A>2.04</BRANCH_RATING_A>
+        <BRANCH_RATING_B>2.05</BRANCH_RATING_B>
+        <BRANCH_RATING_C>2.06</BRANCH_RATING_C>
+        <BRANCH_RATING>2.07</BRANCH_RATING>
+        <BRANCH_STATUS>2</BRANCH_STATUS>
+        <BRANCH_X>2.08</BRANCH_X>
+        <BRANCH_B>2.09</BRANCH_B>
+        <BRANCH_SHUNT_ADMTTNC_BI>2.1</BRANCH_SHUNT_ADMTTNC_BI>
+        <BRANCH_SHUNT_ADMTTNC_BJ>2.11</BRANCH_SHUNT_ADMTTNC_BJ>
+        <BRANCH_SHUNT_ADMTTNC_GI>2.12</BRANCH_SHUNT_ADMTTNC_BJ>
+        <BRANCH_SHUNT_ADMTTNC_GJ>2.13</BRANCH_SHUNT_ADMTTNC_BJ>
+    </Line>
+</TransmissionElements>
+</Branch>
+<Branch>
+<BRANCH_FROMBUS>5</BRANCH_FROMBUS>
+<BRANCH_TOBUS>6</BRANCH_TOBUS>
+    <TransmissionElements>
+    <Line>
+        <elementIndex>3</elementIndex>
+        <BRANCH_INDEX>3</BRANCH_INDEX>
+        <mrid>3</mrid>
+        <BRANCH_FLOW_P>3.01</BRANCH_FLOW_P>
+        <BRANCH_FLOW_Q>3.02</BRANCH_FLOW_Q>
+        <BRANCH_R>3.03</BRANCH_R>
+        <BRANCH_RATING_A>3.04</BRANCH_RATING_A>
+        <BRANCH_RATING_B>3.05</BRANCH_RATING_B>
+        <BRANCH_RATING_C>3.06</BRANCH_RATING_C>
+        <BRANCH_RATING>3.07</BRANCH_RATING>
+        <BRANCH_STATUS>3</BRANCH_STATUS>
+        <BRANCH_X>3.08</BRANCH_X>
+        <BRANCH_B>3.09</BRANCH_B>
+        <BRANCH_SHUNT_ADMTTNC_BI>3.1</BRANCH_SHUNT_ADMTTNC_BI>
+        <BRANCH_SHUNT_ADMTTNC_BJ>3.11</BRANCH_SHUNT_ADMTTNC_BJ>
+        <BRANCH_SHUNT_ADMTTNC_GI>3.12</BRANCH_SHUNT_ADMTTNC_BJ>
+        <BRANCH_SHUNT_ADMTTNC_GJ>3.13</BRANCH_SHUNT_ADMTTNC_BJ>
+    </Line>
+</TransmissionElements>
+</Branch>
+<Branch>
+<BRANCH_FROMBUS>7</BRANCH_FROMBUS>
+<BRANCH_TOBUS>8</BRANCH_TOBUS>
+    <TransmissionElements>
+    <Line>
+        <elementIndex>4</elementIndex>
+        <BRANCH_INDEX>4</BRANCH_INDEX>
+        <mrid>4</mrid>
+        <BRANCH_FLOW_P>4.01</BRANCH_FLOW_P>
+        <BRANCH_FLOW_Q>4.02</BRANCH_FLOW_Q>
+        <BRANCH_R>4.03</BRANCH_R>
+        <BRANCH_RATING_A>4.04</BRANCH_RATING_A>
+        <BRANCH_RATING_B>4.05</BRANCH_RATING_B>
+        <BRANCH_RATING_C>4.06</BRANCH_RATING_C>
+        <BRANCH_RATING>4.07</BRANCH_RATING>
+        <BRANCH_STATUS>4</BRANCH_STATUS>
+        <BRANCH_X>4.08</BRANCH_X>
+        <BRANCH_B>4.09</BRANCH_B>
+        <BRANCH_SHUNT_ADMTTNC_BI>4.1</BRANCH_SHUNT_ADMTTNC_BI>
+        <BRANCH_SHUNT_ADMTTNC_BJ>4.11</BRANCH_SHUNT_ADMTTNC_BJ>
+        <BRANCH_SHUNT_ADMTTNC_GI>4.12</BRANCH_SHUNT_ADMTTNC_BJ>
+        <BRANCH_SHUNT_ADMTTNC_GJ>4.13</BRANCH_SHUNT_ADMTTNC_BJ>
+    </Line>
+</TransmissionElements>
+</Branch>
+<Branch>
+<BRANCH_FROMBUS>9</BRANCH_FROMBUS>
+<BRANCH_TOBUS>10</BRANCH_TOBUS>
+    <TransmissionElements>
+    <Line>
+        <elementIndex>5</elementIndex>
+        <BRANCH_INDEX>5</BRANCH_INDEX>
+        <mrid>5</mrid>
+        <BRANCH_FLOW_P>5.01</BRANCH_FLOW_P>
+        <BRANCH_FLOW_Q>5.02</BRANCH_FLOW_Q>
+        <BRANCH_R>5.03</BRANCH_R>
+        <BRANCH_RATING_A>5.04</BRANCH_RATING_A>
+        <BRANCH_RATING_B>5.05</BRANCH_RATING_B>
+        <BRANCH_RATING_C>5.06</BRANCH_RATING_C>
+        <BRANCH_RATING>5.07</BRANCH_RATING>
+        <BRANCH_STATUS>5</BRANCH_STATUS>
+        <BRANCH_X>5.08</BRANCH_X>
+        <BRANCH_B>5.09</BRANCH_B>
+        <BRANCH_SHUNT_ADMTTNC_BI>5.1</BRANCH_SHUNT_ADMTTNC_BI>
+        <BRANCH_SHUNT_ADMTTNC_BJ>5.11</BRANCH_SHUNT_ADMTTNC_BJ>
+        <BRANCH_SHUNT_ADMTTNC_GI>5.12</BRANCH_SHUNT_ADMTTNC_BJ>
+        <BRANCH_SHUNT_ADMTTNC_GJ>5.13</BRANCH_SHUNT_ADMTTNC_BJ>
+    </Line>
+</TransmissionElements>
+</Branch>
+</Branches>
+<Buses>
+<Bus>
+    <BUS_AREA>1</BUS_AREA>
+    <BUS_BASEKV>1.01</BUS_BASEKV>
+    <BUS_NAME>1</BUS_NAME>
+    <BUS_NUMBER>1</BUS_NUMBER>
+    <BUS_TYPE>1</BUS_TYPE>
+        <Generators>
+        <Generator> 
+            <GENERATOR_BUSNUMBER>1</GENERATOR_BUSNUMBER>
+            <GENERATOR_ID>1</GENERATOR_ID>
+            <GENERATOR_PG>1.02</GENERATOR_PG>
+            <GENERATOR_QG>1.03</GENERATOR_QG>
+            <GENERATOR_QMAX>1.04</GENERATOR_QMAX>
+            <GENERATOR_QMIN>1.05</GENERATOR_QMIN>
+            <GENERATOR_VS>1.06</GENERATOR_VS>
+            <GENERATOR_IREG>1</GENERATOR_IREG>
+            <GENERATOR_MBASE>1.07</GENERATOR_MBASE>
+            <GENERATOR_ZR>1.08</GENERATOR_ZR>
+            <GENERATOR_ZX>1.09</GENERATOR_ZX>
+            <GENERATOR_RT>1.10</GENERATOR_RT>
+            <GENERATOR_XT>1.11</GENERATOR_XT>
+            <GENERATOR_GTAP>1.12</GENERATOR_GTAP>
+            <GENERATOR_STAT>1</GENERATOR_STAT>
+            <GENERATOR_RMPCT>1.13</GENERATOR_RMPCT>
+            <GENERATOR_PMAX>1.14</GENERATOR_PMAX>
+            <GENERATOR_PMIN>1.15</GENERATOR_PMIN>
+            <GENERATOR_OWNER>1</GENERATOR_OWNER>
+        </Generator>
+        <Generator>
+            <GENERATOR_BUSNUMBER>101</GENERATOR_BUSNUMBER>
+            <GENERATOR_ID>1</GENERATOR_ID>
+            <GENERATOR_PG>1.02</GENERATOR_PG>
+            <GENERATOR_QG>1.03</GENERATOR_QG>
+            <GENERATOR_QMAX>1.04</GENERATOR_QMAX>
+            <GENERATOR_QMIN>1.05</GENERATOR_QMIN>
+            <GENERATOR_VS>1.06</GENERATOR_VS>
+            <GENERATOR_IREG>1</GENERATOR_IREG>
+            <GENERATOR_MBASE>1.07</GENERATOR_MBASE>
+            <GENERATOR_ZR>1.08</GENERATOR_ZR>
+            <GENERATOR_ZX>1.09</GENERATOR_ZX>
+            <GENERATOR_RT>1.10</GENERATOR_RT>
+            <GENERATOR_XT>1.11</GENERATOR_XT>
+            <GENERATOR_GTAP>1.12</GENERATOR_GTAP>
+            <GENERATOR_STAT>1</GENERATOR_STAT>
+            <GENERATOR_RMPCT>1.13</GENERATOR_RMPCT>
+            <GENERATOR_PMAX>1.14</GENERATOR_PMAX>
+            <GENERATOR_PMIN>1.15</GENERATOR_PMIN>
+            <GENERATOR_OWNER>1</GENERATOR_OWNER>
+        </Generator>
+        </Generators>
+        <BUS_LOAD_PL>1.16</BUS_LOAD_PL>
+        <BUS_LOAD_QL>1.17</BUS_LOAD_QL>
+        <Loads>
+        <Load>
+            <LOAD_BUSNUMBER>1</LOAD_BUSNUMBER>
+            <LOAD_STATUS>1</LOAD_STATUS>
+            <LOAD_AREA>1</LOAD_AREA>
+            <LOAD_ZONE>1</LOAD_ZONE>
+            <LOAD_PL>1.18</LOAD_PL>
+            <LOAD_QL>1.19</LOAD_QL>
+            <LOAD_IP>1.20</LOAD_IP>
+            <LOAD_IQ>1.21</LOAD_IQ>
+            <LOAD_YP>1.22</LOAD_YP>
+            <LOAD_YQ>1.23</LOAD_YQ>
+            <LOAD_OWNER>1</LOAD_OWNER>
+        </Load>
+        </Loads>
+        <BUS_OWNER>1</BUS_OWNER>
+        <powerGridId>1</powerGridId>
+        <BUS_SHUNT_BL>1.24</BUS_SHUNT_BL>
+        <BUS_SHUNT_GL>1.25</BUS_SHUNT_GL>
+        <BUS_VOLTAGE_ANG>1.26</BUS_VOLTAGE_ANG>
+        <BUS_VOLTAGE_MAG>1.27</BUS_VOLTAGE_MAG>
+        <BUS_ZONE>1</BUS_ZONE>
+    </Bus>
+    <Bus>
+    <BUS_AREA>2</BUS_AREA>
+    <BUS_BASEKV>2.01</BUS_BASEKV>
+    <BUS_NAME>2</BUS_NAME>
+    <BUS_NUMBER>2</BUS_NUMBER>
+    <BUS_TYPE>2</BUS_TYPE>
+        <Generators>
+        <Generator>
+            <GENERATOR_BUSNUMBER>2</GENERATOR_BUSNUMBER>
+            <GENERATOR_ID>2</GENERATOR_ID>
+            <GENERATOR_PG>2.02</GENERATOR_PG>
+            <GENERATOR_QG>2.03</GENERATOR_QG>
+            <GENERATOR_QMAX>2.04</GENERATOR_QMAX>
+            <GENERATOR_QMIN>2.05</GENERATOR_QMIN>
+            <GENERATOR_VS>2.06</GENERATOR_VS>
+            <GENERATOR_IREG>2</GENERATOR_IREG>
+            <GENERATOR_MBASE>2.07</GENERATOR_MBASE>
+            <GENERATOR_ZR>2.08</GENERATOR_ZR>
+            <GENERATOR_ZX>2.09</GENERATOR_ZX>
+            <GENERATOR_RT>2.10</GENERATOR_RT>
+            <GENERATOR_XT>2.11</GENERATOR_XT>
+            <GENERATOR_GTAP>2.12</GENERATOR_GTAP>
+            <GENERATOR_STAT>2</GENERATOR_STAT>
+            <GENERATOR_RMPCT>2.13</GENERATOR_RMPCT>
+            <GENERATOR_PMAX>2.14</GENERATOR_PMAX>
+            <GENERATOR_PMIN>2.15</GENERATOR_PMIN>
+            <GENERATOR_OWNER>2</GENERATOR_OWNER>
+        </Generator>
+        </Generators>
+        <BUS_LOAD_PL>2.16</BUS_LOAD_PL>
+        <BUS_LOAD_QL>2.17</BUS_LOAD_QL>
+        <Loads>
+        <Load>
+            <LOAD_BUSNUMBER>2</LOAD_BUSNUMBER>
+            <LOAD_STATUS>2</LOAD_STATUS>
+            <LOAD_AREA>2</LOAD_AREA>
+            <LOAD_ZONE>2</LOAD_ZONE>
+            <LOAD_PL>2.18</LOAD_PL>
+            <LOAD_QL>2.19</LOAD_QL>
+            <LOAD_IP>2.20</LOAD_IP>
+            <LOAD_IQ>2.21</LOAD_IQ>
+            <LOAD_YP>2.22</LOAD_YP>
+            <LOAD_YQ>2.23</LOAD_YQ>
+            <LOAD_OWNER>2</LOAD_OWNER>
+        </Load>
+        <Load>
+            <LOAD_BUSNUMBER>102</LOAD_BUSNUMBER>
+            <LOAD_STATUS>2</LOAD_STATUS>
+            <LOAD_AREA>2</LOAD_AREA>
+            <LOAD_ZONE>2</LOAD_ZONE>
+            <LOAD_PL>2.18</LOAD_PL>
+            <LOAD_QL>2.19</LOAD_QL>
+            <LOAD_IP>2.20</LOAD_IP>
+            <LOAD_IQ>2.21</LOAD_IQ>
+            <LOAD_YP>2.22</LOAD_YP>
+            <LOAD_YQ>2.23</LOAD_YQ>
+            <LOAD_OWNER>2</LOAD_OWNER>
+        </Load>
+        </Loads>
+        <BUS_OWNER>2</BUS_OWNER>
+        <powerGridId>2</powerGridId>
+        <BUS_SHUNT_BL>2.24</BUS_SHUNT_BL>
+        <BUS_SHUNT_GL>2.25</BUS_SHUNT_GL>
+        <BUS_VOLTAGE_ANG>2.26</BUS_VOLTAGE_ANG>
+        <BUS_VOLTAGE_MAG>2.27</BUS_VOLTAGE_MAG>
+        <BUS_ZONE>2</BUS_ZONE>
+    </Bus>
+<Bus>
+    <BUS_AREA>3</BUS_AREA>
+    <BUS_BASEKV>3.01</BUS_BASEKV>
+    <BUS_NAME>3</BUS_NAME>
+    <BUS_NUMBER>3</BUS_NUMBER>
+    <BUS_TYPE>3</BUS_TYPE>
+        <Generators>
+        <Generator>
+            <GENERATOR_BUSNUMBER>3</GENERATOR_BUSNUMBER>
+            <GENERATOR_ID>3</GENERATOR_ID>
+            <GENERATOR_PG>3.02</GENERATOR_PG>
+            <GENERATOR_QG>3.03</GENERATOR_QG>
+            <GENERATOR_QMAX>3.04</GENERATOR_QMAX>
+            <GENERATOR_QMIN>3.05</GENERATOR_QMIN>
+            <GENERATOR_VS>3.06</GENERATOR_VS>
+            <GENERATOR_IREG>3</GENERATOR_IREG>
+            <GENERATOR_MBASE>3.07</GENERATOR_MBASE>
+            <GENERATOR_ZR>3.08</GENERATOR_ZR>
+            <GENERATOR_ZX>3.09</GENERATOR_ZX>
+            <GENERATOR_RT>3.10</GENERATOR_RT>
+            <GENERATOR_XT>3.11</GENERATOR_XT>
+            <GENERATOR_GTAP>3.12</GENERATOR_GTAP>
+            <GENERATOR_STAT>3</GENERATOR_STAT>
+            <GENERATOR_RMPCT>3.13</GENERATOR_RMPCT>
+            <GENERATOR_PMAX>3.14</GENERATOR_PMAX>
+            <GENERATOR_PMIN>3.15</GENERATOR_PMIN>
+            <GENERATOR_OWNER>3</GENERATOR_OWNER>
+        </Generator>
+        </Generators>
+        <BUS_LOAD_PL>3.16</BUS_LOAD_PL>
+        <BUS_LOAD_QL>3.17</BUS_LOAD_QL>
+        <Loads>
+        <Load>
+            <LOAD_BUSNUMBER>3</LOAD_BUSNUMBER>
+            <LOAD_STATUS>3</LOAD_STATUS>
+            <LOAD_AREA>3</LOAD_AREA>
+            <LOAD_ZONE>3</LOAD_ZONE>
+            <LOAD_PL>3.18</LOAD_PL>
+            <LOAD_QL>3.19</LOAD_QL>
+            <LOAD_IP>3.20</LOAD_IP>
+            <LOAD_IQ>3.21</LOAD_IQ>
+            <LOAD_YP>3.22</LOAD_YP>
+            <LOAD_YQ>3.23</LOAD_YQ>
+            <LOAD_OWNER>3</LOAD_OWNER>
+        </Load>
+        </Loads>
+        <BUS_OWNER>3</BUS_OWNER>
+        <powerGridId>3</powerGridId>
+        <BUS_SHUNT_BL>3.24</BUS_SHUNT_BL>
+        <BUS_SHUNT_GL>3.25</BUS_SHUNT_GL>
+        <BUS_VOLTAGE_ANG>3.26</BUS_VOLTAGE_ANG>
+        <BUS_VOLTAGE_MAG>3.27</BUS_VOLTAGE_MAG>
+        <BUS_ZONE>3</BUS_ZONE>
+    </Bus>
+<Bus>
+    <BUS_AREA>4</BUS_AREA>
+    <BUS_BASEKV>4.01</BUS_BASEKV>
+    <BUS_NAME>4</BUS_NAME>
+    <BUS_NUMBER>4</BUS_NUMBER>
+    <BUS_TYPE>4</BUS_TYPE>
+        <Generators>
+        <Generator>
+            <GENERATOR_BUSNUMBER>4</GENERATOR_BUSNUMBER>
+            <GENERATOR_ID>4</GENERATOR_ID>
+            <GENERATOR_PG>4.02</GENERATOR_PG>
+            <GENERATOR_QG>4.03</GENERATOR_QG>
+            <GENERATOR_QMAX>4.04</GENERATOR_QMAX>
+            <GENERATOR_QMIN>4.05</GENERATOR_QMIN>
+            <GENERATOR_VS>4.06</GENERATOR_VS>
+            <GENERATOR_IREG>4</GENERATOR_IREG>
+            <GENERATOR_MBASE>4.07</GENERATOR_MBASE>
+            <GENERATOR_ZR>4.08</GENERATOR_ZR>
+            <GENERATOR_ZX>4.09</GENERATOR_ZX>
+            <GENERATOR_RT>4.10</GENERATOR_RT>
+            <GENERATOR_XT>4.11</GENERATOR_XT>
+            <GENERATOR_GTAP>4.12</GENERATOR_GTAP>
+            <GENERATOR_STAT>4</GENERATOR_STAT>
+            <GENERATOR_RMPCT>4.13</GENERATOR_RMPCT>
+            <GENERATOR_PMAX>4.14</GENERATOR_PMAX>
+            <GENERATOR_PMIN>4.15</GENERATOR_PMIN>
+            <GENERATOR_OWNER>4</GENERATOR_OWNER>
+        </Generator>
+        </Generators>
+        <BUS_LOAD_PL>4.16</BUS_LOAD_PL>
+        <BUS_LOAD_QL>4.17</BUS_LOAD_QL>
+        <Loads>
+        <Load>
+            <LOAD_BUSNUMBER>4</LOAD_BUSNUMBER>
+            <LOAD_STATUS>4</LOAD_STATUS>
+            <LOAD_AREA>4</LOAD_AREA>
+            <LOAD_ZONE>4</LOAD_ZONE>
+            <LOAD_PL>4.18</LOAD_PL>
+            <LOAD_QL>4.19</LOAD_QL>
+            <LOAD_IP>4.20</LOAD_IP>
+            <LOAD_IQ>4.21</LOAD_IQ>
+            <LOAD_YP>4.22</LOAD_YP>
+            <LOAD_YQ>4.23</LOAD_YQ>
+            <LOAD_OWNER>4</LOAD_OWNER>
+        </Load>
+        </Loads>
+        <BUS_OWNER>4</BUS_OWNER>
+        <powerGridId>4</powerGridId>
+        <BUS_SHUNT_BL>4.24</BUS_SHUNT_BL>
+        <BUS_SHUNT_GL>4.25</BUS_SHUNT_GL>
+        <BUS_VOLTAGE_ANG>4.26</BUS_VOLTAGE_ANG>
+        <BUS_VOLTAGE_MAG>4.27</BUS_VOLTAGE_MAG>
+        <BUS_ZONE>4</BUS_ZONE>
+    </Bus>
+<Bus>
+    <BUS_AREA>5</BUS_AREA>
+    <BUS_BASEKV>5.01</BUS_BASEKV>
+    <BUS_NAME>5</BUS_NAME>
+    <BUS_NUMBER>5</BUS_NUMBER>
+    <BUS_TYPE>5</BUS_TYPE>
+        <Generators>
+        <Generator>
+            <GENERATOR_BUSNUMBER>5</GENERATOR_BUSNUMBER>
+            <GENERATOR_ID>5</GENERATOR_ID>
+            <GENERATOR_PG>5.02</GENERATOR_PG>
+            <GENERATOR_QG>5.03</GENERATOR_QG>
+            <GENERATOR_QMAX>5.04</GENERATOR_QMAX>
+            <GENERATOR_QMIN>5.05</GENERATOR_QMIN>
+            <GENERATOR_VS>5.06</GENERATOR_VS>
+            <GENERATOR_IREG>5</GENERATOR_IREG>
+            <GENERATOR_MBASE>5.07</GENERATOR_MBASE>
+            <GENERATOR_ZR>5.08</GENERATOR_ZR>
+            <GENERATOR_ZX>5.09</GENERATOR_ZX>
+            <GENERATOR_RT>5.10</GENERATOR_RT>
+            <GENERATOR_XT>5.11</GENERATOR_XT>
+            <GENERATOR_GTAP>5.12</GENERATOR_GTAP>
+            <GENERATOR_STAT>5</GENERATOR_STAT>
+            <GENERATOR_RMPCT>5.13</GENERATOR_RMPCT>
+            <GENERATOR_PMAX>5.14</GENERATOR_PMAX>
+            <GENERATOR_PMIN>5.15</GENERATOR_PMIN>
+            <GENERATOR_OWNER>5</GENERATOR_OWNER>
+        </Generator>
+        </Generators>
+        <BUS_LOAD_PL>5.16</BUS_LOAD_PL>
+        <BUS_LOAD_QL>5.17</BUS_LOAD_QL>
+        <Loads>
+        <Load>
+            <LOAD_BUSNUMBER>5</LOAD_BUSNUMBER>
+            <LOAD_STATUS>5</LOAD_STATUS>
+            <LOAD_AREA>5</LOAD_AREA>
+            <LOAD_ZONE>5</LOAD_ZONE>
+            <LOAD_PL>5.18</LOAD_PL>
+            <LOAD_QL>5.19</LOAD_QL>
+            <LOAD_IP>5.20</LOAD_IP>
+            <LOAD_IQ>5.21</LOAD_IQ>
+            <LOAD_YP>5.22</LOAD_YP>
+            <LOAD_YQ>5.23</LOAD_YQ>
+            <LOAD_OWNER>5</LOAD_OWNER>
+        </Load>
+        </Loads>
+        <BUS_OWNER>5</BUS_OWNER>
+        <powerGridId>5</powerGridId>
+        <BUS_SHUNT_BL>5.24</BUS_SHUNT_BL>
+        <BUS_SHUNT_GL>5.25</BUS_SHUNT_GL>
+        <BUS_VOLTAGE_ANG>5.26</BUS_VOLTAGE_ANG>
+        <BUS_VOLTAGE_MAG>5.27</BUS_VOLTAGE_MAG>
+        <BUS_ZONE>5</BUS_ZONE>
+    </Bus>
+<Bus>
+    <BUS_AREA>6</BUS_AREA>
+    <BUS_BASEKV>6.01</BUS_BASEKV>
+    <BUS_NAME>6</BUS_NAME>
+    <BUS_NUMBER>6</BUS_NUMBER>
+    <BUS_TYPE>6</BUS_TYPE>
+        <Generators>
+        <Generator>
+            <GENERATOR_BUSNUMBER>6</GENERATOR_BUSNUMBER>
+            <GENERATOR_ID>6</GENERATOR_ID>
+            <GENERATOR_PG>6.02</GENERATOR_PG>
+            <GENERATOR_QG>6.03</GENERATOR_QG>
+            <GENERATOR_QMAX>6.04</GENERATOR_QMAX>
+            <GENERATOR_QMIN>6.05</GENERATOR_QMIN>
+            <GENERATOR_VS>6.06</GENERATOR_VS>
+            <GENERATOR_IREG>6</GENERATOR_IREG>
+            <GENERATOR_MBASE>6.07</GENERATOR_MBASE>
+            <GENERATOR_ZR>6.08</GENERATOR_ZR>
+            <GENERATOR_ZX>6.09</GENERATOR_ZX>
+            <GENERATOR_RT>6.10</GENERATOR_RT>
+            <GENERATOR_XT>6.11</GENERATOR_XT>
+            <GENERATOR_GTAP>6.12</GENERATOR_GTAP>
+            <GENERATOR_STAT>6</GENERATOR_STAT>
+            <GENERATOR_RMPCT>6.13</GENERATOR_RMPCT>
+            <GENERATOR_PMAX>6.14</GENERATOR_PMAX>
+            <GENERATOR_PMIN>6.15</GENERATOR_PMIN>
+            <GENERATOR_OWNER>6</GENERATOR_OWNER>
+        </Generator>
+        </Generators>
+        <BUS_LOAD_PL>6.16</BUS_LOAD_PL>
+        <BUS_LOAD_QL>6.17</BUS_LOAD_QL>
+        <Loads>
+        <Load>
+            <LOAD_BUSNUMBER>6</LOAD_BUSNUMBER>
+            <LOAD_STATUS>6</LOAD_STATUS>
+            <LOAD_AREA>6</LOAD_AREA>
+            <LOAD_ZONE>6</LOAD_ZONE>
+            <LOAD_PL>6.18</LOAD_PL>
+            <LOAD_QL>6.19</LOAD_QL>
+            <LOAD_IP>6.20</LOAD_IP>
+            <LOAD_IQ>6.21</LOAD_IQ>
+            <LOAD_YP>6.22</LOAD_YP>
+            <LOAD_YQ>6.23</LOAD_YQ>
+            <LOAD_OWNER>6</LOAD_OWNER>
+        </Load>
+        </Loads>
+        <BUS_OWNER>6</BUS_OWNER>
+        <powerGridId>6</powerGridId>
+        <BUS_SHUNT_BL>6.24</BUS_SHUNT_BL>
+        <BUS_SHUNT_GL>6.25</BUS_SHUNT_GL>
+        <BUS_VOLTAGE_ANG>6.26</BUS_VOLTAGE_ANG>
+        <BUS_VOLTAGE_MAG>6.27</BUS_VOLTAGE_MAG>
+        <BUS_ZONE>6</BUS_ZONE>
+    </Bus>
+    <Bus>
+    <BUS_AREA>7</BUS_AREA>
+    <BUS_BASEKV>7.01</BUS_BASEKV>
+    <BUS_NAME>7</BUS_NAME>
+    <BUS_NUMBER>7</BUS_NUMBER>
+    <BUS_TYPE>7</BUS_TYPE>
+        <Generators>
+        <Generator>
+            <GENERATOR_BUSNUMBER>7</GENERATOR_BUSNUMBER>
+            <GENERATOR_ID>7</GENERATOR_ID>
+            <GENERATOR_PG>7.02</GENERATOR_PG>
+            <GENERATOR_QG>7.03</GENERATOR_QG>
+            <GENERATOR_QMAX>7.04</GENERATOR_QMAX>
+            <GENERATOR_QMIN>7.05</GENERATOR_QMIN>
+            <GENERATOR_VS>7.06</GENERATOR_VS>
+            <GENERATOR_IREG>7</GENERATOR_IREG>
+            <GENERATOR_MBASE>7.07</GENERATOR_MBASE>
+            <GENERATOR_ZR>7.08</GENERATOR_ZR>
+            <GENERATOR_ZX>7.09</GENERATOR_ZX>
+            <GENERATOR_RT>7.10</GENERATOR_RT>
+            <GENERATOR_XT>7.11</GENERATOR_XT>
+            <GENERATOR_GTAP>7.12</GENERATOR_GTAP>
+            <GENERATOR_STAT>7</GENERATOR_STAT>
+            <GENERATOR_RMPCT>7.13</GENERATOR_RMPCT>
+            <GENERATOR_PMAX>7.14</GENERATOR_PMAX>
+            <GENERATOR_PMIN>7.15</GENERATOR_PMIN>
+            <GENERATOR_OWNER>7</GENERATOR_OWNER>
+        </Generator>
+        </Generators>
+        <BUS_LOAD_PL>7.16</BUS_LOAD_PL>
+        <BUS_LOAD_QL>7.17</BUS_LOAD_QL>
+        <BUS_OWNER>7</BUS_OWNER>
+        <powerGridId>7</powerGridId>
+        <BUS_SHUNT_BL>7.24</BUS_SHUNT_BL>
+        <BUS_SHUNT_GL>7.25</BUS_SHUNT_GL>
+        <BUS_VOLTAGE_ANG>7.26</BUS_VOLTAGE_ANG>
+        <BUS_VOLTAGE_MAG>7.27</BUS_VOLTAGE_MAG>
+        <BUS_ZONE>7</BUS_ZONE>
+    </Bus>
+<Bus>
+    <BUS_AREA>8</BUS_AREA>
+    <BUS_BASEKV>8.01</BUS_BASEKV>
+    <BUS_NAME>8</BUS_NAME>
+    <BUS_NUMBER>8</BUS_NUMBER>
+    <BUS_TYPE>8</BUS_TYPE>
+        <BUS_LOAD_PL>8.16</BUS_LOAD_PL>
+        <BUS_LOAD_QL>8.17</BUS_LOAD_QL>
+        <Loads>
+        <Load>
+            <LOAD_BUSNUMBER>8</LOAD_BUSNUMBER>
+            <LOAD_STATUS>8</LOAD_STATUS>
+            <LOAD_AREA>8</LOAD_AREA>
+            <LOAD_ZONE>8</LOAD_ZONE>
+            <LOAD_PL>8.18</LOAD_PL>
+            <LOAD_QL>8.19</LOAD_QL>
+            <LOAD_IP>8.20</LOAD_IP>
+            <LOAD_IQ>8.21</LOAD_IQ>
+            <LOAD_YP>8.22</LOAD_YP>
+            <LOAD_YQ>8.23</LOAD_YQ>
+            <LOAD_OWNER>8</LOAD_OWNER>
+        </Load>
+        </Loads>
+        <BUS_OWNER>8</BUS_OWNER>
+        <powerGridId>8</powerGridId>
+        <BUS_SHUNT_BL>8.24</BUS_SHUNT_BL>
+        <BUS_SHUNT_GL>8.25</BUS_SHUNT_GL>
+        <BUS_VOLTAGE_ANG>8.26</BUS_VOLTAGE_ANG>
+        <BUS_VOLTAGE_MAG>8.27</BUS_VOLTAGE_MAG>
+        <BUS_ZONE>8</BUS_ZONE>
+    </Bus>
+<Bus>
+    <BUS_AREA>9</BUS_AREA>
+    <BUS_BASEKV>9.01</BUS_BASEKV>
+    <BUS_NAME>9</BUS_NAME>
+    <BUS_NUMBER>9</BUS_NUMBER>
+    <BUS_TYPE>9</BUS_TYPE>
+        <Generators>
+        <Generator>
+            <GENERATOR_BUSNUMBER>9</GENERATOR_BUSNUMBER>
+            <GENERATOR_ID>9</GENERATOR_ID>
+            <GENERATOR_PG>9.02</GENERATOR_PG>
+            <GENERATOR_QG>9.03</GENERATOR_QG>
+            <GENERATOR_QMAX>9.04</GENERATOR_QMAX>
+            <GENERATOR_QMIN>9.05</GENERATOR_QMIN>
+            <GENERATOR_VS>9.06</GENERATOR_VS>
+            <GENERATOR_IREG>9</GENERATOR_IREG>
+            <GENERATOR_MBASE>9.07</GENERATOR_MBASE>
+            <GENERATOR_ZR>9.08</GENERATOR_ZR>
+            <GENERATOR_ZX>9.09</GENERATOR_ZX>
+            <GENERATOR_RT>9.10</GENERATOR_RT>
+            <GENERATOR_XT>9.11</GENERATOR_XT>
+            <GENERATOR_GTAP>9.12</GENERATOR_GTAP>
+            <GENERATOR_STAT>9</GENERATOR_STAT>
+            <GENERATOR_RMPCT>9.13</GENERATOR_RMPCT>
+            <GENERATOR_PMAX>9.14</GENERATOR_PMAX>
+            <GENERATOR_PMIN>9.15</GENERATOR_PMIN>
+            <GENERATOR_OWNER>9</GENERATOR_OWNER>
+        </Generator>
+        </Generators>
+        <BUS_LOAD_PL>9.16</BUS_LOAD_PL>
+        <BUS_LOAD_QL>9.17</BUS_LOAD_QL>
+        <Loads>
+        <Load>
+            <LOAD_BUSNUMBER>9</LOAD_BUSNUMBER>
+            <LOAD_STATUS>9</LOAD_STATUS>
+            <LOAD_AREA>9</LOAD_AREA>
+            <LOAD_ZONE>9</LOAD_ZONE>
+            <LOAD_PL>9.18</LOAD_PL>
+            <LOAD_QL>9.19</LOAD_QL>
+            <LOAD_IP>9.20</LOAD_IP>
+            <LOAD_IQ>9.21</LOAD_IQ>
+            <LOAD_YP>9.22</LOAD_YP>
+            <LOAD_YQ>9.23</LOAD_YQ>
+            <LOAD_OWNER>9</LOAD_OWNER>
+        </Load>
+        </Loads>
+        <BUS_OWNER>9</BUS_OWNER>
+        <powerGridId>9</powerGridId>
+        <BUS_SHUNT_BL>9.24</BUS_SHUNT_BL>
+        <BUS_SHUNT_GL>9.25</BUS_SHUNT_GL>
+        <BUS_VOLTAGE_ANG>9.26</BUS_VOLTAGE_ANG>
+        <BUS_VOLTAGE_MAG>9.27</BUS_VOLTAGE_MAG>
+        <BUS_ZONE>9</BUS_ZONE>
+    </Bus>
+<Bus>
+    <BUS_AREA>10</BUS_AREA>
+    <BUS_BASEKV>10.01</BUS_BASEKV>
+    <BUS_NAME>10</BUS_NAME>
+    <BUS_NUMBER>10</BUS_NUMBER>
+    <BUS_TYPE>10</BUS_TYPE>
+        <Generators>
+        <Generator>
+            <GENERATOR_BUSNUMBER>10</GENERATOR_BUSNUMBER>
+            <GENERATOR_ID>10</GENERATOR_ID>
+            <GENERATOR_PG>10.02</GENERATOR_PG>
+            <GENERATOR_QG>10.03</GENERATOR_QG>
+            <GENERATOR_QMAX>10.04</GENERATOR_QMAX>
+            <GENERATOR_QMIN>10.05</GENERATOR_QMIN>
+            <GENERATOR_VS>10.06</GENERATOR_VS>
+            <GENERATOR_IREG>10</GENERATOR_IREG>
+            <GENERATOR_MBASE>10.07</GENERATOR_MBASE>
+            <GENERATOR_ZR>10.08</GENERATOR_ZR>
+            <GENERATOR_ZX>10.09</GENERATOR_ZX>
+            <GENERATOR_RT>10.10</GENERATOR_RT>
+            <GENERATOR_XT>10.11</GENERATOR_XT>
+            <GENERATOR_GTAP>10.12</GENERATOR_GTAP>
+            <GENERATOR_STAT>10</GENERATOR_STAT>
+            <GENERATOR_RMPCT>10.13</GENERATOR_RMPCT>
+            <GENERATOR_PMAX>10.14</GENERATOR_PMAX>
+            <GENERATOR_PMIN>10.15</GENERATOR_PMIN>
+            <GENERATOR_OWNER>10</GENERATOR_OWNER>
+        </Generator>
+        </Generators>
+        <BUS_LOAD_PL>10.16</BUS_LOAD_PL>
+        <BUS_LOAD_QL>10.17</BUS_LOAD_QL>
+        <Loads>
+        <Load>
+            <LOAD_BUSNUMBER>10</LOAD_BUSNUMBER>
+            <LOAD_STATUS>10</LOAD_STATUS>
+            <LOAD_AREA>10</LOAD_AREA>
+            <LOAD_ZONE>10</LOAD_ZONE>
+            <LOAD_PL>10.18</LOAD_PL>
+            <LOAD_QL>10.19</LOAD_QL>
+            <LOAD_IP>10.20</LOAD_IP>
+            <LOAD_IQ>10.21</LOAD_IQ>
+            <LOAD_YP>10.22</LOAD_YP>
+            <LOAD_YQ>10.23</LOAD_YQ>
+            <LOAD_OWNER>10</LOAD_OWNER>
+        </Load>
+        </Loads>
+        <BUS_OWNER>10</BUS_OWNER>
+        <powerGridId>10</powerGridId>
+        <BUS_SHUNT_BL>10.24</BUS_SHUNT_BL>
+        <BUS_SHUNT_GL>10.25</BUS_SHUNT_GL>
+        <BUS_VOLTAGE_ANG>10.26</BUS_VOLTAGE_ANG>
+        <BUS_VOLTAGE_MAG>10.27</BUS_VOLTAGE_MAG>
+        <BUS_ZONE>10</BUS_ZONE>
+    </Bus>
+
+
+</Buses>
+</GridpackPowergrid>
+</application>

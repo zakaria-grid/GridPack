@@ -282,6 +282,8 @@
  * type: real float
  * indexed
  */
+#define GENERATOR_ZR "GENERATOR_ZR"
+#define GENERATOR_ZX "GENERATOR_ZX"
 #define GENERATOR_RT "GENERATOR_RT"
 #define GENERATOR_XT "GENERATOR_XT"
 
@@ -372,6 +374,13 @@
  */
 #define GENERATOR_DAMPING_COEFFICIENT_0 "GENERATOR_DAMPING_COEFFICENT_0"
 
+/**
+ * Non-blank alphanumeric string to identify model being used for generator	
+ * type: string
+ * indexed
+ */
+#define GENERATOR_MODEL "GENERATOR_MODEL"
+
 // BRANCH DATA
 /**
  * Global index used to sort branches into a fixed order
@@ -395,6 +404,25 @@
  * type: integer
  */
 #define BRANCH_NUM_ELEMENTS "BRANCH_NUM_ELEMENTS"
+
+/**
+ * Logical flag that defines whether or not to and from bus are switched for
+ * transmission element
+ * type: boolean
+ * indexed
+ */
+#define BRANCH_SWITCHED "BRANCH_SWITCHED"
+
+/**
+ * ADDING
+ * type: real float
+ * indexed
+ */
+#define BRANCH_FLOW_P "BRANCH_FLOW_P"
+#define BRANCH_FLOW_Q "BRANCH_FLOW_Q"
+#define BRANCH_RATING "BRANCH_RATING"
+#define BUS_LOAD_PL "BUS_LOAD_PL"
+#define BUS_LOAD_QL "BUS_LOAD_QL"
 
 /**
  * Non-blank alphanumeric branch circuit identifier
@@ -464,28 +492,28 @@
  * type: real float
  * indexed
  */
-#define BRANCH_SHUNT_ADMTTNC_G1 "BRANCH_SHUNT_ADMTTNC_G1"
+#define BRANCH_SHUNT_ADMTTNC_GI "BRANCH_SHUNT_ADMTTNC_GI"
 
 /**
  * Imaginary part of admittance of the line shunt at the “from bus” end of the branch
  * type: real float
  * indexed
  */
-#define BRANCH_SHUNT_ADMTTNC_B1 "BRANCH_SHUNT_ADMTTNC_B1"
+#define BRANCH_SHUNT_ADMTTNC_BI "BRANCH_SHUNT_ADMTTNC_BI"
 
 /**
  * Real part of admittance of the line shunt at the “to bus” end of the branch
  * type: real float
  * indexed
  */
-#define BRANCH_SHUNT_ADMTTNC_G2 "BRANCH_SHUNT_ADMTTNC_G2"
+#define BRANCH_SHUNT_ADMTTNC_GJ "BRANCH_SHUNT_ADMTTNC_GJ"
 
 /**
  * Imaginary part of admittance of the line shunt at the “to bus” end of the branch
  * type: real float
  * indexed
  */
-#define BRANCH_SHUNT_ADMTTNC_B2 "BRANCH_SHUNT_ADMTTNC_B2"
+#define BRANCH_SHUNT_ADMTTNC_BJ "BRANCH_SHUNT_ADMTTNC_BJ"
 
 
 /**
