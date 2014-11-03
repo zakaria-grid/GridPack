@@ -82,9 +82,11 @@ class Parser
               std::cout << "General exception\n\t";
               std::cout << std::endl;
           }
+
+          p_case_id      = parser.getCaseId();
+          p_case_sbase   = parser.getCaseSbase();
           parser.loadBuses(p_busData,p_busMap);
           parser.loadBranches(p_branchData);
-
 
           createNetwork();
 

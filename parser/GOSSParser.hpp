@@ -29,7 +29,28 @@
 #include "gridpack/component/data_collection.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/utilities/exception.hpp"
-
+/*
+ *       <xs:complexType name="transmissionElements">
+ *         <xs:sequence>
+ *           <xs:element maxOccurs="unbounded" minOccurs="0" name="Line" type="transmissionElementLine"/>
+ *           <xs:element maxOccurs="unbounded" minOccurs="0" name="Transformer" type="transmissionElementTransformer"/>
+ *         </xs:sequence>
+ *       </xs:complexType>
+ *
+ *       <xs:complexType name="transmissionElementLine">
+ *         <xs:complexContent>
+ *           <xs:extension base="transmissionElement">
+ *             <xs:sequence>
+ *               <xs:element name="BRANCH_B" type="xs:double"/>
+ *               <xs:element name="BRANCH_SHUNT_ADMTTNC_B1" type="xs:double"/>
+ *               <xs:element name="BRANCH_SHUNT_ADMTTNC_B2" type="xs:double"/>
+ *               <xs:element name="BRANCH_SHUNT_ADMTTNC_G1" type="xs:double"/>
+ *               <xs:element name="BRANCH_SHUNT_ADMTTNC_G2" type="xs:double"/>
+ *             </xs:sequence>
+ *           </xs:extension>
+ *         </xs:complexContent>
+ *       </xs:complexType>
+ */
 namespace gridpack {
 namespace parser {
 
@@ -39,10 +60,10 @@ class GOSSParser
 {
     public:
 
-    enum XML_TYPE {INTEGER, BOOLEAN, DOUBLE, CHARACTER, STRING};
+    enum XML_TYPE {INTEGER, BOOLEAN, DOUBLE, CHARACTER, STRING, N_TYPES};
 
     /// Constructor
-    explicit GOSSParser() : busIterator(0), branchIterator(0),  nBuses(0), nBranches(0), maxBus(0), p_case_id(1), p_case_sbase(1.0){};
+    explicit GOSSParser() : maxBus(0) {};
 
 
     /**
@@ -67,9 +88,18 @@ class GOSSParser
         }
 
         setTypeAssociations(xmlTree);
-        setCase();
+        loadCase(xmlTree);
         loadBusData(xmlTree);
         loadBranchData(xmlTree);
+    }
+
+    void dumpMap()
+    {
+        std::map<std::string, XML_TYPE>::iterator type;
+        for (type = typeMap.begin(); type != typeMap.end(); ++type)
+        {
+            std::cout << "<" << type->first << "; " << type->second << ">" << std::endl;
+        }
     }
 
     void loadBranches(std::vector<boost::shared_ptr<gridpack::component::DataCollection> > & branches)
@@ -84,6 +114,7 @@ class GOSSParser
             }
         }
     }
+
 #ifdef OLD_MAP
     void loadBuses(std::vector<boost::shared_ptr<gridpack::component::DataCollection> > & buses,
         std::map<int,int> busMap)
@@ -92,14 +123,14 @@ class GOSSParser
       boost::unordered_map<int, int> busMap)
 #endif
     {
-        buses = p_busData;
-        busMap = p_busMap;
+        buses           = p_busData;
+        busMap          = p_busMap;
     }
 
-    int getNBuses(){return nBuses;};
-    int getNBranches(){return nBranches;};
-    int getCaseId(){return p_case_id;};
-    int getCaseSbase(){return p_case_sbase;};
+    int getNBuses()     {return nBuses;};
+    int getNBranches()  {return nBranches;};
+    std::string getCaseId()     {return p_case_id;};
+    int getCaseSbase()  {return p_case_sbase;};
 
     protected:
     private:
@@ -116,13 +147,6 @@ class GOSSParser
         }
     }
 
-    void setCase()
-    {
-        p_case_id       = 1;
-        p_case_sbase    = 1.0;
-    }
-
-
     void setTypeAssociations(boost::property_tree::ptree &  xmlTree)
     {
         std::string          name("");
@@ -132,7 +156,7 @@ class GOSSParser
             schemaStyleAttr =
                     xmlTree.get_child("application.grammars.xs:schema");
         } catch (boost::exception & e){
-            std::cout << "Throwing exception from get_child(\"application.grammars.xs:schema\")" << std::endl;
+            std::cout << __FILE__ << ":" << __LINE__ <<  "\n\tThrowing exception from get_child(\"application.grammars.xs:schema\")" << std::endl;
             throw;
         }
 
@@ -144,48 +168,79 @@ class GOSSParser
             try {
                 recursiveSetTypeAssociation(elementAttr, name);
             } catch (boost::exception & e) {
-                std::cout << "Error in recursive type setting" << std::endl;
+                std::cout << __FILE__ << ":" << __LINE__ <<  "\n\tError in recursive type setting " << name << std::endl;
             }
         }
     }
 
-    void recursiveSetTypeAssociation(boost::property_tree::ptree::value_type const& elementAttr, std::string & name)
+    void recursiveSetTypeAssociation(boost::property_tree::ptree::value_type const& elementType, std::string & name)
     {
         XML_TYPE             typeEnum;
         // if the XML type starts with xs:element, then it is component value
-        if (elementAttr.first == "xs:element") {
-            const boost::property_tree::ptree & attributes = elementAttr.second.get_child("<xmlattr>");
+        if (elementType.first == "xs:element") {
+            // get the elements attribute list
+            const boost::property_tree::ptree & attributes = elementType.second.get_child("<xmlattr>");
+
+            // search for and extract the name and type values
             BOOST_FOREACH( boost::property_tree::ptree::value_type const& attr, attributes)
             {
-                std::string               type   = attr.second.data();
-                std::vector<std::string>  split_type;
-                boost::algorithm::split(split_type, type, boost::algorithm::is_any_of(":"), boost::token_compress_on);
-                if (split_type[0] == "xs"){
-                    if (split_type[1] == "int") {
-                        typeEnum = INTEGER;
-                    } else if (split_type[1] == "boolean") {
-                        typeEnum = BOOLEAN;
-                    } else if (split_type[1] == "double") {
-                        typeEnum = DOUBLE;
-                    } else if (split_type[1] == "char") {
-                        typeEnum = CHARACTER;
-                    } else if (split_type[1] == "string") {
-                        typeEnum = STRING;
-                    } else {
-                        // TODO: exception, invalid type
+                if (attr.first == "name") {
+                    name = attr.second.data()   ;
+                } else if (attr.first == "type"){
+                    std::string               type   = attr.second.data();
+                    std::vector<std::string>  split_type;
+                    boost::algorithm::split(split_type, type, boost::algorithm::is_any_of(":"), boost::token_compress_on);
+                    if (split_type[0] == "xs"){
+                        if (split_type[1] == "int") {
+                            typeEnum = INTEGER;
+                        } else if (split_type[1] == "boolean") {
+                            typeEnum = BOOLEAN;
+                        } else if (split_type[1] == "double") {
+                            typeEnum = DOUBLE;
+                        } else if (split_type[1] == "char") {
+                            typeEnum = CHARACTER;
+                        } else if (split_type[1] == "string") {
+                            typeEnum = STRING;
+                        } else {
+                            typeEnum = N_TYPES;
+                        }
+                        if (typeEnum < N_TYPES) {
+                            typeMap[name] = typeEnum;
+                        }
                     }
-
-                    typeMap[name] = typeEnum;
-                } else {
-                    name = attr.second.data();
                 }
             }
-        } else if (elementAttr.first == "xs:complexType") {
-            // a complex type is a compound data type in the XML file
-            boost::property_tree::ptree complexTree = elementAttr.second.get_child("xs:sequence");
-            BOOST_FOREACH( boost::property_tree::ptree::value_type const& sequenceAttr, complexTree)
+        } else {
+            std::string  element        = elementType.first;
+            boost::property_tree::ptree subTree;
+            try {
+                subTree = elementType.second.get_child("");
+            } catch (boost::exception & e) {
+                std::cout << __FILE__ << ":" << __LINE__ <<  "\n\tError in recursive statement " << element  << std::endl;
+                throw;
+            }
+            BOOST_FOREACH( boost::property_tree::ptree::value_type const& subTreeType, subTree)
             {
-                recursiveSetTypeAssociation(sequenceAttr, name);
+                recursiveSetTypeAssociation(subTreeType, name);
+            }
+        }
+
+    }
+
+    void loadCase(boost::property_tree::ptree & xmlTree)
+    {
+        boost::property_tree::ptree caseXMLTree =
+                xmlTree.get_child("application.GridpackPowergrid");
+
+        BOOST_FOREACH( boost::property_tree::ptree::value_type const& caseAttr, caseXMLTree)
+        {
+            if (caseAttr.first == "CASE_SBASE")
+            {
+                p_case_sbase    = atoi(caseAttr.second.data().c_str());
+            }
+            if (caseAttr.first == "CASE_ID")
+            {
+                p_case_id    = caseAttr.second.data();
             }
         }
     }
@@ -366,6 +421,10 @@ class GOSSParser
                     data->addValue(it->first.c_str(), it->second.c_str(), nElems);
                     break;
                 }
+                default:
+                {
+                    break;
+                }
             }
         }
     }
@@ -402,6 +461,10 @@ class GOSSParser
             case STRING:
             {
                 data->addValue(attr.first.c_str(), attr.second.data().c_str());
+                break;
+            }
+            default:
+            {
                 break;
             }
         }
@@ -441,6 +504,10 @@ class GOSSParser
                 data->addValue(attr.first.c_str(), attr.second.data().c_str(), nElems);
                 break;
             }
+            default:
+            {
+                break;
+            }
         }
     }
 
@@ -464,8 +531,8 @@ class GOSSParser
     // Map of PTI indices to index in p_busData
     BucketList               branchBucket;
 
-    int                      p_case_id;
-    double                   p_case_sbase;
+    std::string              p_case_id;
+    int                      p_case_sbase;
     std::map<std::string, XML_TYPE> typeMap;
 
 }; /* end of GOSSParser */

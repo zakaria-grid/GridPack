@@ -492,28 +492,28 @@
  * type: real float
  * indexed
  */
-#define BRANCH_SHUNT_ADMTTNC_GI "BRANCH_SHUNT_ADMTTNC_GI"
+#define BRANCH_SHUNT_ADMTTNC_G1 "BRANCH_SHUNT_ADMTTNC_G1"
 
 /**
  * Imaginary part of admittance of the line shunt at the “from bus” end of the branch
  * type: real float
  * indexed
  */
-#define BRANCH_SHUNT_ADMTTNC_BI "BRANCH_SHUNT_ADMTTNC_BI"
+#define BRANCH_SHUNT_ADMTTNC_B1 "BRANCH_SHUNT_ADMTTNC_B1"
 
 /**
  * Real part of admittance of the line shunt at the “to bus” end of the branch
  * type: real float
  * indexed
  */
-#define BRANCH_SHUNT_ADMTTNC_GJ "BRANCH_SHUNT_ADMTTNC_GJ"
+#define BRANCH_SHUNT_ADMTTNC_G2 "BRANCH_SHUNT_ADMTTNC_G2"
 
 /**
  * Imaginary part of admittance of the line shunt at the “to bus” end of the branch
  * type: real float
  * indexed
  */
-#define BRANCH_SHUNT_ADMTTNC_BJ "BRANCH_SHUNT_ADMTTNC_BJ"
+#define BRANCH_SHUNT_ADMTTNC_B2 "BRANCH_SHUNT_ADMTTNC_B2"
 
 
 /**
