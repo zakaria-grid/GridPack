@@ -9,7 +9,7 @@
 /**
  * @file   pf_app2.cpp
  * @author William A. Perkins
- * @date   2014-02-11 08:00:03 d3g096
+ * @date   2014-10-02 08:47:55 d3g096
  * 
  * @brief  
  * 
@@ -21,7 +21,7 @@
 #include <ga++.h>
 
 #include "pf_app2.hpp"
-#include "pf_factory.hpp"
+#include "gridpack/include/gridpack.hpp"
 
 #include <gridpack/gridpack.hpp>
 
@@ -211,7 +211,7 @@ PFApp2::~PFApp2(void)
 // PFApp2::execute
 // -------------------------------------------------------------
 void
-PFApp2::execute(void)
+PFApp2::execute(int argc, char** argv)
 {
   parallel::Communicator world;
   boost::shared_ptr<PFNetwork> network(new PFNetwork(world));
@@ -219,7 +219,13 @@ PFApp2::execute(void)
   // read configuration file
   utility::Configuration *config = 
     utility::Configuration::configuration();
-  config->open("input.xml", world);
+  if (argc >= 2 && argv[1] != NULL) {
+    char inputfile[256];
+    sprintf(inputfile,"%s",argv[1]);
+    config->open(inputfile,world);
+  } else {
+    config->open("input.xml",world);
+  }
   utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Powerflow");
   std::string filename = cursor->get("networkConfiguration",
@@ -335,10 +341,11 @@ PFApp2::execute(void)
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment(argc, argv);
+  gridpack::parallel::Environment env(argc, argv);
+  gridpack::math::Initialize();
 
   gridpack::powerflow::PFApp2 app;
-  app.execute();
+  app.execute(argc, argv);
 
   return 0;
 }

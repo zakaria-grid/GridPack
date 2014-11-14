@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2014-01-31 11:31:42 d3g096
+ * @date   2014-09-12 13:43:37 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -53,12 +53,13 @@ PETScMatrixImplementation::p_getCommunicator(const Mat& m)
  * @param dense 
  */
 PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicator& comm,
-                                                     const int& local_rows, const int& global_cols,
+                                                     const int& local_rows, 
+                                                     const int& local_cols,
                                                      const bool& dense)
   : MatrixImplementation(comm),
     p_matrixWrapped(false)
 {
-  p_build_matrix(comm, local_rows, global_cols);
+  p_build_matrix(comm, local_rows, local_cols);
   if (dense) {
     p_set_dense_matrix();
   } else {
@@ -67,22 +68,24 @@ PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicato
 }
 
 PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicator& comm,
-                                                     const int& local_rows, const int& cols,
+                                                     const int& local_rows, 
+                                                     const int& local_cols,
                                                      const int& max_nonzero_per_row)
   : MatrixImplementation(comm),
     p_matrixWrapped(false)
 {
-  p_build_matrix(comm, local_rows, cols);
+  p_build_matrix(comm, local_rows, local_cols);
   p_set_sparse_matrix(max_nonzero_per_row);
 }
 
 PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicator& comm,
-                                                     const int& local_rows, const int& cols,
+                                                     const int& local_rows, 
+                                                     const int& local_cols,
                                                      const int *nonzero_by_row)
   : MatrixImplementation(comm),
     p_matrixWrapped(false)
 {
-  p_build_matrix(comm, local_rows, cols);
+  p_build_matrix(comm, local_rows, local_cols);
   p_set_sparse_matrix(nonzero_by_row);
 }
 
@@ -100,7 +103,7 @@ PETScMatrixImplementation::PETScMatrixImplementation(Mat& m, const bool& copyMat
       p_matrixWrapped = true;
     }
 
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -127,7 +130,7 @@ PETScMatrixImplementation::~PETScMatrixImplementation(void)
 void
 PETScMatrixImplementation::p_build_matrix(const parallel::Communicator& comm,
                                           const int& local_rows, 
-                                          const int& global_cols)
+                                          const int& local_cols)
 {
   PetscErrorCode ierr(0);
   try {
@@ -139,16 +142,12 @@ PETScMatrixImplementation::p_build_matrix(const parallel::Communicator& comm,
     PetscInt lrows(local_rows), grows(PETSC_DECIDE);
     ierr = PetscSplitOwnership(comm, &lrows, &grows); CHKERRXX(ierr);
 
-    PetscInt lcols(PETSC_DECIDE), gcols(global_cols);
-    if (grows == global_cols) {
-      lcols = lrows;
-    } else {
-      ierr = PetscSplitOwnership(comm, &lcols, &gcols); CHKERRXX(ierr);
-    }
+    PetscInt lcols(local_cols), gcols(PETSC_DECIDE);
+    ierr = PetscSplitOwnership(comm, &lcols, &gcols); CHKERRXX(ierr);
     
     ierr = MatCreate(this->communicator(), &p_matrix); CHKERRXX(ierr);
     ierr = MatSetSizes(p_matrix, lrows, lcols, grows, gcols); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -168,7 +167,7 @@ PETScMatrixImplementation::p_set_dense_matrix(void)
       ierr = MatSetType(p_matrix, MATDENSE); CHKERRXX(ierr);
       ierr = MatMPIDenseSetPreallocation(p_matrix, PETSC_NULL); CHKERRXX(ierr);
     }
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -188,7 +187,7 @@ PETScMatrixImplementation::p_set_sparse_matrix(void)
     }
     ierr = MatSetFromOptions(p_matrix); CHKERRXX(ierr);
     ierr = MatSetUp(p_matrix); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -198,7 +197,7 @@ PETScMatrixImplementation::p_set_sparse_matrix(const int& max_nz_per_row)
 {
   PetscErrorCode ierr(0);
   const PetscInt diagonal_non_zero_guess(max_nz_per_row);
-  PetscInt offdiagonal_non_zero_guess(static_cast<PetscInt>(0.5*diagonal_non_zero_guess));
+  PetscInt offdiagonal_non_zero_guess(static_cast<PetscInt>(diagonal_non_zero_guess));
   offdiagonal_non_zero_guess = std::max(offdiagonal_non_zero_guess, 10);
 
   try {
@@ -217,7 +216,7 @@ PETScMatrixImplementation::p_set_sparse_matrix(const int& max_nz_per_row)
     }
     ierr = MatSetFromOptions(p_matrix); CHKERRXX(ierr);
     ierr = MatSetUp(p_matrix); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -252,7 +251,7 @@ PETScMatrixImplementation::p_set_sparse_matrix(const int *nz_by_row)
     }
     ierr = MatSetFromOptions(p_matrix); CHKERRXX(ierr);
     ierr = MatSetUp(p_matrix); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -269,7 +268,7 @@ PETScMatrixImplementation::p_localRowRange(int& lo, int& hi) const
     ierr = MatGetOwnershipRange(p_matrix, &plo, &phi); CHKERRXX(ierr);
     lo = plo;
     hi = phi;
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -286,7 +285,7 @@ PETScMatrixImplementation::p_rows(void) const
     PetscInt rows;
     ierr = MatGetSize(p_matrix, &rows, PETSC_NULL); CHKERRXX(ierr);
     result = rows;
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
   return result;
@@ -304,7 +303,7 @@ PETScMatrixImplementation::p_localRows(void) const
     PetscInt rows;
     ierr = MatGetLocalSize(p_matrix, &rows, PETSC_NULL); CHKERRXX(ierr);
     result = rows;
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
   return result;
@@ -322,12 +321,29 @@ PETScMatrixImplementation::p_cols(void) const
     PetscInt cols;
     ierr = MatGetSize(p_matrix, PETSC_NULL, &cols); CHKERRXX(ierr);
     result = cols;
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
   return result;
 }  
 
+// -------------------------------------------------------------
+// PETScMatrixImplementation::p_local_rows
+// -------------------------------------------------------------
+int
+PETScMatrixImplementation::p_localCols(void) const
+{
+  PetscErrorCode ierr(0);
+  int result(0);
+  try {
+    PetscInt cols;
+    ierr = MatGetLocalSize(p_matrix, PETSC_NULL, &cols); CHKERRXX(ierr);
+    result = cols;
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+  return result;
+}  
 // -------------------------------------------------------------
 // PETScMatrixImplementation::p_setElement
 // -------------------------------------------------------------
@@ -338,7 +354,7 @@ PETScMatrixImplementation::p_setElement(const int& i, const int& j,
   PetscErrorCode ierr(0);
   try {
     ierr = MatSetValue(p_matrix, i, j, x, INSERT_VALUES); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -367,7 +383,7 @@ PETScMatrixImplementation::p_addElement(const int& i, const int& j,
   PetscErrorCode ierr(0);
   try {
     ierr = MatSetValue(p_matrix, i, j, x, ADD_VALUES); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -399,7 +415,7 @@ PETScMatrixImplementation::p_getElement(const int& i, const int& j,
     PetscInt iidx[one] = { i };
     PetscInt jidx[one] = { j };
     ierr = MatGetValues(p_matrix, one, &iidx[0], one, &jidx[0], &x); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -427,7 +443,7 @@ PETScMatrixImplementation::p_real(void)
   PetscErrorCode ierr(0);
   try {
     ierr = MatRealPart(p_matrix); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -441,7 +457,7 @@ PETScMatrixImplementation::p_imaginary(void)
   PetscErrorCode ierr(0);
   try {
     ierr = MatImaginaryPart(p_matrix); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -455,7 +471,7 @@ PETScMatrixImplementation::p_conjugate(void)
   PetscErrorCode ierr(0);
   try {
     ierr = MatConjugate(p_matrix); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -472,7 +488,7 @@ PETScMatrixImplementation::p_norm2(void) const
     PetscReal norm;
     ierr = MatNorm(p_matrix, NORM_FROBENIUS, &norm); CHKERRXX(ierr);
     result = norm;
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
   return result;
@@ -497,7 +513,7 @@ PETScMatrixImplementation::p_ready(void)
     //           << "#nz allocated = " << info.nz_allocated << ", "
     //           << "#nz used = " << info.nz_used << ", "
     //           << std::endl;
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }

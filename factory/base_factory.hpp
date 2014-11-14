@@ -263,8 +263,10 @@ class BaseFactory {
     /**
      * Set up the exchange buffers so that they work correctly. This should only
      * be called after the network topology has been specified
+     * @param flag if true then have network allocate buffers for exchange,
+     * otherwise use external buffers
      */
-    virtual void setExchange(void)
+    virtual void setExchange(bool flag=true)
     {
       gridpack::utility::CoarseTimer *timer =
         gridpack::utility::CoarseTimer::instance();
@@ -285,21 +287,53 @@ class BaseFactory {
       } else {
         busXCSize = 0;
       }
-      p_network->allocXCBus(busXCSize);
+      if (flag) {
+        p_network->allocXCBus(busXCSize);
+      } else {
+        p_network->allocXCBusPointers(busXCSize);
+      }
 
       if (nbranch > 0){
         branchXCSize = p_network->getBranch(0)->getXCBufSize();
+      } else {
+        branchXCSize = 0;
       }
-      p_network->allocXCBranch(branchXCSize);
+      if (flag) {
+        p_network->allocXCBranch(branchXCSize);
+      } else {
+        p_network->allocXCBranchPointers(branchXCSize);
+      }
 
-      // Buffers have been allocated in network. Now associate buffers from network
-      // back to individual components
       int i;
-      for (i=0; i<nbus; i++) {
-        p_network->getBus(i)->setXCBuf(p_network->getXCBusBuffer(i));
-      }
-      for (i=0; i<nbranch; i++) {
-        p_network->getBranch(i)->setXCBuf(p_network->getXCBranchBuffer(i));
+      if (flag) {
+        // Buffers have been allocated in network. Now associate buffers from network
+        // back to individual components
+        if (busXCSize > 0) {
+          for (i=0; i<nbus; i++) {
+            p_network->getBus(i)->setXCBuf(p_network->getXCBusBuffer(i));
+          }
+        }
+        if (branchXCSize > 0) {
+          for (i=0; i<nbranch; i++) {
+            p_network->getBranch(i)->setXCBuf(p_network->getXCBranchBuffer(i));
+          }
+        }
+      } else {
+        // Buffers have been allocated in components. Now assign buffers to
+        // pointers in network
+        void *ptr;
+        if (busXCSize > 0) {
+          for (i=0; i<nbus; i++) {
+            p_network->getBus(i)->getXCBuf(&ptr);
+            p_network->setXCBusBuffer(i,ptr);
+          }
+        }
+        if (branchXCSize > 0) {
+          for (i=0; i<nbranch; i++) {
+            p_network->getBranch(i)->getXCBuf(&ptr);
+            p_network->setXCBranchBuffer(i,ptr);
+          }
+        }
       }
       timer->stop(t_setx);
       timer->configTimer(true);
@@ -324,6 +358,30 @@ class BaseFactory {
         p_network->getBranch(i)->setMode(mode);
       }
     }
+
+    /**
+     * A convenience function that checks to see if something is true on all
+     * processors
+     * @param flag boolean flag on each processor
+     * @return true if flag is true on all processors, false otherwise
+     */
+    bool checkTrue(bool flag) {
+      int iok;
+      if (flag) {
+        iok = 1;
+      } else {
+        iok = 0;
+      }
+      int grp = p_network->communicator().getGroup();
+      int nprocs = GA_Pgroup_nnodes(grp);
+      GA_Pgroup_igop(grp,&iok,1,"+");
+      if (iok == nprocs) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
 
   protected:
 

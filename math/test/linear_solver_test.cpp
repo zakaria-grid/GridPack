@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2014-02-10 09:06:56 d3g096
+ * @date   2014-07-01 13:38:11 d3g096
  * 
  * @brief  
  * 
@@ -78,7 +78,7 @@ assemble(const int imax, const int jmax,
           bp += 0.0;
           ap -= 0.0;
         } else {
-          as = (k/dx)*(dx*t);
+          as = (k/dy)*(dx*t);
         }
 
         if (j == jmax - 1) {      /* constant temperature (100C) north boundary */
@@ -86,7 +86,7 @@ assemble(const int imax, const int jmax,
           bp += 2*k/dy*(dy*t)*100.0;
           ap -= -2*k/dy*(dy*t);
         } else {
-          an = (k/dx)*(dx*t);
+          an = (k/dy)*(dx*t);
         }
 
         if (i == 0) {             /* constant flux (500kw/m2) west boundary */
@@ -94,7 +94,7 @@ assemble(const int imax, const int jmax,
           bp += 500000.0*dy*t;
           ap -= 0.0;
         } else {
-          aw = (k/dx)*(dx*t);
+          aw = (k/dx)*(dy*t);
         }
 
         if (i == imax - 1) {      /* insulated east boundary */
@@ -102,7 +102,7 @@ assemble(const int imax, const int jmax,
           bp += 0.0; 
           ap -= 0.0;
         } else {
-          ae = (k/dx)*(dx*t);
+          ae = (k/dx)*(dy*t);
         }
         
         ap += as + an + aw + ae;
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE( Versteeg )
     
 
   std::auto_ptr<gridpack::math::Matrix> 
-    A(new gridpack::math::Matrix(world, local_size, global_size, 
+    A(new gridpack::math::Matrix(world, local_size, local_size, 
                                  gridpack::math::Matrix::Sparse));
   std::auto_ptr<gridpack::math::Vector>
     b(new gridpack::math::Vector(world, local_size)),
@@ -230,9 +230,9 @@ BOOST_AUTO_TEST_CASE ( VersteegInverse )
     
 
   std::auto_ptr<gridpack::math::Matrix> 
-    A(new gridpack::math::Matrix(world, local_size, global_size, 
+    A(new gridpack::math::Matrix(world, local_size, local_size, 
                                  gridpack::math::Matrix::Sparse)),
-    I(new gridpack::math::Matrix(world, local_size, global_size, 
+    I(new gridpack::math::Matrix(world, local_size, local_size, 
                                  gridpack::math::Matrix::Sparse));
   I->identity();
 
@@ -304,9 +304,9 @@ BOOST_AUTO_TEST_CASE ( VersteegMatrixInverse )
     
 
   std::auto_ptr<gridpack::math::Matrix> 
-    A(new gridpack::math::Matrix(world, local_size, global_size, 
+    A(new gridpack::math::Matrix(world, local_size, local_size, 
                                  gridpack::math::Matrix::Sparse)),
-    I(new gridpack::math::Matrix(world, local_size, global_size, 
+    I(new gridpack::math::Matrix(world, local_size, local_size, 
                                  gridpack::math::Matrix::Dense));
   I->identity();
 

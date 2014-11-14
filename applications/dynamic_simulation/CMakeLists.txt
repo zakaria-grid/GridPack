@@ -10,12 +10,11 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-08 08:30:25 d3g096
+# Last Change: 2014-03-24 11:53:04 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
     gridpack
-    gridpack_ymatrix_components
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
@@ -29,18 +28,30 @@ endif()
 
 add_executable(ds.x
    ds_app.cpp
-   ds_components.cpp
    ds_factory.cpp
    ds_main.cpp
 )
 
 target_link_libraries(ds.x ${target_libraries})
 
+add_custom_target(ds.x.input
+ 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
 
-# -------------------------------------------------------------
-# TEST: pf_network_test
-# -------------------------------------------------------------
-#add_executable(pf_network_test test/pf_network_test.cpp)
-#target_link_libraries(pf_network_test powerflow_app ${target_libraries})
-#gridpack_add_unit_test(pf_network_test pf_network_test)
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145bus_v23_PSLF.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145b_classical_model.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  DEPENDS 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145bus_v23_PSLF.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145b_classical_model.dyr
+)
+
+add_dependencies(ds.x ds.x.input)

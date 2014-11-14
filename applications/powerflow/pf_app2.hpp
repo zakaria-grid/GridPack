@@ -18,6 +18,10 @@
 #ifndef _pf_app_h_
 #define _pf_app_h_
 
+#include "boost/smart_ptr/scoped_ptr.hpp"
+#include "pf_factory.hpp"
+#include "gridpack/include/gridpack.hpp"
+
 namespace gridpack {
 namespace powerflow {
 
@@ -39,7 +43,7 @@ public:
   /**
    * Execute application
    */
-  void execute(void);
+  void execute(int argc, char** argv);
   
 private:
 };

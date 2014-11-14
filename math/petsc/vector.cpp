@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2014-01-13 12:07:44 d3g096
+ * @date   2014-09-12 13:44:17 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -51,7 +51,7 @@ Vector::scale(const ComplexType& x)
   PetscErrorCode ierr(0);
   try {
     ierr = VecScale(*vec, x); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -71,7 +71,7 @@ Vector::add(const Vector& x, const ComplexType& scale)
 
     // This call computes y = x + alpha*y. Where y is p_vector.  
     ierr = VecAXPY(*yvec, alpha, *xvec);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -83,7 +83,7 @@ Vector::add(const ComplexType& x)
   PetscErrorCode ierr(0);
   try {
     ierr = VecShift(*vec, x); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -104,7 +104,7 @@ Vector::equate(const Vector& x)
   const Vec *xvec(PETScVector(x));
   try {
     ierr = VecCopy(*xvec, *yvec); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -119,7 +119,7 @@ Vector::reciprocal(void)
   PetscErrorCode ierr(0);
   try {
     ierr = VecReciprocal(*vec); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -135,7 +135,7 @@ Vector::elementMultiply(const Vector& x)
   PetscErrorCode ierr(0);
   try {
     ierr = VecPointwiseMult(*vec, *vec, *xvec); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }  
@@ -151,24 +151,10 @@ Vector::elementDivide(const Vector& x)
   PetscErrorCode ierr(0);
   try {
     ierr = VecPointwiseDivide(*vec, *vec, *xvec); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }  
-
-// -------------------------------------------------------------
-// petsc_make_viewer
-// -------------------------------------------------------------
-static void
-petsc_make_viewer(const char* filename, PetscViewer *viewer)
-{
-  PetscErrorCode ierr;
-  if (filename != NULL) {
-    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, viewer); ; CHKERRXX(ierr);
-  } else {
-    *viewer = PETSC_VIEWER_STDOUT_(PETSC_COMM_WORLD);
-  }
-}
 
 // -------------------------------------------------------------
 // petsc_print_vector
@@ -179,10 +165,18 @@ petsc_print_vector(const Vec vec, const char* filename, PetscViewerFormat format
   PetscErrorCode ierr;
   try {
     PetscViewer viewer;
-    petsc_make_viewer(filename, &viewer);
+    MPI_Comm comm = PetscObjectComm((PetscObject)vec);
+    if (filename != NULL) {
+      ierr = PetscViewerASCIIOpen(comm, filename, &viewer); ; CHKERRXX(ierr);
+    } else {
+      ierr = PetscViewerASCIIGetStdout(comm, &viewer); CHKERRXX(ierr);
+    }
     ierr = PetscViewerSetFormat(viewer, format); ; CHKERRXX(ierr);
     ierr = VecView(vec, viewer); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+    if (filename != NULL) {
+      ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
+    }
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -223,7 +217,7 @@ Vector::loadBinary(const char* filename)
                                  &viewer); CHKERRXX(ierr);
     ierr = VecLoad(*vec, viewer); CHKERRXX(ierr);
     ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -244,7 +238,7 @@ Vector::saveBinary(const char* filename) const
                                  &viewer); CHKERRXX(ierr);
     ierr = VecView(*vec, viewer); CHKERRXX(ierr);
     ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }

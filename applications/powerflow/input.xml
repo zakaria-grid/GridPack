@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <Powerflow>
-    <networkConfiguration> pti08.raw </networkConfiguration>
+    <networkConfiguration> IEEE14.raw </networkConfiguration>
+    <maxIteration>50</maxIteration>
+    <tolerance>1.0e-6</tolerance>
     <!--
     <LinearSolver>
       <PETScPrefix>nrs</PETScPrefix>

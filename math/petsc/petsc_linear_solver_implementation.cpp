@@ -8,7 +8,7 @@
 /**
  * @file   petsc_linear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2014-01-14 13:49:26 d3g096
+ * @date   2014-09-29 09:43:09 d3g096
  * 
  * @brief  
  * 
@@ -23,7 +23,6 @@
 #include "petsc/petsc_linear_solver_implementation.hpp"
 #include "petsc/petsc_matrix_extractor.hpp"
 #include "petsc/petsc_vector_extractor.hpp"
-#include "petsc/petsc_configuration.hpp"
 
 namespace gridpack {
 namespace math {
@@ -38,6 +37,7 @@ namespace math {
 // -------------------------------------------------------------
 PETScLinearSolverImplementation::PETScLinearSolverImplementation(Matrix& A)
   : LinearSolverImplementation(A.communicator()),
+    PETScConfigurable(this->communicator()),
     p_A(PETScMatrix(A))
 {
 }
@@ -78,7 +78,7 @@ PETScLinearSolverImplementation::p_build(const std::string& option_prefix)
                             p_maxIterations); CHKERRXX(ierr);
 
     ierr = KSPSetFromOptions(p_KSP);CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }  
@@ -90,8 +90,7 @@ void
 PETScLinearSolverImplementation::p_configure(utility::Configuration::CursorPtr props)
 {
   LinearSolverImplementation::p_configure(props);
-  std::string prefix(petscProcessOptions(this->communicator(), props));
-  p_build(prefix);
+  this->build(props);
 }
 
 // -------------------------------------------------------------
@@ -120,7 +119,13 @@ PETScLinearSolverImplementation::p_solve(const Vector& b, Vector& x) const
   try {
     const Vec *bvec(PETScVector(b));
     Vec *xvec(PETScVector(x));
+
+#if PETSC_VERSION_LT(3,5,0)
     ierr = KSPSetOperators(p_KSP, *p_A, *p_A, SAME_NONZERO_PATTERN); CHKERRXX(ierr);
+#else
+    ierr = KSPSetOperators(p_KSP, *p_A, *p_A); CHKERRXX(ierr);
+#endif
+
     ierr = KSPSolve(p_KSP, *bvec, *xvec); CHKERRXX(ierr);
     int its;
     KSPConvergedReason reason;
@@ -140,7 +145,7 @@ PETScLinearSolverImplementation::p_solve(const Vector& b, Vector& x) const
                    me % its % reason);
       std::cerr << msg << std::endl;
     }
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   } catch (const Exception& e) {
     throw e;

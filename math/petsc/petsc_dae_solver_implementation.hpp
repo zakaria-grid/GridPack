@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-11-14 11:41:16 d3g096
+ * @date   2014-09-29 09:49:31 d3g096
  * 
  * @brief  
  * 
@@ -22,7 +22,9 @@
 #define _petsc_dae_solver_implementation_hpp_
 
 #include <petscts.h>
+#include "petsc_exception.hpp"
 #include "dae_solver_implementation.hpp"
+#include "petsc_configurable.hpp"
 
 namespace gridpack {
 namespace math {
@@ -31,7 +33,8 @@ namespace math {
 //  class PETScDAESolverImplementation
 // -------------------------------------------------------------
 class PETScDAESolverImplementation 
-  : public DAESolverImplementation
+  : public DAESolverImplementation,
+    private PETScConfigurable
 {
 public:
 
@@ -67,10 +70,21 @@ protected:
   void p_solve(double& maxtime,
                int& maxsteps);
 
+#if PETSC_VERSION_LT(3,5,0)
+
   /// Routine to assemble Jacobian that is sent to PETSc
   static PetscErrorCode FormIJacobian(TS ts, PetscReal t, Vec x, Vec xdot, 
                                       PetscReal a, Mat *jac, Mat *B, 
                                       MatStructure *flag, void *dummy);
+
+#else
+
+  /// Routine to assemble Jacobian that is sent to PETSc
+  static PetscErrorCode FormIJacobian(TS ts, PetscReal t, Vec x, Vec xdot, 
+                                      PetscReal a, Mat jac, Mat B, 
+                                      void *dummy);
+
+#endif
 
   /// Routine to assemble RHS that is sent to PETSc
   static PetscErrorCode FormIFunction(TS ts, PetscReal t, Vec x, Vec xdot, 

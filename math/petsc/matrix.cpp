@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2014-01-13 12:17:39 d3g096
+ * @date   2014-09-12 13:42:40 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -103,7 +103,7 @@ Matrix::equate(const Matrix& B)
   try {
     PetscScalar one(1.0);
     ierr = MatCopy(*pB, *pA, DIFFERENT_NONZERO_PATTERN); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -121,7 +121,7 @@ Matrix::scale(const ComplexType& xin)
   try {
     PetscScalar x(xin);
     ierr = MatScale(*pA, x); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -141,7 +141,7 @@ Matrix::add(const Matrix& B)
   try {
     PetscScalar one(1.0);
     ierr = MatAXPY(*pA, one, *pB, DIFFERENT_NONZERO_PATTERN); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -157,7 +157,7 @@ Matrix::addDiagonal(const Vector& x)
   PetscErrorCode ierr(0);
   try {
     ierr = MatDiagonalSet(*pA, *pX, ADD_VALUES); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -186,7 +186,7 @@ Matrix::identity(void)
       ierr = MatZeroEntries(*pA); CHKERRXX(ierr);
       ierr = MatShift(*pA, one); CHKERRXX(ierr);
     }
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -202,7 +202,7 @@ Matrix::zero(void)
   PetscErrorCode ierr(0);
   try {
     ierr = MatZeroEntries(*pA); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -225,22 +225,8 @@ Matrix::multiplyDiagonal(const Vector& x)
     ierr = MatDiagonalSet(*pA, diagnew, INSERT_VALUES); CHKERRXX(ierr);
     ierr = VecDestroy(&diagorig); CHKERRXX(ierr); 
     ierr = VecDestroy(&diagnew); CHKERRXX(ierr); 
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
-  }
-}
-
-// -------------------------------------------------------------
-// petsc_make_viewer
-// -------------------------------------------------------------
-static void
-petsc_make_viewer(const char* filename, PetscViewer *viewer)
-{
-  PetscErrorCode ierr;
-  if (filename != NULL) {
-    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, viewer); ; CHKERRXX(ierr);
-  } else {
-    *viewer = PETSC_VIEWER_STDOUT_(PETSC_COMM_WORLD);
   }
 }
 
@@ -253,10 +239,45 @@ petsc_print_matrix(const Mat mat, const char* filename, PetscViewerFormat format
   PetscErrorCode ierr;
   try {
     PetscViewer viewer;
-    petsc_make_viewer(filename, &viewer);
-    ierr = PetscViewerSetFormat(viewer, format); CHKERRXX(ierr);
+    MPI_Comm comm = PetscObjectComm((PetscObject)mat);
+    int me, nproc;
+    ierr = MPI_Comm_rank(comm, &me);
+    ierr = MPI_Comm_size(comm, &nproc);
+    if (filename != NULL) {
+      ierr = PetscViewerASCIIOpen(comm, filename, &viewer); CHKERRXX(ierr);
+    } else {
+      ierr = PetscViewerASCIIGetStdout(comm, &viewer); CHKERRXX(ierr);
+    }
+    ierr = PetscViewerSetFormat(viewer, format);
+    PetscInt grow, gcol, lrow, lcol;
+    switch (format) {
+    case PETSC_VIEWER_DEFAULT:
+      ierr = MatGetSize(mat, &grow, &gcol); CHKERRXX(ierr);
+      ierr = MatGetLocalSize(mat, &lrow, &lcol); CHKERRXX(ierr);
+      ierr = PetscViewerASCIISynchronizedAllow(viewer, PETSC_TRUE); CHKERRXX(ierr);
+      ierr = PetscViewerASCIIPrintf(viewer,             
+                                    "# Matrix distribution\n"); CHKERRXX(ierr);
+      ierr = PetscViewerASCIIPrintf(viewer,             
+                                    "# proc   rows     cols\n");  CHKERRXX(ierr);
+      ierr = PetscViewerASCIIPrintf(viewer,             
+                                    "# ---- -------- --------\n"); CHKERRXX(ierr);
+      ierr = PetscViewerASCIISynchronizedPrintf(viewer, "# %4d %8d %8d\n",
+                                                me, lrow, lcol);  CHKERRXX(ierr);
+      ierr = PetscViewerFlush(viewer); CHKERRXX(ierr);
+      ierr = MPI_Barrier(comm);
+      ierr = PetscViewerASCIIPrintf(viewer,             
+                                    "# ---- -------- --------\n");  CHKERRXX(ierr);
+      ierr = PetscViewerASCIIPrintf(viewer, "# %4d %8d %8d\n", 
+                                    nproc, grow, gcol);  CHKERRXX(ierr);
+    }
     ierr = MatView(mat, viewer); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+    if (filename != NULL) {
+      ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
+    } else {
+      // FIXME: causes a SEGV?
+      // ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
+    }
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -269,6 +290,7 @@ void
 Matrix::print(const char* filename) const
 {
   const Mat *mat(PETScMatrix(*this));
+  
   petsc_print_matrix(*mat, filename, PETSC_VIEWER_DEFAULT);
 }
 
@@ -299,7 +321,7 @@ Matrix::loadBinary(const char* filename)
     ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
     ierr = MatLoad(*mat, viewer); CHKERRXX(ierr);
     ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -321,7 +343,7 @@ Matrix::saveBinary(const char* filename) const
     ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
     ierr = MatView(*mat, viewer); CHKERRXX(ierr);
     ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -358,7 +380,7 @@ Matrix::storageType(void) const
       msg += "\"";
       throw Exception(msg);
     }
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   } catch (const Exception& e) {
     throw;

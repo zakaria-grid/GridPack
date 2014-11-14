@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2014-01-28 11:33:44 d3g096
+# Last Change: 2014-09-29 11:55:35 d3g096
 # -------------------------------------------------------------
 
 # CMake >= 2.8.8 is required because OBJECT libraries are used
@@ -59,7 +59,7 @@ endif()
 # -------------------------------------------------------------
 message(STATUS "Checking Boost ...")
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.49 COMPONENTS mpi serialization random REQUIRED)
+find_package(Boost 1.49 COMPONENTS mpi serialization random system REQUIRED)
 include_directories(AFTER ${Boost_INCLUDE_DIRS})
 
 # -------------------------------------------------------------
@@ -182,12 +182,16 @@ add_subdirectory(mapper)
 add_subdirectory(applications/powerflow)
 add_subdirectory(applications/dynamic_simulation)
 add_subdirectory(applications/contingency_analysis)
+add_subdirectory(applications/state_estimation)
 add_subdirectory(applications/examples/hello_world)
 add_subdirectory(applications/examples/resistor_grid)
 add_subdirectory(applications/components/y_matrix)
+add_subdirectory(applications/components/pf_matrix)
+add_subdirectory(applications/components/ds_matrix)
 add_subdirectory(parser)
 add_subdirectory(serial_io)
 add_subdirectory(timer)
+add_subdirectory(include)
 
 add_subdirectory(lib)
 

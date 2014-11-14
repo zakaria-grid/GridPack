@@ -5,9 +5,9 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   pf_components.hpp
- * @author Bruce Palmer
- * @date   2013-10-24 14:30:43 d3g096
+ * @file   ds_components.hpp
+ * @author Shuangshuang Jin 
+ * @date   September 19, 2013
  * 
  * @brief  
  * 
@@ -15,8 +15,30 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _pf_components_h_
-#define _pf_components_h_
+#ifndef _ds_components_h_
+#define _ds_components_h_
+
+/**
+ * Some preprocessor string declarations. These will need to be put in an
+ * include file someplace else. Just declare them here for the time being.
+ */
+
+/*
+#define BRANCH_REACTANCE   "branch_reactance"
+#define BRANCH_RESISTANCE  "branch_resistance"
+#define BRANCH_TAP_RATIO   "branch_tap_ratio"
+#define BRANCH_PHASE_SHIFT "branch_phase_shift"
+#define BRANCH_CHARGING    "branch_charging"
+#define BUS_SHUNT_GS    "branch_shunt_gs"
+#define BUS_SHUNT_BS    "branch_shunt_bs"
+*/
+
+/* These are defined in dictionary.hpp. */
+
+/* #define BRANCH_SHUNT_ADMTTNC_G1 "branch_shunt_admttnc_g1" */
+/* #define BRANCH_SHUNT_ADMTTNC_B1 "branch_shunt_admttnc_b1" */
+/* #define BRANCH_SHUNT_ADMTTNC_G2 "branch_shunt_admttnc_g2" */
+/* #define BRANCH_SHUNT_ADMTTNC_B2 "branch_shunt_admttnc_b2" */
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
@@ -26,23 +48,26 @@
 #include "gridpack/applications/components/y_matrix/ymatrix_components.hpp"
 
 namespace gridpack {
-namespace powerflow {
+namespace dynamic_simulation {
 
-enum PFMode{YBus, Jacobian, RHS, S_Cal, State};
+enum DSMode{YBUS, YL, PERM, PERMTrans, YA, permYMOD, YB, PMatrix, updateYbus,
+            DAE_init, init_pelect, init_eprime, init_mac_ang, init_mac_spd,
+            init_eqprime, init_pmech, init_mva, init_d0, init_h, onFY,
+            posFY, YC};
 
-class PFBus
+class DSBus
   : public gridpack::ymatrix::YMBus
 {
   public:
     /**
      *  Simple constructor
      */
-    PFBus(void);
+    DSBus(void);
 
     /**
      *  Simple destructor
      */
-    ~PFBus(void);
+    ~DSBus(void);
 
     /**
      * Return size of matrix block on the diagonal contributed by
@@ -78,24 +103,7 @@ class PFBus
      */
     bool vectorValues(ComplexType *values);
 
-    /**
-     * Set the internal values of the voltage magnitude and phase angle. Need this
-     * function to push values from vectors back onto buses 
-     * @param values array containing voltage magnitude and angle
-     */
-    void setValues(gridpack::ComplexType *values);
-
-    /**
-     * Return the size of the buffer used in data exchanges on the network.
-     * For this problem, the voltage magnitude and phase angle need to be exchanged
-     * @return size of buffer
-     */
-    int getXCBufSize(void);
-
-    /**
-     * Assign pointers for voltage magnitude and phase angle
-     */
-    void setXCBuf(void *buf);
+    void setValues(ComplexType *values);
 
     /**
      * Set values of YBus matrix. These can then be used in subsequent
@@ -110,7 +118,7 @@ class PFBus
     gridpack::ComplexType getYBus(void);
 
     /**
-     * Load values stored in DataCollection object into PFBus object. The
+     * Load values stored in DataCollection object into DSBus object. The
      * DataCollection object will have been filled when the network was created
      * from an external configuration file
      * @param data: DataCollection object contain parameters relevant to this
@@ -127,15 +135,9 @@ class PFBus
 
     /**
      * Return the value of the voltage magnitude on this bus
-     * @return voltage magnitude
+     * @return: voltage magnitude
      */
     double getVoltage(void);
-
-    /**
-     * Return the complex voltage on this bus
-     * @return the complex voltage
-     */
-    ComplexType getComplexVoltage(void);
 
     /**
      * Return the value of the phase angle on this bus
@@ -144,11 +146,10 @@ class PFBus
     double getPhase(void);
 
     /**
-     * Return whether or not the bus is a PV bus (V held fixed in powerflow
-     * equations)
-     * @return true if bus is PV bus
+     * Return the number of generators on this bus
+     * @return number of generators on bus
      */
-    bool isPV(void);
+    int getNumGen(void);
 
     /**
      * Return whether or not a bus is isolated
@@ -157,106 +158,126 @@ class PFBus
     bool isIsolated(void) const;
 
     /**
-     * Set voltage value
+     * Set values of the IFunction on this bus (gen)
      */
-    void setVoltage(void);
+    void setIFunc(void);
 
     /**
-     * Set phase angle value
+     * Set values of the IJaco on this bus (gen)
      */
-    void setPhase(void);
+    void setIJaco(void);
 
     /**
-     * setGBus
-    */
-    void setGBus(void);
+     * Check to see if a fault event applies to this bus and set an internal
+     * flag marking the bus as the "from" or "to" bus for the event
+     * @param from_idx index of "from" bus for fault event
+     * @param to_idx index of "to" bus for fault event
+     * @param branch_ptr pointer to branch on which fault occurs
+     */
+    void setEvent(int from_idx, int to_idx,
+        gridpack::component::BaseBranchComponent* branch_ptr);
 
     /**
-     * setSBus
-    BUS = (CG*(GEN(ON,PG) + J*GEN(ON,QG)-(PD+J*QD))/BASEMVA
-    */
-    void setSBus(void);
+     * Clear fault event from bus
+     */
+    void clearEvent();
 
     /**
      * Write output from buses to standard out
      * @param string (output) string with information to be printed out
+     * @param bufsize size of string buffer in bytes
      * @param signal an optional character string to signal to this
      * routine what about kind of information to write
      * @return true if bus is contributing string to output, false otherwise
      */
-    bool serialWrite(char *string, const char *signal = NULL);
+    bool serialWrite(char *string, const int bufsize, const char *signal);
+
 
   private:
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
-    bool p_load;
     int p_mode;
-
-    // p_v and p_a are initialized to p_voltage and p_angle respectively,
-    // but may be subject to change during the NR iterations
-    double p_v, p_a;
-    double p_theta; //phase angle difference
+    double p_theta; // phase angle difference
     double p_ybusr, p_ybusi;
-    double p_P0, p_Q0; //double p_sbusr, p_sbusi;
-    double p_angle;   // initial bus angle read from parser
-    double p_voltage; // initial bus voltage read from parser
-    // newly added priavate variables:
-    std::vector<double> p_pg, p_qg;
-    std::vector<int> p_gstatus;
-    std::vector<double> p_vs;
+    double p_angle, p_voltage;
+    bool p_load;
     double p_pl, p_ql;
     double p_sbase;
-    double p_Pinj, p_Qinj;
-    bool p_isPV;
+    bool p_isGen;
+    std::vector<double> p_pg, p_qg;
+    std::vector<int> p_gstatus;
+    std::vector<double> p_mva, p_r, p_dstr, p_dtr;
+    int p_ngen;
+    int p_type;
+    gridpack::ComplexType p_permYmod;
+    bool p_from_flag, p_to_flag;
+    std::vector<std::string> p_genid;
 
-    /**
-     * Variables that are exchanged between buses
-     */
-    double* p_vMag_ptr;
-    double* p_vAng_ptr;
+    // DAE related variables
+    //double user_eqprime, user_pmech, user_gen_d0, user_gen_h; // User app context variables
+    //int user_ngen; // User app context variables
+    std::vector<double> p_h, p_d0;
+    //std::vector<double> x, xdot; // DAE variables
+    std::vector<gridpack::ComplexType> p_pelect, p_eprime;
 
-private:
+    std::vector<gridpack::ComplexType> p_elect_final, p_mech_final;
+    std::vector<gridpack::ComplexType> p_mac_ang_final, p_mac_spd_final;
 
+    gridpack::component::BaseBranchComponent* p_branch;
 
-  friend class boost::serialization::access;
+    friend class boost::serialization::access;
 
-  template<class Archive>
-  void serialize(Archive & ar, const unsigned int version)
-  {
-//    ar & boost::serialization::base_object<gridpack::component::BaseBusComponent>(*this)
-    ar  & boost::serialization::base_object<gridpack::ymatrix::YMBus>(*this)
-      & p_shunt_gs
-      & p_shunt_bs
-      & p_shunt
-      & p_load
-      & p_mode
-      & p_v & p_a & p_theta
-      & p_ybusr & p_ybusi
-      & p_P0 & p_Q0
-      & p_angle & p_voltage
-      & p_pg & p_qg
-      & p_gstatus
-      & p_pl & p_ql
-      & p_sbase
-      & p_Pinj & p_Qinj
-      & p_isPV;
-  }  
+    template<class Archive>
+      void serialize(Archive & ar, const unsigned int version)
+      {
+        ar &
+          boost::serialization::base_object<gridpack::ymatrix::YMBus>(*this)
+          & p_shunt_gs
+          & p_shunt_bs
+          & p_shunt
+          & p_mode
+          & p_theta
+          & p_ybusr & p_ybusi
+          & p_angle & p_voltage
+          & p_load
+          & p_pl & p_ql
+          & p_sbase
+          & p_isGen
+          & p_pg & p_qg
+          & p_gstatus
+          & p_mva & p_r & p_dstr & p_dtr
+          & p_ngen & p_type & p_permYmod
+          & p_from_flag & p_to_flag
+          & p_h & p_d0
+          & p_pelect & p_eprime
+          & p_elect_final & p_mech_final
+          & p_mac_ang_final & p_mac_spd_final
+          & p_genid;
+      }
 
 };
 
-class PFBranch
+class DSBranch
   : public gridpack::ymatrix::YMBranch {
   public:
+    // Small utility structure to encapsulate information about fault events
+    struct Event{
+      std::string name;
+      double start,end;
+      int from_idx, to_idx;
+      double step;
+    };
+
     /**
      *  Simple constructor
      */
-    PFBranch(void);
+    DSBranch(void);
 
     /**
      *  Simple destructor
      */
-    ~PFBranch(void);
+    ~DSBranch(void);
 
     /**
      * Return size of off-diagonal matrix block contributed by the component
@@ -283,13 +304,7 @@ class PFBranch
     void setYBus(void);
 
     /**
-     * Get values of YBus matrix. These can then be used in subsequent
-     * calculations
-     */
-    gridpack::ComplexType getYBus(void);
-
-    /**
-     * Load values stored in DataCollection object into PFBranch object. The
+     * Load values stored in DataCollection object into DSBranch object. The
      * DataCollection object will have been filled when the network was created
      * from an external configuration file
      * @param data: DataCollection object contain parameters relevant to this
@@ -309,30 +324,14 @@ class PFBranch
      * @param bus: pointer to the bus making the call
      * @return: contribution from transformers to Y matrix
      */
-    gridpack::ComplexType getTransformer(PFBus *bus);
+    gridpack::ComplexType getTransformer(DSBus *bus);
 
     /**
      * Return the contribution to a bus from shunts
      * @param bus: pointer to the bus making the call
      * @return: contribution to Y matrix from shunts associated with branches
      */
-    gridpack::ComplexType getShunt(PFBus *bus);
-
-    /**
-     * Return the contribution to the Jacobian for the powerflow equations from
-     * a branch
-     * @param bus: pointer to the bus making the call
-     * @param values: an array of 4 doubles that holds return metrix elements
-     * @return: contribution to Jacobian matrix from branch
-     */
-    void getJacobian(PFBus *bus, double *values);
-
-    /**
-     * Return contribution to constraints
-     * @param p: real part of constraint
-     * @param q: imaginary part of constraint
-     */
-    void getPQ(PFBus *bus, double *p, double *q);
+    gridpack::ComplexType getShunt(DSBus *bus);
 
     /**
      * Set the mode to control what matrices and vectors are built when using
@@ -342,13 +341,20 @@ class PFBranch
     void setMode(int mode);
 
     /**
-     * Write output from branches to standard out
-     * @param string (output) string with information to be printed out
-     * @param signal an optional character string to signal to this
-     * routine what about kind of information to write
-     * @return true if branch is contributing string to output, false otherwise
+     * Return the updating factor that will be applied to the ybus matrix at
+     * the clear fault phase
+     * @return: value of update factor
      */
-    bool serialWrite(char *string, const char *signal = NULL);
+    gridpack::ComplexType getPosfy11YbusUpdateFactor(int sw2_2, int sw3_2);
+    gridpack::ComplexType getUpdateFactor();
+
+    /**
+     * Check to see if an event applies to this branch and set appropriate
+     * internal parameters
+     * @param event a struct containing parameters that describe a fault
+     * event in a dyanamic simulation
+     */
+    void setEvent(const Event &event);
 
   private:
     std::vector<double> p_reactance;
@@ -369,48 +375,41 @@ class PFBranch
     std::vector<int> p_branch_status;
     int p_elems;
     bool p_active;
+    bool p_event;
 
-private:
+    friend class boost::serialization::access;
 
-
-  friend class boost::serialization::access;
-
-  template<class Archive>
-  void serialize(Archive & ar, const unsigned int version)
-  {
-//    ar & boost::serialization::base_object<gridpack::component::BaseBranchComponent>(*this)
-    ar  & boost::serialization::base_object<gridpack::ymatrix::YMBranch>(*this)
-      & p_reactance
-      & p_resistance
-      & p_tap_ratio
-      & p_phase_shift
-      & p_charging
-      & p_shunt_admt_g1
-      & p_shunt_admt_b1
-      & p_shunt_admt_g2
-      & p_shunt_admt_b2
-      & p_xform & p_shunt
-      & p_mode
-      & p_ybusr_frwd & p_ybusi_frwd
-      & p_ybusr_rvrs & p_ybusi_rvrs
-      & p_theta
-      & p_sbase
-      & p_branch_status
-      & p_active;
-  }  
-
+    template<class Archive>
+      void serialize(Archive & ar, const unsigned int version)
+      {
+        ar &
+          boost::serialization::base_object<gridpack::ymatrix::YMBranch>(*this)
+          & p_reactance
+          & p_resistance
+          & p_tap_ratio
+          & p_phase_shift
+          & p_charging
+          & p_shunt_admt_g1
+          & p_shunt_admt_b1
+          & p_shunt_admt_g2
+          & p_shunt_admt_b2
+          & p_xform & p_shunt
+          & p_mode
+          & p_ybusr_frwd & p_ybusi_frwd
+          & p_ybusr_rvrs & p_ybusi_rvrs
+          & p_theta & p_sbase
+          & p_branch_status
+          & p_elems & p_active & p_event;
+      }
 };
 
+/// The type of network used in the dynamic_simulation application
+typedef network::BaseNetwork<DSBus, DSBranch > DSNetwork;
 
-/// The type of network used in the powerflow application
-typedef network::BaseNetwork<PFBus, PFBranch > PFNetwork;
-
-
-}     // powerflow
+}     // dynamic_simulation
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::powerflow::PFBus);
-BOOST_CLASS_EXPORT_KEY(gridpack::powerflow::PFBranch);
-
+BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSBus);
+BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSBranch);
 
 #endif

@@ -57,7 +57,7 @@ class MatVecInterface {
     virtual bool matrixDiagSize(int *isize, int *jsize) const;
 
     /**
-     * Return the values of for a diagonal matrix block. The values are
+     * Return the values for a diagonal matrix block. The values are
      * returned in row-major order.
      * @param values pointer to matrix block values
      * @return false if network component does not contribute
@@ -76,7 +76,7 @@ class MatVecInterface {
     virtual bool matrixForwardSize(int *isize, int *jsize) const;
 
     /**
-     * Return the values of for an off-diagonl matrix block. The values are
+     * Return the values for an off-diagonl matrix block. The values are
      * for the forward direction and are returned in row-major order.
      * @param values pointer to matrix block values
      * @return false if network component does not contribute
@@ -95,7 +95,7 @@ class MatVecInterface {
     virtual bool matrixReverseSize(int *isize, int *jsize) const;
 
     /**
-     * Return the values of for an off-diagonl matrix block. The values are
+     * Return the values for an off-diagonl matrix block. The values are
      * for the reverse direction and are returned in row-major order.
      * @param values pointer to matrix block values
      * @return false if network component does not contribute
@@ -174,12 +174,140 @@ class MatVecInterface {
 };
 
 // -------------------------------------------------------------
+//  class GenMatVecInterface:
+//    A general interface for defining matrices generated from
+//    the network that do not follow the mapping of buses to
+//    diagonal blocks and branches to off-diagonal blocks
+// -------------------------------------------------------------
+
+class GenMatVecInterface {
+  public:
+    /**
+     * Constructor
+     */
+    GenMatVecInterface(void);
+
+    /**
+     * Destructor
+     */
+    virtual ~GenMatVecInterface(void);
+
+    /**
+     * Return number of rows in matrix from component
+     * @return number of rows from component
+     */
+    virtual int matrixNumRows() const;
+
+    /**
+     * Return number of columns in matrix from component
+     * @return number of columnsows from component
+     */
+    virtual int matrixNumCols() const;
+
+    /**
+     * Set row indices corresponding to the rows contributed by this
+     * component
+     * @param irow index of row contributed by this component (e.g. if component
+     * contributes 3 rows then irow is between 0 and 2)
+     * @param idx matrix index of row irow
+     */
+    virtual void matrixSetRowIndex(int irow, int idx);
+
+    /**
+     * Set column indices corresponding to the columns contributed by this
+     * component
+     * @param icol index of column contributed by this component (e.g. if component
+     * contributes 3 columns then icol is between 0 and 2)
+     * @param idx matrix index of column icol
+     */
+    virtual void matrixSetColIndex(int icol, int idx);
+
+    /**
+     * Get the row indices corresponding to the rows contributed by this component
+     * @param irow index of row contributed by this component (e.g. if component
+     * contributes 3 rows then irow is between 0 and 2)
+     * @return matrix index of row irow
+     */
+    virtual int matrixGetRowIndex(int irow);
+
+    /**
+     * Get the column indices corresponding to the columns contributed by this component
+     * @param icol index of column contributed by this component (e.g. if component
+     * contributes 3 columns then icol is between 0 and 2)
+     * @return matrix index of column icol
+     */
+    virtual int matrixGetColIndex(int icol);
+
+    /**
+     * Return the number of matrix values contributed by this component
+     * @return number of matrix values
+     */
+    virtual int matrixNumValues() const;
+
+    /**
+     * Get a list of matrix values contributed by this component and their
+     * matrix indices
+     * @param values list of matrix element values
+     * @param rows row indices for the matrix elements
+     * @param cols column indices for the matrix elements
+     */
+    virtual void matrixGetValues(ComplexType *values, int *rows, int*cols);
+
+    /**
+     * Return number of elements in vector from component
+     * @return number of elements contributed from component
+     */
+    virtual int vectorNumElements() const;
+
+    /**
+     * Set indices corresponding to the elements contributed by this
+     * component
+     * @param ielem index of element contributed by this component (e.g. if component
+     * contributes 3 elements then ielem is between 0 and 2)
+     * @param idx vector index of element ielem
+     */
+    virtual void vectorSetElementIndex(int ielem, int idx);
+
+    /**
+     * Get list of element indices from component
+     * @param idx list of indices that component maps onto
+     */
+    virtual void vectorGetElementIndices(int *idx);
+
+    /**
+     * Get a list of vector values contributed by this component and their
+     * indices
+     * @param values list of vector element values
+     * @param idx indices for the vector elements
+     */
+    virtual void vectorGetElementValues(ComplexType *values, int *idx);
+
+    /**
+     * Transfer vector values to component
+     * @param values list of vector element values
+     */
+    virtual void vectorSetElementValues(ComplexType *values);
+
+  private:
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+    ar;
+  }
+
+
+};
+
+// -------------------------------------------------------------
 //  class BaseComponent:
 //  This class implements some basic functions that can be
 //  expected from any component on the network.
 // -------------------------------------------------------------
 class BaseComponent
-  : public MatVecInterface {
+  : public MatVecInterface, public GenMatVecInterface {
   public:
     /**
      * Simple constructor
@@ -218,6 +346,12 @@ class BaseComponent
     virtual void setXCBuf(void *buf);
 
     /**
+     * Return the location of the data exchange buffer
+     * @param buf void pointer to exchange buffer
+     */
+    virtual void getXCBuf(void **bus);
+
+    /**
      * Set an internal variable that can be used to control the behavior of the
      * component. This function doesn't need to be implemented, but if needed,
      * it can be used to change the behavior of the network in different phases
@@ -232,11 +366,12 @@ class BaseComponent
      * Copy a string for output into buffer. The behavior of this method can be
      * altered by inputting different values for the signal string
      * @param string buffer containing string to be written to output
+     * @param bufsize size of string buffer in bytes
      * @param signal string to control behavior of routine (e.g. what
      * properties to write
      * @return true if component is writing a contribution, false otherwise
      */
-    virtual bool serialWrite(char *string, const char *signal = NULL);
+    virtual bool serialWrite(char *string, const int bufsize, const char *signal = NULL);
 
   protected:
     /**
@@ -266,6 +401,7 @@ class BaseComponent
     // p_XCBuf and p_XCBufSize are managed somewhere else; they will
     // have to be initialized
     ar << boost::serialization::base_object<MatVecInterface>(*this)
+       << boost::serialization::base_object<GenMatVecInterface>(*this)
        << p_XCBufSize
        << p_mode;
   }
@@ -275,6 +411,7 @@ class BaseComponent
   void load(Archive & ar, const unsigned int version)
   {
     ar >> boost::serialization::base_object<MatVecInterface>(*this)
+       >> boost::serialization::base_object<GenMatVecInterface>(*this)
        >> p_XCBufSize
        >> p_mode;
   }
@@ -305,7 +442,7 @@ class BaseBusComponent
     /**
      * Add a pointer to the list of buses that a bus is connected to via
      * a branch
-     * @param bus pointer to a branch that is connected to bus
+     * @param bus pointer to a bus that is connected to bus via a branch
      */
     void addBus(const boost::shared_ptr<BaseComponent> & bus);
 

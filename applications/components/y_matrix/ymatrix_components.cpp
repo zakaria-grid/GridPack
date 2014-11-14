@@ -160,6 +160,15 @@ bool gridpack::ymatrix::YMBus::isIsolated(void) const
 }
 
 /**
+ * Change isolated status of bus
+ * @param flag true if bus is isolated
+ */
+void gridpack::ymatrix::YMBus::setIsolated(const bool flag)
+{
+  p_isolated = flag;
+}
+
+/**
  *  Simple constructor
  */
 gridpack::ymatrix::YMBranch::YMBranch(void)
@@ -176,6 +185,7 @@ gridpack::ymatrix::YMBranch::YMBranch(void)
   p_xform.clear();
   p_shunt.clear();
   p_branch_status.clear();
+  p_switched.clear();
   p_elems = 0;
   p_mode = YBus;
 }
@@ -285,7 +295,8 @@ void gridpack::ymatrix::YMBranch::setYBus(void)
     ret = -1.0/ret;
     gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
     a = p_tap_ratio[i]*a;
-    if (p_branch_status[i] == 1) {
+    if (p_switched[i]) a = conj(a);
+    if (p_branch_status[i]) {
       if (p_xform[i]) {
         p_ybusr_frwd += real(ret/conj(a));
         p_ybusi_frwd += imag(ret/conj(a));
@@ -335,6 +346,8 @@ void gridpack::ymatrix::YMBranch::load(
   data->getValue(BRANCH_NUM_ELEMENTS, &p_elems);
   double rvar;
   int ivar;
+  std::string svar;
+  bool lvar;
   double pi = 4.0*atan(1.0);
   p_active = false;
   int idx;
@@ -349,6 +362,8 @@ void gridpack::ymatrix::YMBranch::load(
     p_phase_shift.push_back(rvar);
     ok = ok && data->getValue(BRANCH_TAP, &rvar, idx);
     p_tap_ratio.push_back(rvar); 
+    ok = ok && data->getValue(BRANCH_CKT, &svar, idx);
+    p_tag.push_back(svar);
     if (rvar != 0.0) {
       p_xform.push_back(xform);
     } else {
@@ -356,8 +371,11 @@ void gridpack::ymatrix::YMBranch::load(
     }
     ivar = 1;
     data->getValue(BRANCH_STATUS, &ivar, idx);
-    p_branch_status.push_back(ivar);
+    p_branch_status.push_back(static_cast<bool>(ivar));
     if (ivar == 1) p_active = true;
+    ok = data->getValue(BRANCH_SWITCHED, &lvar, idx);
+    if (!ok) lvar = false;
+    p_switched.push_back(lvar);
     bool shunt = true;
     shunt = shunt && data->getValue(BRANCH_B, &rvar, idx);
     p_charging.push_back(rvar);
@@ -393,7 +411,7 @@ gridpack::ComplexType gridpack::ymatrix::YMBranch::getAdmittance(void)
   gridpack::ComplexType ret(0.0,0.0);
   for (i=0; i<p_elems; i++) {
     gridpack::ComplexType tmp(p_resistance[i], p_reactance[i]);
-    if (!p_xform[i] && p_branch_status[i] == 1) {
+    if (!p_xform[i] && p_branch_status[i]) {
       tmp = -1.0/tmp;
     } else {
       tmp = gridpack::ComplexType(0.0,0.0);
@@ -417,14 +435,15 @@ gridpack::ymatrix::YMBranch::getTransformer(gridpack::ymatrix::YMBus *bus)
   for (i=0; i<p_elems; i++) {
     gridpack::ComplexType tmp(p_resistance[i],p_reactance[i]);
     gridpack::ComplexType tmpB(0.0,0.5*p_charging[i]);
-    if (p_xform[i] && p_branch_status[i] == 1) {
+    if (p_xform[i] && p_branch_status[i]) {
       tmp = -1.0/tmp;
       tmp = tmp - tmpB;
       gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
       a = p_tap_ratio[i]*a;
-      if (bus == getBus1().get()) {
+      if ((!p_switched[i] && bus == getBus1().get()) ||
+          (p_switched[i] && bus == getBus2().get())) {
         tmp = tmp/(conj(a)*a);
-      } else if (bus == getBus2().get()) {
+      } else {
         // tmp is unchanged
       }
     } else {
@@ -449,7 +468,7 @@ gridpack::ymatrix::YMBranch::getShunt(gridpack::ymatrix::YMBus *bus)
   int i;
   for (i=0; i<p_elems; i++) {
     double tmpr, tmpi;
-    if (p_shunt[i] && p_branch_status[i] == 1) {
+    if (p_shunt[i] && p_branch_status[i]) {
       tmpr = 0.0;
       tmpi = 0.0;
       if (!p_xform[i]) {
@@ -474,4 +493,89 @@ gridpack::ymatrix::YMBranch::getShunt(gridpack::ymatrix::YMBus *bus)
     reti += tmpi;
   }
   return gridpack::ComplexType(retr,reti);
+}
+
+/**
+ * Return contributions to Y-matrix from a specific transmission element
+ * @param tag character string for transmission element
+ * @param Yii contribution from "from" bus
+ * @param Yij contribution from line element
+ */
+void gridpack::ymatrix::YMBranch::getLineElements(const std::string tag,
+   gridpack::ComplexType *Yii, gridpack::ComplexType *Yij)// , gridpack::ComplexType *yii)
+{
+  gridpack::ComplexType zero = gridpack::ComplexType(0.0,0.0);
+  gridpack::ComplexType flow = zero;
+  *Yii = zero;
+  *Yij = zero;
+  int i, idx;
+  idx = -1;
+  // find line element corresponding to tag
+  for (i=0; i<p_elems; i++) {
+    if (tag == p_tag[i]) {
+      idx = i;
+      break;
+    }
+  }
+  if (idx >= 0) {
+    gridpack::ComplexType yij,aij,bij;
+    yij = gridpack::ComplexType(p_resistance[idx],p_reactance[idx]);
+    bij = gridpack::ComplexType(0.0,p_charging[idx]);
+    if (yij != zero) yij = -1.0/yij;
+    if (p_xform[idx]) {
+      // evaluate flow for transformer
+      aij = gridpack::ComplexType(cos(p_phase_shift[idx]),sin(p_phase_shift[idx]));
+      aij = p_tap_ratio[idx]*aij;
+      if (aij != zero) {
+        if (!p_switched[idx]) {
+          *Yij = yij/conj(aij);
+          *Yii = -(yij-0.5*bij);
+          *Yii = (*Yii)/(aij*conj(aij));
+        } else {
+          *Yij = yij/aij;
+          *Yii = -(yij-0.5*bij);
+        }
+      }
+    } else {
+      // evaluate flow for regular line
+      *Yij = yij;
+      *Yii = -((*Yij)-0.5*bij);
+    }
+  }
+}
+
+/**
+ * Return status of all transmission elements
+ * @return vector containing status of transmission elements
+ */
+std::vector<bool> gridpack::ymatrix::YMBranch::getLineStatus()
+{
+  return p_branch_status;
+}
+
+/**
+ * Return tags of all transmission elements
+ * @return vector containging tag of transmission elements
+ */
+std::vector<std::string> gridpack::ymatrix::YMBranch::getLineTags()
+{
+  return p_tag;
+}
+
+/**
+ * Set the status of a transmission element based on its tag name
+ * @param tag name of transmission element
+ * @param status that transmission element should be set to
+ * @return false if no transmission element with that name exists
+ */
+bool gridpack::ymatrix::YMBranch::setLineStatus(std::string tag,
+    bool status)
+{
+  int i;
+  for (i=0; i<p_elems; i++) {
+    if (tag == p_tag[i]) {
+      p_branch_status[i] = status;
+      break;
+    }
+  }
 }

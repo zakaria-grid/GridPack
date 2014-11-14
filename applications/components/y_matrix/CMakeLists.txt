@@ -10,24 +10,14 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-02-11 07:49:11 d3g096
+# Last Change: 2014-03-24 12:02:42 d3g096
 # -------------------------------------------------------------
-
-set(target_libraries
-    ${Boost_LIBRARIES}
-    ${GA_LIBRARIES}
-    ${MPI_CXX_LIBRARIES})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(gridpack_ymatrix_components
+add_library(gridpack_ymatrix_components OBJECT
   ymatrix_components.cpp
 )
-
-# -------------------------------------------------------------
-# component serialization tests
-# -------------------------------------------------------------
-target_link_libraries(gridpack_ymatrix_components ${target_libraries})
 
 # -------------------------------------------------------------
 # installation
@@ -35,11 +25,6 @@ target_link_libraries(gridpack_ymatrix_components ${target_libraries})
 install(FILES 
   ymatrix_components.hpp  
   DESTINATION include/gridpack/applications/components/y_matrix
-)
-
-install(TARGETS 
-  gridpack_ymatrix_components
-  DESTINATION lib
 )
 
 

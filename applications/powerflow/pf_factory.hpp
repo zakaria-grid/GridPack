@@ -19,12 +19,14 @@
 #define _pf_factory_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/factory/base_factory.hpp"
-#include "pf_components.hpp"
-#include "gridpack/math/matrix.hpp"
+#include "gridpack/include/gridpack.hpp"
+#include "gridpack/applications/components/pf_matrix/pf_components.hpp"
 
 namespace gridpack {
 namespace powerflow {
+
+/// The type of network used in the powerflow application
+typedef network::BaseNetwork<PFBus, PFBranch > PFNetwork;
 
 //enum PFMode{YBus, Jacobian};
 
@@ -46,11 +48,6 @@ class PFFactory
      * Create the admittance (Y-Bus) matrix
      */
     void setYBus(void);
-
-    /**
-     * Find GBus vector 
-     */
-    void setGBus(void);
 
     /**
      * Make SBus vector 

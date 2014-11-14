@@ -15,6 +15,7 @@
 
 add_library(gridpack_timer OBJECT
   coarse_timer.cpp
+  local_timer.cpp
 )
 
 set(target_libraries
@@ -47,6 +48,7 @@ add_test(test_timer test_timer)
 # -------------------------------------------------------------
 install(FILES 
   coarse_timer.hpp
+  local_timer.hpp
   DESTINATION include/gridpack/timer
 )
 
