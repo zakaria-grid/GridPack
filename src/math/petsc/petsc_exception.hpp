@@ -8,7 +8,7 @@
 /**
  * @file   petsc_exception.hpp
  * @author William A. Perkins
- * @date   2013-10-09 13:23:43 d3g096
+ * @date   2014-09-29 09:47:51 d3g096
  * 
  * @brief 
  * 
@@ -16,9 +16,30 @@
  */
 // -------------------------------------------------------------
 
+#ifndef _petsc_exception_hpp_
+#define _petsc_exception_hpp_
+
 #include <string>
+#include <exception>
 #include <petscsys.h>
+
+// You gotta love PETSc consistency 
+
+#if PETSC_VERSION_(3,4,0)
+#undef PETSC_VERSION_RELEASE
+#define PETSC_VERSION_RELEASE 0
+#endif
+
+// With PETSc version 3.5, PETSc::Exception was no longer defined.  It
+// was replaced with std::runtime_error. 
+
+#if PETSC_VERSION_LT(3,5,0)
 #include <petscsys.hh>
+#define PETSC_EXCEPTION_TYPE PETSc::Exception
+#else
+#define PETSC_EXCEPTION_TYPE std::runtime_error
+#endif 
+
 #include "gridpack/utilities/exception.hpp"
 
 namespace gridpack {
@@ -34,10 +55,10 @@ public:
   explicit PETScException(const PetscErrorCode ierr);
 
   /// Construct from a PETSc exception
-  explicit PETScException(const PETSc::Exception& e);
+  explicit PETScException(const PETSC_EXCEPTION_TYPE& e);
 
   /// Construct from a PETSc exception and error code
-  PETScException(const PetscErrorCode& ierr, const PETSc::Exception& e);
+  PETScException(const PetscErrorCode& ierr, const PETSC_EXCEPTION_TYPE& e);
 
   /// Copy constructor
   PETScException(const PETScException& old);
@@ -59,3 +80,5 @@ protected:
 
 } // namespace math
 } // namespace gridpack
+
+#endif

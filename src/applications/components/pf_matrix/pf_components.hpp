@@ -204,10 +204,17 @@ class PFBus
      * Write output from buses to standard out
      * @param string (output) string with information to be printed out
      * @param signal an optional character string to signal to this
+     * @param bufsize size of string buffer in bytes
      * routine what about kind of information to write
      * @return true if bus is contributing string to output, false otherwise
      */
-    bool serialWrite(char *string, const char *signal = NULL);
+    bool serialWrite(char *string, const int bufsize, const char *signal = NULL);
+
+    /**
+     * chkQlim
+     check QLIM violations
+    */
+    bool chkQlim(void);
 
   private:
     double p_shunt_gs;
@@ -227,6 +234,7 @@ class PFBus
     // newly added priavate variables:
     std::vector<double> p_pg, p_qg;
     std::vector<int> p_gstatus;
+    std::vector<double> p_qmax,p_qmin;
     std::vector<double> p_vs;
     std::vector<std::string> p_gid;
     double p_pl, p_ql;
@@ -355,11 +363,12 @@ class PFBranch
     /**
      * Write output from branches to standard out
      * @param string (output) string with information to be printed out
+     * @param bufsize size of string buffer in bytes
      * @param signal an optional character string to signal to this
      * routine what about kind of information to write
      * @return true if branch is contributing string to output, false otherwise
      */
-    bool serialWrite(char *string, const char *signal = NULL);
+    bool serialWrite(char *string, const int bufsize, const char *signal = NULL);
 
   private:
     std::vector<double> p_reactance;
@@ -373,6 +382,7 @@ class PFBranch
     std::vector<double> p_shunt_admt_b2;
     std::vector<bool> p_xform, p_shunt;
     std::vector<double> p_rateA;
+    std::vector<bool> p_branch_status;
     int p_mode;
     double p_ybusr_frwd, p_ybusi_frwd;
     double p_ybusr_rvrs, p_ybusi_rvrs;

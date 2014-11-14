@@ -21,15 +21,7 @@
 #include <ga++.h>
 
 #include "pf_app2.hpp"
-#include "gridpack/configuration/configuration.hpp"
-#include "gridpack/parser/PTI23_parser.hpp"
-#include "gridpack/math/math.hpp"
-#include "gridpack/math/newton_raphson_solver.hpp"
-#include "gridpack/math/nonlinear_solver.hpp"
-#include "gridpack/mapper/bus_vector_map.hpp"
-#include "gridpack/mapper/full_map.hpp"
-#include "gridpack/serial_io/serial_io.hpp"
-#include "gridpack/utilities/uncopyable.hpp"
+#include "gridpack/include/gridpack.hpp"
 
 
 namespace gridpack {
@@ -217,7 +209,7 @@ PFApp2::~PFApp2(void)
 // PFApp2::execute
 // -------------------------------------------------------------
 void
-PFApp2::execute(void)
+PFApp2::execute(int argc, char** argv)
 {
   parallel::Communicator world;
   boost::shared_ptr<PFNetwork> network(new PFNetwork(world));
@@ -225,7 +217,13 @@ PFApp2::execute(void)
   // read configuration file
   utility::Configuration *config = 
     utility::Configuration::configuration();
-  config->open("input.xml", world);
+  if (argc >= 2 && argv[1] != NULL) {
+    char inputfile[256];
+    sprintf(inputfile,"%s",argv[1]);
+    config->open(inputfile,world);
+  } else {
+    config->open("input.xml",world);
+  }
   utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Powerflow");
   std::string filename = cursor->get("networkConfiguration",
@@ -345,7 +343,7 @@ main(int argc, char **argv)
   gridpack::math::Initialize();
 
   gridpack::powerflow::PFApp2 app;
-  app.execute();
+  app.execute(argc, argv);
 
   gridpack::math::Finalize();
 }

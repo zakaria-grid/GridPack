@@ -185,11 +185,12 @@ class DSBus
     /**
      * Write output from buses to standard out
      * @param string (output) string with information to be printed out
+     * @param bufsize size of string buffer in bytes
      * @param signal an optional character string to signal to this
      * routine what about kind of information to write
      * @return true if bus is contributing string to output, false otherwise
      */
-    bool serialWrite(char *string, const char *signal);
+    bool serialWrite(char *string, const int bufsize, const char *signal);
 
 
   private:
@@ -262,6 +263,7 @@ class DSBranch
   public:
     // Small utility structure to encapsulate information about fault events
     struct Event{
+      std::string name;
       double start,end;
       int from_idx, to_idx;
       double step;

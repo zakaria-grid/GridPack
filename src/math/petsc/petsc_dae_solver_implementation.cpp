@@ -8,7 +8,7 @@
 /**
  * @file   petsc_dae_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-14 11:48:54 d3g096
+ * @date   2014-09-18 09:29:27 d3g096
  * 
  * @brief  
  * 
@@ -24,7 +24,6 @@
 #include "petsc/petsc_vector_extractor.hpp"
 #include "petsc/petsc_matrix_extractor.hpp"
 #include "petsc/petsc_vector_implementation.hpp"
-#include "petsc/petsc_configuration.hpp"
 
 namespace gridpack {
 namespace math {
@@ -36,6 +35,9 @@ namespace math {
 // -------------------------------------------------------------
 // PETScDAESolverImplementation::FormIJacobian
 // -------------------------------------------------------------
+
+#if PETSC_VERSION_LT(3,5,0)
+
 PetscErrorCode 
 PETScDAESolverImplementation::FormIJacobian(TS ts, PetscReal t, Vec x, Vec xdot, 
                                             PetscReal a, Mat *jac, Mat *B, 
@@ -65,6 +67,38 @@ PETScDAESolverImplementation::FormIJacobian(TS ts, PetscReal t, Vec x, Vec xdot,
   return ierr;
   
 }
+
+#else
+
+PetscErrorCode 
+PETScDAESolverImplementation::FormIJacobian(TS ts, PetscReal t, Vec x, Vec xdot, 
+                                            PetscReal a, Mat jac, Mat B, 
+                                            void *dummy)
+{
+  PetscErrorCode ierr(0);
+
+  // Necessary C cast
+  PETScDAESolverImplementation *solver =
+    (PETScDAESolverImplementation *)dummy;
+
+  // Copy PETSc's current estimate into 
+
+  // Should be the case, but just make sure
+  BOOST_ASSERT(jac == *(solver->p_petsc_J));
+  BOOST_ASSERT(B == *(solver->p_petsc_J));
+
+  boost::scoped_ptr<Vector> 
+    xtmp(new Vector(new PETScVectorImplementation(x, false))),
+    xdottmp(new Vector(new PETScVectorImplementation(xdot, false)));
+
+  // Call the user-specified function (object) to form the Jacobian
+  (solver->p_Jbuilder)(t, *xtmp, *xdottmp, a, solver->p_J);
+
+  return ierr;
+  
+}
+
+#endif
 
 // -------------------------------------------------------------
 // PETScDAESolverImplementation::FormIFunction
@@ -96,6 +130,7 @@ PETScDAESolverImplementation::PETScDAESolverImplementation(const parallel::Commu
                                                            DAEJacobianBuilder& jbuilder,
                                                            DAEFunctionBuilder& fbuilder)
   : DAESolverImplementation(comm, local_size, jbuilder, fbuilder),
+    PETScConfigurable(this->communicator()),
     p_ts(),
     p_petsc_J(NULL)
 {
@@ -148,7 +183,7 @@ PETScDAESolverImplementation::p_build(const std::string& option_prefix)
     // ierr = TSSetExactFinalTime(p_ts, TS_EXACTFINALTIME_MATCHSTEP); CHKERRXX(ierr);
 
     ierr = TSSetFromOptions(p_ts); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
     
@@ -161,8 +196,7 @@ void
 PETScDAESolverImplementation::p_configure(utility::Configuration::CursorPtr props)
 {
   DAESolverImplementation::p_configure(props);
-  std::string prefix(petscProcessOptions(this->communicator(), props));
-  p_build(prefix);
+  this->build(props);
 }
 
 // -------------------------------------------------------------
@@ -178,7 +212,7 @@ PETScDAESolverImplementation::p_initialize(const double& t0,
     ierr = TSSetInitialTimeStep(p_ts, t0, deltat0); CHKERRXX(ierr); 
     Vec *xvec(PETScVector(x0));
     ierr = TSSetSolution(p_ts, *xvec);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
   
@@ -226,7 +260,7 @@ PETScDAESolverImplementation::p_solve(double& maxtime,
       throw gridpack::Exception(msg);
     }
     
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   } catch (const gridpack::Exception& e) {
     throw;

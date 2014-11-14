@@ -29,6 +29,7 @@
 #include "gridpack/serial_io/serial_io.hpp"
 #include "ca_factory.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
+#include "gridpack/timer/local_timer.hpp"
 
 // Calling program for contingency analysis application
 
@@ -110,11 +111,13 @@ void gridpack::contingency_analysis::CAApp::execute(
     gridpack::contingency_analysis::Contingency contingency)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
+  gridpack::utility::LocalTimer ltimer(comm);
   gridpack::utility::CoarseTimer *timer = 
     gridpack::utility::CoarseTimer::instance();
-  double time = timer->currentTime();
+  int lt_task = ltimer.createCategory("Evaluate Contingency");
   int t_task = timer->createCategory("Evaluate Contingency");
   timer->start(t_task);
+  ltimer.start(lt_task);
 
   // get configuration file
   gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
@@ -154,7 +157,9 @@ void gridpack::contingency_analysis::CAApp::execute(
 
   // check contingency for isolated buses
   int t_lone = timer->createCategory("Check for Lone Bus");
+  int lt_lone = ltimer.createCategory("Check for Lone Bus");
   timer->start(t_lone);
+  ltimer.start(lt_lone);
   if (p_factory->checkLoneBus(busIO.getStream().get())) {
     sprintf(ioBuf,"\nIsolated bus found for contingency %s\n",
         contingency.p_name.c_str());
@@ -163,43 +168,68 @@ void gridpack::contingency_analysis::CAApp::execute(
     p_network->updateBuses();
   }
   timer->stop(t_lone);
+  ltimer.stop(lt_lone);
 
   // set YBus components so that you can create Y matrix  
-  int t_matv = timer->createCategory("Create Matrices and Vectors");
+  int t_matv = timer->createCategory("Set Matrices and Vectors");
+  int lt_matv = ltimer.createCategory("Set Matrices and Vectors");
   timer->start(t_matv);
+  ltimer.start(lt_matv);
   p_factory->setYBus();
 
+#if 0
   p_factory->setMode(gridpack::powerflow::YBus);
   gridpack::mapper::FullMatrixMap<CANetwork> ybusMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
-  //branchIO.header("\n=== orginal ybus: ============\n");
-  //orgYbus->print();
+#endif
 
   //////////////////////////////////////////////////////////////
   p_factory->setMode(gridpack::powerflow::S_Cal);
 
   // make Sbus components to create S vector
   p_factory->setSBus();
+  timer->stop(t_matv);
+  ltimer.stop(lt_matv);
 
   // Set PQ
+  int t_cmap = timer->createCategory("Create Mapper");
+  int lt_cmap = ltimer.createCategory("Create Mapper");
+  timer->start(t_cmap);
+  ltimer.start(lt_cmap);
   p_factory->setMode(gridpack::powerflow::RHS);
   gridpack::mapper::BusVectorMap<CANetwork> vMap(p_network);
+  timer->stop(t_cmap);
+  ltimer.stop(lt_cmap);
+  int t_mapm = timer->createCategory("Map Matrix");
+  int lt_mapm = ltimer.createCategory("Map Matrix");
+  int t_mapv = timer->createCategory("Map Vector");
+  int lt_mapv = ltimer.createCategory("Map Vector");
+  timer->start(t_mapv);
+  ltimer.start(lt_mapv);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
-//  branchIO.header("\n=== PQ: ============\n");
-//  PQ->print();
+  timer->stop(t_mapv);
+  ltimer.stop(lt_mapv);
+  timer->start(t_cmap);
+  ltimer.start(lt_cmap);
   p_factory->setMode(gridpack::powerflow::Jacobian);
   gridpack::mapper::FullMatrixMap<CANetwork> jMap(p_network);
+  timer->stop(t_cmap);
+  ltimer.stop(lt_cmap);
+  timer->start(t_mapm);
+  ltimer.start(lt_mapm);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
-  //J->print(); 
+  timer->stop(t_mapm);
+  ltimer.stop(lt_mapm);
 
   // Create X vector by cloning PQ
   boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
-  timer->stop(t_matv);
 
   // Create linear solver
   gridpack::math::LinearSolver solver(*J);
   int t_solv = timer->createCategory("Solve Powerflow Equations");
+  int lt_solv = ltimer.createCategory("Solve Powerflow Equations");
   timer->start(t_solv);
+  ltimer.start(lt_solv);
   solver.configure(cursor);
 
   tol = 2.0*tolerance;
@@ -210,49 +240,72 @@ void gridpack::contingency_analysis::CAApp::execute(
   try {
     solver.solve(*PQ, *X);
   } catch (const gridpack::Exception e) {
-    busIO.header("Solver failure");
+    busIO.header("Solver failure\n\n");
     p_factory->clearContingency(contingency);
     timer->stop(t_solv);
+    ltimer.stop(lt_solv);
     timer->stop(t_task);
+    ltimer.stop(lt_task);
+    ltimer.dump(busIO.getStream());
     return;
   }
   tol = PQ->normInfinity();
   timer->stop(t_solv);
-  //J->print();
-  //PQ->print();
-  //X->print();
+  ltimer.stop(lt_solv);
+
+  int t_updt = timer->createCategory("Update Buses");
+  int lt_updt = ltimer.createCategory("Update Buses");
 
   bool converged = false;
   if (real(tol) <= tolerance) converged = true;
   while (real(tol) > tolerance && iter < max_iteration) {
     // Push current values in X vector back into network components
-    timer->start(t_matv);
+    timer->start(t_mapv);
+    ltimer.start(lt_mapv);
     p_factory->setMode(gridpack::powerflow::RHS);
     vMap.mapToBus(X);
+    timer->stop(t_mapv);
+    ltimer.stop(lt_mapv);
 
     // Exchange data between ghost buses (I don't think we need to exchange data
     // between branches)
+    timer->start(t_updt);
+    ltimer.start(lt_updt);
     p_network->updateBuses();
+    timer->stop(t_updt);
+    ltimer.stop(lt_updt);
 
     // Create new versions of Jacobian and PQ vector
+    timer->start(t_mapv);
+    ltimer.start(lt_mapv);
     vMap.mapToVector(PQ);
+    timer->stop(t_mapv);
+    ltimer.stop(lt_mapv);
+    timer->start(t_mapm);
+    ltimer.start(lt_mapm);
     p_factory->setMode(gridpack::powerflow::Jacobian);
     jMap.mapToMatrix(J);
-    timer->stop(t_matv);
+    timer->stop(t_mapm);
+    ltimer.stop(lt_mapm);
 
     // Create linear solver
     timer->start(t_solv);
+    ltimer.start(lt_solv);
     X->zero(); //might not need to do this
     try {
       solver.solve(*PQ, *X);
     } catch (const gridpack::Exception e) {
-      busIO.header("Solver failure");
+      busIO.header("Solver failure\n\n");
       p_factory->clearContingency(contingency);
       timer->stop(t_solv);
+      ltimer.stop(lt_solv);
       timer->stop(t_task);
+      ltimer.stop(lt_task);
+      ltimer.dump(busIO.getStream());
       return;
     }
     timer->stop(t_solv);
+    ltimer.stop(lt_solv);
 
     tol = PQ->normInfinity();
     if (real(tol) <= tolerance) converged = true;
@@ -261,31 +314,42 @@ void gridpack::contingency_analysis::CAApp::execute(
     iter++;
   }
   // Push final result back onto buses
+  timer->start(t_mapv);
+  ltimer.start(lt_mapv);
   p_factory->setMode(gridpack::powerflow::RHS);
   vMap.mapToBus(X);
+  timer->stop(t_mapv);
+  ltimer.stop(lt_mapv);
 
-  // Check for any violations
-  bool bus_ok, branch_ok;
-  p_factory->checkContingencies(minV,maxV,&bus_ok,&branch_ok);
-  if (!bus_ok || !branch_ok) {
-    sprintf(ioBuf,"\n   Violation found for contingency %s\n",contingency.p_name.c_str());
-  } else {
-    sprintf(ioBuf,"\n   No violations found for contingency %s\n",contingency.p_name.c_str());
-  }
-  busIO.header(ioBuf);
+  int t_out = timer->createCategory("Write Output to File");
+  int lt_out = ltimer.createCategory("Write Output to File");
+  timer->start(t_out);
+  ltimer.start(lt_out);
+  if (converged) {
+    // Check for any violations
+    bool bus_ok, branch_ok;
+    p_factory->checkContingencies(minV,maxV,&bus_ok,&branch_ok);
+    if (!bus_ok || !branch_ok) {
+      sprintf(ioBuf,"\n   Violation found for contingency %s\n",
+         contingency.p_name.c_str());
+    } else {
+      sprintf(ioBuf,"\n   No violations found for contingency %s\n",
+         contingency.p_name.c_str());
+    }
+    busIO.header(ioBuf);
 
-  if (!branch_ok) {
-    branchIO.header("\n   Branch Violations\n");
-    branchIO.header("\n        Bus 1       Bus 2     Tag          P"
-	"                    Q          Rating   Overloading\n");
-    branchIO.write("flow");
-  }
+    if (!branch_ok) {
+      branchIO.header("\n   Branch Violations\n");
+      branchIO.header("\n        Bus 1       Bus 2     Tag          P"
+	  "                    Q          Rating   Overloading\n");
+      branchIO.write("flow");
+    }
 
-
-  if (!bus_ok) {
-    busIO.header("\n   Bus Voltages Violations\n");
-    busIO.header("\n   Bus Number      Voltage Magnitude\n");
-    busIO.write("violations_only");
+    if (!bus_ok) {
+      busIO.header("\n   Bus Voltages Violations\n");
+      busIO.header("\n   Bus Number      Voltage Magnitude\n");
+      busIO.write("violations_only");
+    }
   }
 
   if (converged) {
@@ -294,14 +358,15 @@ void gridpack::contingency_analysis::CAApp::execute(
     sprintf(ioBuf,"\nContingency evaluation did NOT converge\n");
   }
   busIO.header(ioBuf);
-  time = timer->currentTime()-time;
-  sprintf(ioBuf,"\nElapsed time for task: %12.6f\n",time);
-  busIO.header(ioBuf);
 
-  busIO.close();
+  timer->stop(t_out);
+  ltimer.stop(lt_out);
   // clear contingency
   p_factory->clearContingency(contingency);
   p_factory->clearLoneBus();
+  ltimer.stop(lt_task);
+  ltimer.dump(busIO.getStream());
+  busIO.close();
   timer->stop(t_task);
 }
 
