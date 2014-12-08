@@ -721,14 +721,14 @@ void compareBuses(gridpack::parser::GOSSParser & parser,
 
         while ((*data)->getValue(LOAD_BUSNUMBER, &integerValue, subIndex))
         {
-//            compareLoads(data, index, subIndex);
+            compareLoads(data, index, subIndex);
             ++subIndex;
         }
 
         subIndex        = 0;
         while ((*data)->getValue(GENERATOR_BUSNUMBER, &integerValue, subIndex))
         {
-//            compareGenerators(data, index, subIndex);
+            compareGenerators(data, index, subIndex);
             ++subIndex;
         }
         ++index;
@@ -875,7 +875,6 @@ void compareBranches(gridpack::parser::GOSSParser & parser)
 
 BOOST_AUTO_TEST_CASE(ArtificialData)
 {
-
     bool ok = true;
     std::string   fileName("gridpack-test1.xml");
     std::cout << "TESTING LOAD OF " << fileName << std::endl;
@@ -896,9 +895,9 @@ BOOST_AUTO_TEST_CASE(ArtificialData)
     std::set<int> hasLoad(busesWithLoad, busesWithLoad+10);
 
 
-//    dumpBuses(parser, hasGenerator, hasLoad);
+    dumpBuses(parser, hasGenerator, hasLoad);
     compareBuses(parser, hasGenerator, hasLoad);
-//    dumpBranches(parser);
+    dumpBranches(parser);
     compareBranches(parser);
     std::cout << "END TESTING LOAD OF " << fileName << std::endl;
 
@@ -907,6 +906,7 @@ BOOST_AUTO_TEST_CASE(ArtificialData)
 
 BOOST_AUTO_TEST_CASE(ArtificialData2)
 {
+    /*
     bool ok = true;
     std::string   fileName("gridpack-test2.xml");
     std::cout << "TESTING LOAD OF " << fileName << std::endl;
@@ -932,11 +932,12 @@ BOOST_AUTO_TEST_CASE(ArtificialData2)
     compareBuses(parser, hasGenerator, hasLoad);
     compareBranches(parser);
     std::cout << "END TESTING LOAD OF " << fileName << std::endl;
+    */
 }
 
 BOOST_AUTO_TEST_CASE(Greek_118)
 {
-
+/*
     std::string   fileName("full_gp_north_118.xml");
     std::cout << "TESTING LOAD OF " << fileName << std::endl;
     gridpack::parser::GOSSParser           parser;
@@ -951,6 +952,7 @@ BOOST_AUTO_TEST_CASE(Greek_118)
     }
 //    dumpBranches(parser);
     std::cout << "END TESTING LOAD OF " << fileName << std::endl;
+    */
 }
 
 BOOST_AUTO_TEST_SUITE_END()
