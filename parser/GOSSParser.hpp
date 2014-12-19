@@ -8,14 +8,17 @@
  *
  *  Created on: May 23, 2013
  *      Author: Kevin Glass, Bruce Palmer
- *
- * rev;
  */
 
 #ifndef GOSSPARSER_HPP_
 #define GOSSPARSER_HPP_
 
 #define OLD_MAP
+
+#include <iostream>
+#include <string>
+#include <vector>
+#include <map>
 
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
@@ -24,8 +27,6 @@
 #include <boost/algorithm/string/predicate.hpp>
 #include <boost/foreach.hpp>
 #include <boost/shared_ptr.hpp>
-
-#include <vector>
 
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
@@ -56,7 +57,7 @@
 namespace gridpack {
 namespace parser {
 
-typedef std::vector <std::vector <boost::shared_ptr<gridpack::component::DataCollection > > > BucketList;
+//typedef std::vector <std::vector <boost::shared_ptr<gridpack::component::DataCollection > > > BucketList;
 
 class GOSSParser
 {
@@ -65,7 +66,7 @@ class GOSSParser
     enum XML_TYPE {INTEGER, BOOLEAN, DOUBLE, CHARACTER, STRING, N_TYPES};
 
     /// Constructor
-    explicit GOSSParser() : maxBus(0) {};
+    explicit GOSSParser() :nBuses(0), nBranches(0), p_case_sbase(0) {};
 
 
     /**
@@ -95,49 +96,68 @@ class GOSSParser
         loadBranchData(xmlTree);
     }
 
-    void dumpMap()
+    int getNBuses()             {return nBuses;};
+    std::string getCaseId()     {return p_case_id;};
+    int getNBranches()          {return nBranches;};
+    int getCaseSbase()          {return p_case_sbase;};
+
+    void copyDataCollection(std::vector<boost::shared_ptr<gridpack::component::DataCollection> > & busCollection,
+        std::vector<boost::shared_ptr<gridpack::component::DataCollection> > & branchCollection)
+    {
+        /*
+        std::vector<boost::shared_ptr<gridpack::component::DataCollection>::iterator dataCollection;
+        for (dataCollection = p_dataCollection.begin();
+                dataCollection != p_dataCollection.end(); ++dataCollection)
+        {
+            dataCollectionVector.push_back(dataCollection);
+        }
+        */
+        busCollection    = p_busCollection;
+        branchCollection = p_branchCollection;
+    }
+
+    void test_dumpDataColletionVector(std::vector<boost::shared_ptr<gridpack::component::DataCollection> > & dataCollectionVector)
+    {
+        std::vector<boost::shared_ptr<gridpack::component::DataCollection> >::iterator dataCollection;
+        for (dataCollection = dataCollectionVector.begin();
+                dataCollection != dataCollectionVector.end(); ++dataCollection)
+        {
+            (*dataCollection)->dump();
+        }
+    }
+
+    void test_dumpDataColletion(gridpack::component::DataCollection & dataCollection)
+    {
+         dataCollection.dump();
+    }
+
+    void test_dumpTypeMap()
     {
         std::map<std::string, XML_TYPE>::iterator type;
         for (type = typeMap.begin(); type != typeMap.end(); ++type)
         {
-            std::cout << "<" << type->first << "; " << type->second << ">" << std::endl;
-        }
-    }
-
-    void loadBranches(std::vector<boost::shared_ptr<gridpack::component::DataCollection> > & branches)
-    {
-        for (int i = 0; i < maxBus; ++i)
-        {
-            for (int j = 0; j < maxBus; ++j)
-            {
-                if (branchBucket[i][j]) {
-                    branches.push_back(branchBucket[i][j]);
-                }
+            std::cout << "<" << type->first << "; ";
+            if (type->second == BOOLEAN) {
+                std::cout << "boolean>" << std::endl;
+            } else if (type->second == DOUBLE) {
+                std::cout << "double>" << std::endl;
+            } else if (type->second == INTEGER) {
+                std::cout << "integer>" << std::endl;
+            } else if (type->second == STRING) {
+                std::cout << "string>" << std::endl;
+            } else if (type->second == CHARACTER) {
+                std::cout << "character>" << std::endl;
             }
         }
     }
 
-#ifdef OLD_MAP
-    void loadBuses(std::vector<boost::shared_ptr<gridpack::component::DataCollection> > & buses,
-        std::map<int,int> busMap)
-#else
-    void loadBuses(std::vector<boost::shared_ptr<gridpack::component::DataCollection> > & buses,
-      boost::unordered_map<int, int> busMap)
-#endif
-    {
-        buses           = p_busData;
-        busMap          = p_busMap;
-    }
-
-    int getNBuses()     {return nBuses;};
-    int getNBranches()  {return nBranches;};
-    std::string getCaseId()     {return p_case_id;};
-    int getCaseSbase()  {return p_case_sbase;};
-
     protected:
+    /* ************************************************************************
+     **************************************************************************
+     ***** PRIVATE SCOPE
+     **************************************************************************
+     *********************************************************************** */
     private:
-    // ****************************************************************************
-    // ****************************************************************************
 
     void setupXMLTree(const std::string & xmlFileName,
         boost::property_tree::ptree & xmlTree)
@@ -149,6 +169,11 @@ class GOSSParser
         }
     }
 
+    /* ************************************************************************
+     **************************************************************************
+     ***** Type map setup
+     **************************************************************************
+     *********************************************************************** */
     void setTypeAssociations(boost::property_tree::ptree &  xmlTree)
     {
         std::string          name("");
@@ -229,6 +254,11 @@ class GOSSParser
 
     }
 
+    /* ************************************************************************
+     **************************************************************************
+     ***** Load case data
+     **************************************************************************
+     *********************************************************************** */
     void loadCase(boost::property_tree::ptree & xmlTree)
     {
         boost::property_tree::ptree caseXMLTree =
@@ -247,19 +277,42 @@ class GOSSParser
         }
     }
 
+    /* ************************************************************************
+     **************************************************************************
+     ***** Load bus data
+     **************************************************************************
+     *********************************************************************** */
+
+    /* ***********************************************************************
+     * Find the "Buses" node in the XML tree and read all of the "Bus" tags
+     *********************************************************************** */
     void loadBusData(boost::property_tree::ptree & xmlTree)
     {
         boost::property_tree::ptree busXMLTree =
                 xmlTree.get_child("application.GridpackPowergrid.Buses");
-        int                  nBus           = 0;
-        BOOST_FOREACH( boost::property_tree::ptree::value_type const& busesAttr, busXMLTree)
+
+        // loop through XML Bus subtree "Buses"
+        BOOST_FOREACH( boost::property_tree::ptree::value_type const& busTree, busXMLTree)
         {
-            readBus(busesAttr);
-            ++nBus;
+            readBus(busTree);
         }
     }
 
-    void readBus(boost::property_tree::ptree::value_type const & busesAttr)
+    /* ***********************************************************************
+     * Read the "Bus" node of the "Buses" subtree. For each XML tag
+     * associated with a "Bus" if the tag is:
+     *      "Generators" is the set of generators assocaiated with a given
+     *           "Bus." Each generator within a bus is given an index value
+     *           corresponding to the order in which the "Generator" is read.
+     *           For each "Bus" containing N "Generators," the generator index
+     *           values range from 0 to N-1.
+     *      "Loads" is the set of loads assocaiated with a given "Bus." Each
+     *           load within a bus is given an index value corresponding to the
+     *           order in which the "Load" is read. For each "Bus" containing
+     *           N "Loads," the load index values range from 0 to N-1.
+     *      All other tags are loaded into the "Bus."
+     *********************************************************************** */
+    void readBus(boost::property_tree::ptree::value_type const & busTree)
     {
         boost::shared_ptr<gridpack::component::DataCollection>
             data(new gridpack::component::DataCollection);
@@ -268,7 +321,7 @@ class GOSSParser
         int                      nGenerators = 0;
 
         BOOST_FOREACH( boost::property_tree::ptree::value_type busAttr,
-            busesAttr.second)
+            busTree.second)
         {
             if (busAttr.first == "Generators")
             {
@@ -298,138 +351,66 @@ class GOSSParser
 
             } else {
                 loadCollection(data, busAttr);
-                int      busIndex = 0;
-
-                data->getValue(BUS_NUMBER, &busIndex);
-                if (maxBus < busIndex) maxBus = busIndex;
-                p_busMap.insert(std::pair<int,int>(busIndex,busIndex));
             }
         }
-        p_busData.push_back(data);
+        p_busCollection.push_back(data);
         ++nBuses;
     }
 
+    /* ************************************************************************
+     **************************************************************************
+     ***** Load branch data
+     **************************************************************************
+     *********************************************************************** */
+
+    /* ***********************************************************************
+     * Find the "Buses" node in the XML tree and read all of the "Bus" tags
+     *********************************************************************** */
     void loadBranchData(boost::property_tree::ptree & xmlTree)
     {
-        boost::property_tree::ptree branchesXMLTree;
-        branchesXMLTree =
+        boost::property_tree::ptree branchXMLTree =
                 xmlTree.get_child("application.GridpackPowergrid.Branches");
-        int                  index          = 0;
 
-        // create an nBuses x nBuses bucket list
-        ++maxBus;
-        branchBucket    = BucketList(maxBus, std::vector<boost::shared_ptr<gridpack::component::DataCollection> >(maxBus));
-
-        BOOST_FOREACH( boost::property_tree::ptree::value_type const& branchesAttr, branchesXMLTree)
+        // loop through XML Bus subtree "Buses"
+        BOOST_FOREACH( boost::property_tree::ptree::value_type const& branchTree, branchXMLTree)
         {
-            readBranch(branchesAttr, index);
-            ++ index;
+            readBranch(branchTree);
         }
     }
 
-    void readBranch(boost::property_tree::ptree::value_type const& branchesAttr, int index)
+    void readBranch(boost::property_tree::ptree::value_type const & branchTree)
     {
-        int                      nLoads     = 0;
-        int                      nGenerators = 0;
-        std::map<std::string, std::string>     keyValue;
-        int              nElems       = 0;
+        boost::shared_ptr<gridpack::component::DataCollection>
+            data(new gridpack::component::DataCollection);
 
-        // load the branch data into the keyValue map
-        BOOST_FOREACH( boost::property_tree::ptree::value_type branchAttr, branchesAttr.second)
+        BOOST_FOREACH( boost::property_tree::ptree::value_type branchAttr,
+            branchTree.second)
         {
-            try{
 
-                if (branchAttr.first == "TransmissionElements") {
-                    // read xml branch and store in map
-                    BOOST_FOREACH( boost::property_tree::ptree::value_type lineAttr, branchAttr.second.get_child("Line"))
+            if (branchAttr.first == "TransmissionElements")
+            {
+                BOOST_FOREACH( boost::property_tree::ptree::value_type lineSet,
+                        branchAttr.second)
+                {
+                    BOOST_FOREACH( boost::property_tree::ptree::value_type lineAttr,
+                            lineSet.second)
                     {
-                            keyValue[lineAttr.first] = lineAttr.second.data();
+                          loadCollection(data, lineAttr);
                     }
-                } else {
-                    if (branchAttr.first == BRANCH_FROMBUS || branchAttr.first == BRANCH_TOBUS)
-                    {
-                        keyValue[branchAttr.first] = branchAttr.second.data();
-                    };
                 }
-            }catch (boost::exception & e) {
-                std::cout << "Failed to read transmission element" << std::endl;
-                throw;
+            } else {
+                loadCollection(data, branchAttr);
             }
         }
-
-        // branch from/to indices
-        int       fromBus = atoi(keyValue["BRANCH_FROMBUS"].c_str());
-        int       toBus   = atoi(keyValue["BRANCH_TOBUS"].c_str());
-
-        // bucketList load branch bucket using from/to or to/from for switched buses
-        if (branchBucket[fromBus][toBus])
-        {
-            branchBucket[fromBus][toBus]->getValue(BRANCH_NUM_ELEMENTS,&nElems);
-        } else if (branchBucket[toBus][fromBus]) {
-            branchBucket[toBus][fromBus]->getValue(BRANCH_NUM_ELEMENTS,&nElems);
-        } else {
-            nElems      = 0;
-            boost::shared_ptr<gridpack::component::DataCollection>  s_data(new gridpack::component::DataCollection);
-            s_data->addValue(BRANCH_FROMBUS, fromBus);
-            s_data->addValue(BRANCH_TOBUS, toBus);
-
-            branchBucket[fromBus][toBus] = s_data;
-        }
-
-        // load key/value elements into bucket
-        loadKeyValues(keyValue, branchBucket[fromBus][toBus], nElems);
-
-        // set the element index in the data collection
-        ++nElems;
-        branchBucket[fromBus][toBus]->setValue(BRANCH_NUM_ELEMENTS,nElems);
-
+        p_branchCollection.push_back(data);
         ++nBranches;
     }
 
-    void loadKeyValues(std::map<std::string,std::string> &  keyValue,
-        boost::shared_ptr<gridpack::component::DataCollection> data, int nElems)
-    {
-        for (std::map<std::string,std::string>::iterator it = keyValue.begin();
-                it != keyValue.end(); ++it)
-        {
-            XML_TYPE         type               = typeMap[it->first];
-
-            switch (type)
-            {
-                case BOOLEAN:
-                {
-                    bool             value          = true;
-                    if (it->second == "false") value = false;
-                    data->addValue(it->first.c_str(), value, nElems);
-                    break;
-                }
-                case INTEGER:
-                {
-                    data->addValue(it->first.c_str(), atoi(it->second.c_str()), nElems);
-                    break;
-                }
-                case DOUBLE:
-                {
-                    data->addValue(it->first.c_str(), atof(it->second.c_str()), nElems);
-                    break;
-                }
-                case CHARACTER:
-                {
-                    data->addValue(it->first.c_str(), it->second[0], nElems);
-                    break;
-                }
-                case STRING:
-                {
-                    data->addValue(it->first.c_str(), it->second.c_str(), nElems);
-                    break;
-                }
-                default:
-                {
-                    break;
-                }
-            }
-        }
-    }
+    /* ************************************************************************
+     **************************************************************************
+     ***** Load data into data collection
+     **************************************************************************
+     *********************************************************************** */
 
     void loadCollection(boost::shared_ptr<gridpack::component::DataCollection> & data,
             boost::property_tree::ptree::value_type & attr)
@@ -513,40 +494,24 @@ class GOSSParser
         }
     }
 
-    int                      busIterator;
-    int                      branchIterator;
+    /* ************************************************************************
+     **************************************************************************
+     ***** OBJECT DATA
+     **************************************************************************
+     *********************************************************************** */
     int                      nBuses;
     int                      nBranches;
-    int                      maxBus;
-    // Vector of bus data objects
-    std::vector<boost::shared_ptr<gridpack::component::DataCollection> >
-                             p_busData;
-#ifdef OLD_MAP
-      std::map<int,int> p_busMap;
-#else
-      boost::unordered_map<int, int> p_busMap;
-#endif
-    // Vector of branch data objects
-    std::vector<boost::shared_ptr<gridpack::component::DataCollection> >
-                             p_branchData;
 
-    // Map of PTI indices to index in p_busData
-    BucketList               branchBucket;
+    // Vector of data collection objects
+    std::vector<boost::shared_ptr<gridpack::component::DataCollection> >
+                             p_busCollection;
+    std::vector<boost::shared_ptr<gridpack::component::DataCollection> >
+                             p_branchCollection;
+    std::map<std::string, XML_TYPE> typeMap;
 
     std::string              p_case_id;
     int                      p_case_sbase;
-    std::map<std::string, XML_TYPE> typeMap;
-
 }; /* end of GOSSParser */
-
-// ****************************************************************************
-// ****************************************************************************
-// ****************************************************************************
-// ****************************************************************************
-// ****************************************************************************
-// ****************************************************************************
-// ****************************************************************************
-// ****************************************************************************
 
 } /* namespace parser */
 } /* namespace gridpack */

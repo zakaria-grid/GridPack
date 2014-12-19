@@ -26,380 +26,30 @@
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
 #include <boost/test/included/unit_test.hpp>
-#include <boost/property_tree/xml_parser.hpp>
+//#include <boost/property_tree/xml_parser.hpp>
 
 #define EPSILON     0.00001
 
 
-void dumpLoads(std::vector <boost::shared_ptr<gridpack::component::DataCollection > >::iterator & data,
-    int index, int subIndex)
+
+bool compareString(const char * str1, const char * str2)
 {
+    int                      len            = strlen(str1) + 2;
+    bool                     comp           = true;
 
-    int                      integerValue   = 0;
-    double                   doubleValue    = 0.0;
-    bool                     logicalValue   = true;
-    char                     charValue      = 'a';
-    char                     stringValue[64];
-    std::string              sourceValue;
-    double                   step           = 0.0;
+    std::cout << "char\t" << str1 << "\t" << str2 << "\tDIFF" << std::endl;
+    for (int i = 0; i < len; i++)
+    {
+        std::cout << i << "\t" << (int)str1[i] << "\t" << (int)str2[i] << "\t" << (int)str1[i] - (int)str2[i] <<std::endl;
+        if (str1[i] != str2[i]) comp = false;
+    }
 
-    (*data)->getValue(LOAD_BUSNUMBER, &integerValue, subIndex);
-    std::cout << "LOAD_BUSNUMBER  recovered is " << integerValue << std::endl;
-
-    (*data)->getValue(LOAD_STATUS, &integerValue, subIndex);
-    std::cout << "LOAD_STATUS is " << std::endl;
-
-    (*data)->getValue(LOAD_AREA, &integerValue, subIndex);
-    std::cout << "LOAD_AREA is " << integerValue << std::endl;
-
-    (*data)->getValue(LOAD_ZONE, &integerValue, subIndex);
-    std::cout << "LOAD_ZONE is " << integerValue << std::endl;
-
-    (*data)->getValue(LOAD_OWNER, &integerValue, subIndex);
-    std::cout << "LOAD_OWNER is " << integerValue << std::endl;
-
-    (*data)->getValue(LOAD_PL, &doubleValue, subIndex);
-    std::cout << "LOAD_PL is " << doubleValue << std::endl;
-
-    (*data)->getValue(LOAD_QL, &doubleValue, subIndex);
-        std::cout << "LOAD_QL is " << doubleValue << std::endl;
-
-    (*data)->getValue(LOAD_IP, &doubleValue, subIndex);
-        std::cout << "LOAD_IP is " << doubleValue << std::endl;
-
-    (*data)->getValue(LOAD_IQ, &doubleValue, subIndex);
-        std::cout << "LOAD_IQ is " << doubleValue << std::endl;
-
-        std::cout << "LOAD_PL is " << doubleValue << std::endl;
-
-    (*data)->getValue(LOAD_YQ, &doubleValue, subIndex);
-    std::cout << "LOAD_PL is " << doubleValue << std::endl;
-
+    return comp;
 }
-
-void compareGenerators(std::vector <boost::shared_ptr<gridpack::component::DataCollection > >::iterator & data,
-    int index, int subIndex)
-{
-
-    int                      integerValue   = 0;
-    double                   doubleValue    = 0.0;
-    bool                     logicalValue   = true;
-    char                     charValue      = 'a';
-    char                     stringValue[64];
-    std::string              stringRead;
-    std::string              sourceValue;
-    double                   step           = 0.0;
-
-    (*data)->getValue(GENERATOR_BUSNUMBER, &integerValue, subIndex);
-    BOOST_CHECK_MESSAGE(integerValue == index + 1 + subIndex*100,
-           "GENERATOR_BUSNUMBER actual = " << index + 1 << " recovered is " << integerValue);
-
-    bool test = (*data)->getValue(GENERATOR_ID, &sourceValue, subIndex);
-    sprintf(stringValue, "%d", index + 1);
-    stringRead  = std::string(stringValue);
-    BOOST_CHECK_MESSAGE(stringRead == sourceValue,
-           "GENERATOR_ID actual =" << stringRead << "-recovered is " << sourceValue);
-
-    (*data)->getValue(GENERATOR_OWNER, &integerValue, subIndex);
-    BOOST_CHECK_MESSAGE(integerValue == index + 1,
-           "GENERATOR_OWNER actual = " << index + 1 << " recovered is " << integerValue);
-
-    (*data)->getValue(GENERATOR_STAT, &integerValue, subIndex);
-    BOOST_CHECK_MESSAGE(integerValue == index + 1,
-           "GENERATOR_STAT actual = " << index + 1 << " recovered is " << integerValue);
-
-    (*data)->getValue(GENERATOR_IREG, &integerValue, subIndex);
-    BOOST_CHECK_MESSAGE(integerValue == index + 1,
-           "GENERATOR_IREG actual = " << index + 1 << " recovered is " << integerValue);
-
-    step            = 1.02;
-    (*data)->getValue(GENERATOR_PG, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_PG actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.03;
-    (*data)->getValue(GENERATOR_QG, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_QG actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.04;
-    (*data)->getValue(GENERATOR_QMAX, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_QMAX actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.05;
-    (*data)->getValue(GENERATOR_QMIN, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_QMIN actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.06;
-    (*data)->getValue(GENERATOR_VS, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_VS actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.07;
-    (*data)->getValue(GENERATOR_MBASE, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_MBASE actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.08;
-    (*data)->getValue(GENERATOR_ZR, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_ZR actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.09;
-    (*data)->getValue(GENERATOR_ZX, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_ZX actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.10;
-    (*data)->getValue(GENERATOR_RT, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_RT actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.11;
-    (*data)->getValue(GENERATOR_XT, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_XT actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.12;
-    (*data)->getValue(GENERATOR_GTAP, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_GTAP actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.13;
-    (*data)->getValue(GENERATOR_RMPCT, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_RMPCT actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.14;
-    (*data)->getValue(GENERATOR_PMAX, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_PMAX actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.15;
-    (*data)->getValue(GENERATOR_PMIN, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_PMIN actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-}
-
 
 BOOST_AUTO_TEST_SUITE(Parser)
 
-void dumpBus(std::vector <boost::shared_ptr<gridpack::component::DataCollection > >::iterator & data,
-    int index, int subIndex)
-{
-    double                   step           = 0.0;
-    int                      integerValue   = 0;
-    double                   doubleValue    = 0.0;
-    bool                     logicalValue   = true;
-    char                     charValue      = 'a';
-    char                     stringValue[64];
-    std::string              sourceValue;
-
-    (*data)->getValue(BUS_AREA, &integerValue);
-    std::cout << "BUS_AREA is " << integerValue << std::endl;
-
-    (*data)->getValue(BUS_NUMBER, &integerValue);
-    std::cout << "BUS_NUMBER is " << integerValue << std::endl;
-
-    (*data)->getValue(BUS_TYPE, &integerValue);
-    std::cout << "BUS_TYPE is " << integerValue << std::endl;
-
-    (*data)->getValue(BUS_OWNER, &integerValue);
-    std::cout << "BUS_OWNER is " << integerValue << std::endl;
-
-    (*data)->getValue(BUS_ZONE, &integerValue);
-    std::cout << "BUS_ZONE is " << integerValue << std::endl;
-
-    (*data)->getValue(BUS_BASEKV, &doubleValue);
-    std::cout << "BRANCH_FLOW_P is " << doubleValue << std::endl;
-
-    (*data)->getValue(BUS_LOAD_PL, &doubleValue);
-    std::cout << "BUS_LOAD_PL is " << doubleValue << std::endl;
-
-    (*data)->getValue(BUS_LOAD_QL, &doubleValue);
-    std::cout << "BUS_LOAD_QL is " << doubleValue << std::endl;
-
-    (*data)->getValue(BUS_SHUNT_BL, &doubleValue);
-    std::cout << "BUS_SHUNT_BL is " << doubleValue << std::endl;
-
-    (*data)->getValue(BUS_SHUNT_GL, &doubleValue);
-    std::cout << "BUS_SHUNT_GL is " << doubleValue << std::endl;
-
-    (*data)->getValue(BUS_VOLTAGE_ANG, &doubleValue);
-    std::cout << "BUS_VOLTAGE_ANG is " << doubleValue << std::endl;
-
-    (*data)->getValue(BUS_VOLTAGE_MAG, &doubleValue);
-    std::cout << "BUS_VOLTAGE_MAG is " << doubleValue << std::endl;
-}
-
-
-void dumpBuses(gridpack::parser::GOSSParser & parser,
-    std::set<int> & hasGenerator, std::set<int> & hasLoad)
-{
-    std::vector <boost::shared_ptr<gridpack::component::DataCollection> > p_busData;
-#ifdef OLD_MAP
-      std::map<int,int> p_busMap;
-#else
-      boost::unordered_map<int, int> p_busMap;
-#endif
-    parser.loadBuses(p_busData, p_busMap);
-    int                      index          = 0;
-    int                      subIndex       = 0;
-    int                      integerValue   = 0;
-    double                   doubleValue    = 0.0;
-    bool                     logicalValue   = true;
-    char                     charValue      = 'a';
-    char                     stringValue[64];
-    std::string              sourceValue;
-    double                   step           = 0.0;
-    std::set<int>::iterator  it;
-    for (std::vector <boost::shared_ptr<gridpack::component::DataCollection > >::iterator data = p_busData.begin();
-            data != p_busData.end(); ++data)
-    {
-        subIndex = 0;
-
-        dumpBus(data, index, subIndex);
-
-        while ((*data)->getValue(LOAD_BUSNUMBER, &integerValue, subIndex))
-        {
-//            compareLoads(data, index, subIndex);
-            ++subIndex;
-        }
-
-        subIndex        = 0;
-        while ((*data)->getValue(GENERATOR_BUSNUMBER, &integerValue, subIndex))
-        {
-//            compareGenerators(data, index, subIndex);
-            ++subIndex;
-        }
-        ++index;
-    }
-}
-
-
-void dumpBranches(gridpack::parser::GOSSParser & parser)
-{
-    int                      index          = 0;
-    int                      integerValue   = 0;
-    double                   doubleValue    = 0.0;
-    bool                     logicalValue   = true;
-    char                     charValue      = 'a';
-    char                     stringValue[64];
-    std::string              stringRead;
-    std::string              sourceValue;
-    double                   step           = 0.0;
-
-    // load branches from parser
-    std::vector<boost::shared_ptr<gridpack::component::DataCollection> > branches;
-    parser.loadBranches(branches);
-
-    for (std::vector<boost::shared_ptr<gridpack::component::DataCollection> >::iterator data = branches.begin();
-            data < branches.end(); data++)
-    {
-
-        (*data)->getValue(BRANCH_FROMBUS, &integerValue);
-        std::cout << "BRANCH_FROMBUS is " << integerValue << std::endl;
-
-        (*data)->getValue(BRANCH_TOBUS, &integerValue);
-        std::cout << "BRANCH_TOBUS is " << integerValue << std::endl;
-
-        (*data)->getValue(BRANCH_INDEX, &integerValue,0);
-        std::cout << "BRANCH_INDEX is " << integerValue << std::endl;
-
-        (*data)->getValue("mrid", &sourceValue, 0);
-        sprintf(stringValue, "%d", index + 1);
-        stringRead  = std::string(stringValue);
-        std::cout << "mrid is " << sourceValue << std::endl;
-
-        step            = 1.01;
-        (*data)->getValue(BRANCH_FLOW_P, &doubleValue,0);
-            std::cout << "BRANCH_FLOW_P is " << doubleValue << std::endl;
-
-        step            = 1.02;
-        (*data)->getValue(BRANCH_FLOW_Q, &doubleValue,0);
-            std::cout << "BRANCH_FLOW_Q is " << doubleValue << std::endl;
-
-        step            = 1.03;
-        (*data)->getValue(BRANCH_R, &doubleValue,0);
-            std::cout << "BRANCH_R is " << doubleValue << std::endl;
-
-        step            = 1.04;
-        (*data)->getValue(BRANCH_RATING_A, &doubleValue,0);
-            std::cout << "BRANCH_RATING_A is " << doubleValue << std::endl;
-
-        step            = 1.05;
-        (*data)->getValue(BRANCH_RATING_B, &doubleValue,0);
-            std::cout << "BRANCH_RATING_B is " << doubleValue << std::endl;
-
-        step            = 1.06;
-        (*data)->getValue(BRANCH_RATING_C, &doubleValue,0);
-            std::cout << "BRANCH_RATING_C is " << doubleValue << std::endl;
-
-        step            = 1.07;
-        (*data)->getValue(BRANCH_RATING, &doubleValue,0);
-            std::cout << "BRANCH_RATING is " << doubleValue << std::endl;
-
-        (*data)->getValue(BRANCH_STATUS, &integerValue,0);
-        std::cout << "BRANCH_STATUS is " << integerValue << std::endl;
-
-        step            = 1.08;
-        (*data)->getValue(BRANCH_X, &doubleValue,0);
-            std::cout << "BRANCH_X is " << doubleValue << std::endl;
-
-        step            = 1.09;
-        (*data)->getValue(BRANCH_B, &doubleValue,0);
-            std::cout << "BRANCH_B is " << doubleValue << std::endl;
-
-        step            = 1.10;
-        (*data)->getValue(BRANCH_SHUNT_ADMTTNC_B1, &doubleValue,0);
-            std::cout << "BRANCH_SHUNT_ADMTTNC_B1 is " << doubleValue << std::endl;
-
-        step            = 1.11;
-        (*data)->getValue(BRANCH_SHUNT_ADMTTNC_B2, &doubleValue,0);
-            std::cout << "BRANCH_SHUNT_ADMTTNC_B2 is " << doubleValue << std::endl;
-
-        step            = 1.12;
-        (*data)->getValue(BRANCH_SHUNT_ADMTTNC_G1, &doubleValue,0);
-            std::cout << "BRANCH_SHUNT_ADMTTNC_G1 is " << doubleValue << std::endl;
-
-        step            = 1.13;
-        (*data)->getValue(BRANCH_SHUNT_ADMTTNC_G2, &doubleValue,0);
-            std::cout << "BRANCH_SHUNT_ADMTTNC_G2 is " << doubleValue << std::endl;
-
-        ++index;
-    }
-}
+/*
 void compareLoads(std::vector <boost::shared_ptr<gridpack::component::DataCollection > >::iterator & data,
     int index, int subIndex)
 {
@@ -476,144 +126,12 @@ void compareLoads(std::vector <boost::shared_ptr<gridpack::component::DataCollec
 
 }
 
-void compareGenerators(std::vector <boost::shared_ptr<gridpack::component::DataCollection > >::iterator & data,
-    int index, int subIndex)
+*/
+bool verifyBusData(gridpack::component::DataCollection & data,
+    gridpack::parser::GOSSParser parser, int busIndex)
 {
-
-    int                      integerValue   = 0;
-    double                   doubleValue    = 0.0;
-    bool                     logicalValue   = true;
-    char                     charValue      = 'a';
-    char                     stringValue[64];
-    std::string              stringRead;
-    std::string              sourceValue;
-    double                   step           = 0.0;
-
-    (*data)->getValue(GENERATOR_BUSNUMBER, &integerValue, subIndex);
-    BOOST_CHECK_MESSAGE(integerValue == index + 1 + subIndex*100,
-           "GENERATOR_BUSNUMBER actual = " << index + 1 << " recovered is " << integerValue);
-
-    bool test = (*data)->getValue(GENERATOR_ID, &sourceValue, subIndex);
-    sprintf(stringValue, "%d", index + 1);
-    stringRead  = std::string(stringValue);
-    BOOST_CHECK_MESSAGE(stringRead == sourceValue,
-           "GENERATOR_ID actual =" << stringRead << "-recovered is " << sourceValue);
-
-    (*data)->getValue(GENERATOR_OWNER, &integerValue, subIndex);
-    BOOST_CHECK_MESSAGE(integerValue == index + 1,
-           "GENERATOR_OWNER actual = " << index + 1 << " recovered is " << integerValue);
-
-    (*data)->getValue(GENERATOR_STAT, &integerValue, subIndex);
-    BOOST_CHECK_MESSAGE(integerValue == index + 1,
-           "GENERATOR_STAT actual = " << index + 1 << " recovered is " << integerValue);
-
-    (*data)->getValue(GENERATOR_IREG, &integerValue, subIndex);
-    BOOST_CHECK_MESSAGE(integerValue == index + 1,
-           "GENERATOR_IREG actual = " << index + 1 << " recovered is " << integerValue);
-
-    step            = 1.02;
-    (*data)->getValue(GENERATOR_PG, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_PG actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.03;
-    (*data)->getValue(GENERATOR_QG, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_QG actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.04;
-    (*data)->getValue(GENERATOR_QMAX, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_QMAX actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.05;
-    (*data)->getValue(GENERATOR_QMIN, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_QMIN actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.06;
-    (*data)->getValue(GENERATOR_VS, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_VS actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.07;
-    (*data)->getValue(GENERATOR_MBASE, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_MBASE actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.08;
-    (*data)->getValue(GENERATOR_ZR, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_ZR actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.09;
-    (*data)->getValue(GENERATOR_ZX, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_ZX actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.10;
-    (*data)->getValue(GENERATOR_RT, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_RT actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.11;
-    (*data)->getValue(GENERATOR_XT, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_XT actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.12;
-    (*data)->getValue(GENERATOR_GTAP, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_GTAP actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.13;
-    (*data)->getValue(GENERATOR_RMPCT, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_RMPCT actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.14;
-    (*data)->getValue(GENERATOR_PMAX, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_PMAX actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-    step            = 1.15;
-    (*data)->getValue(GENERATOR_PMIN, &doubleValue, subIndex);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "GENERATOR_PMIN actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-
-}
-
-void compareBus(std::vector <boost::shared_ptr<gridpack::component::DataCollection > >::iterator & data,
-    int index, int subIndex)
-{
+    bool                     valid          = true;
+    bool                     busValid       = true;
     double                   step           = 0.0;
     int                      integerValue   = 0;
     double                   doubleValue    = 0.0;
@@ -622,256 +140,752 @@ void compareBus(std::vector <boost::shared_ptr<gridpack::component::DataCollecti
     char                     stringValue[64];
     std::string              sourceValue;
 
-    (*data)->getValue(BUS_AREA, &integerValue);
-    BOOST_CHECK_MESSAGE(integerValue == index + 1,
-           "BUS_AREA actual = " << index + 1 << " recovered is " << integerValue);
+    data.getValue(BUS_AREA, &integerValue);
+    valid               = integerValue == busIndex + 1;
+    busValid        |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "BUS_AREA actual = " << busIndex + 1 << " recovered is " << integerValue);
 
-    (*data)->getValue(BUS_NUMBER, &integerValue);
-    BOOST_CHECK_MESSAGE(integerValue == index + 1,
-           "BUS_NUMBER actual = " << index + 1 << " recovered is " << integerValue);
+    data.getValue(BUS_NUMBER, &integerValue);
+    valid               = integerValue == busIndex + 1;
+    busValid        |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "BUS_NUMBER actual = " << busIndex + 1 << " recovered is " << integerValue);
 
-    (*data)->getValue(BUS_TYPE, &integerValue);
-    BOOST_CHECK_MESSAGE(integerValue == index + 1,
-           "BUS_TYPE actual = " << index + 1 << " recovered is " << integerValue);
+    data.getValue(BUS_TYPE, &integerValue);
+    valid               = integerValue == busIndex + 1;
+    busValid        |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "BUS_TYPE actual = " << busIndex + 1 << " recovered is " << integerValue);
 
-    (*data)->getValue(BUS_OWNER, &integerValue);
-    BOOST_CHECK_MESSAGE(integerValue == index + 1,
-           "BUS_OWNER actual = " << index + 1 << " recovered is " << integerValue);
+    data.getValue(BUS_OWNER, &integerValue);
+    valid               = integerValue == busIndex + 1;
+    busValid        |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "BUS_OWNER actual = " << busIndex + 1 << " recovered is " << integerValue);
 
-    (*data)->getValue(BUS_ZONE, &integerValue);
-    BOOST_CHECK_MESSAGE(integerValue == index + 1,
-           "BUS_ZONE actual = " << index + 1 << " recovered is " << integerValue);
+    data.getValue(BUS_ZONE, &integerValue);
+    valid               = integerValue == busIndex + 1;
+    busValid        |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "BUS_ZONE actual = " << busIndex + 1 << " recovered is " << integerValue);
 
     step            = 1.01;
-    (*data)->getValue(BUS_BASEKV, &doubleValue);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "BRANCH_FLOW_P actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
+    data.getValue(BUS_BASEKV, &doubleValue);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid           |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BUS_BASEKV actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
     step            = 1.16;
-    (*data)->getValue(BUS_LOAD_PL, &doubleValue);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "BUS_LOAD_PL actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
+    data.getValue(BUS_LOAD_PL, &doubleValue);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid           |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BUS_LOAD_PL actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
     step            = 1.17;
-    (*data)->getValue(BUS_LOAD_QL, &doubleValue);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "BUS_LOAD_QL actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
+    data.getValue(BUS_LOAD_QL, &doubleValue);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid           |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BUS_LOAD_QL actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
     step            = 1.24;
-    (*data)->getValue(BUS_SHUNT_BL, &doubleValue);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "BUS_SHUNT_BL actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
+    data.getValue(BUS_SHUNT_BL, &doubleValue);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid           |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BUS_SHUNT_BL actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
     step            = 1.25;
-    (*data)->getValue(BUS_SHUNT_GL, &doubleValue);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "BUS_SHUNT_GL actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
+    data.getValue(BUS_SHUNT_GL, &doubleValue);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid           |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BUS_SHUNT_GL actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
     step            = 1.26;
-    (*data)->getValue(BUS_VOLTAGE_ANG, &doubleValue);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "BUS_VOLTAGE_ANG actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
+    data.getValue(BUS_VOLTAGE_ANG, &doubleValue);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid           |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BUS_VOLTAGE_ANG actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
     step            = 1.27;
-    (*data)->getValue(BUS_VOLTAGE_MAG, &doubleValue);
-    BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-    if ((double)index + step > doubleValue + EPSILON ||
-            (double)index + step < doubleValue - EPSILON )
-        std::cout << "BUS_VOLTAGE_MAG actual = " << (double)index + step << " recovered is " << doubleValue << std::endl;
-}
-
-void compareBuses(gridpack::parser::GOSSParser & parser,
-    std::set<int> & hasGenerator, std::set<int> & hasLoad)
-{
-    std::vector <boost::shared_ptr<gridpack::component::DataCollection> > p_busData;
-#ifdef OLD_MAP
-      std::map<int,int> p_busMap;
-#else
-      boost::unordered_map<int, int> p_busMap;
-#endif
-    parser.loadBuses(p_busData, p_busMap);
-    int                      index          = 0;
-    int                      subIndex       = 0;
-    int                      integerValue   = 0;
-    double                   doubleValue    = 0.0;
-    bool                     logicalValue   = true;
-    char                     charValue      = 'a';
-    char                     stringValue[64];
-    std::string              sourceValue;
-    double                   step           = 0.0;
-    std::set<int>::iterator  it;
-    for (std::vector <boost::shared_ptr<gridpack::component::DataCollection > >::iterator data = p_busData.begin();
-            data != p_busData.end(); ++data)
+    data.getValue(BUS_VOLTAGE_MAG, &doubleValue);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid           |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
     {
-        subIndex = 0;
-
-        dumpBus(data, index, subIndex);
-
-        while ((*data)->getValue(LOAD_BUSNUMBER, &integerValue, subIndex))
-        {
-            compareLoads(data, index, subIndex);
-            ++subIndex;
-        }
-
-        subIndex        = 0;
-        while ((*data)->getValue(GENERATOR_BUSNUMBER, &integerValue, subIndex))
-        {
-            compareGenerators(data, index, subIndex);
-            ++subIndex;
-        }
-        ++index;
+        std::cout << "BUS_VOLTAGE_MAG actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
     }
+
+    return busValid;
 }
 
-void compareBranches(gridpack::parser::GOSSParser & parser)
+bool verifyGeneratorData(gridpack::component::DataCollection & data,
+    gridpack::parser::GOSSParser parser, int busIndex, int generatorIndex)
 {
-    int                      index          = 0;
+    bool                     valid          = true;
+    bool                     busValid       = true;
     int                      integerValue   = 0;
     double                   doubleValue    = 0.0;
-    bool                     logicalValue   = true;
-    char                     charValue      = 'a';
     char                     stringValue[64];
     std::string              stringRead;
     std::string              sourceValue;
     double                   step           = 0.0;
 
-    // load branches from parser
-    std::vector<boost::shared_ptr<gridpack::component::DataCollection> > branches;
-    parser.loadBranches(branches);
+    data.getValue(GENERATOR_BUSNUMBER, &integerValue, generatorIndex);
+    valid               = integerValue == busIndex + 1;
+    busValid           |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "GENERATOR_BUSNUMBER actual = " << busIndex + 1 << " recovered is " << integerValue);
 
-    for (std::vector<boost::shared_ptr<gridpack::component::DataCollection> >::iterator data = branches.begin();
-            data < branches.end(); data++)
+    bool test = data.getValue(GENERATOR_ID, &sourceValue, generatorIndex);
+    sprintf(stringValue, "%d", busIndex + 1);
+    valid               = !strcmp(stringValue, sourceValue.c_str());
+    busValid           |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "GENERATOR_ID actual = " << stringValue << " recovered is " << sourceValue);
+
+    data.getValue(GENERATOR_OWNER, &integerValue, generatorIndex);
+    valid               = integerValue == busIndex + 1;
+    busValid           |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "GENERATOR_OWNER actual = " << busIndex + 1 << " recovered is " << integerValue);
+
+    data.getValue(GENERATOR_STAT, &integerValue, generatorIndex);
+    valid               = integerValue == busIndex + 1;
+    busValid           |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "GENERATOR_STAT actual = " << busIndex + 1 << " recovered is " << integerValue);
+
+    data.getValue(GENERATOR_IREG, &integerValue, generatorIndex);
+    valid               = integerValue == busIndex + 1;
+    busValid           |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "GENERATOR_IREG actual = " << busIndex + 1 << " recovered is " << integerValue);
+
+    step            = 1.02;
+    data.getValue(GENERATOR_PG, &doubleValue, generatorIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
     {
+        std::cout << "GENERATOR_PG actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
-        (*data)->getValue(BRANCH_FROMBUS, &integerValue);
-        BOOST_CHECK_MESSAGE(integerValue == 2*index + 1,
-               "BRANCH_FROMBUS actual = " << 2*index + 1 << " recovered is " << integerValue);
+    step            = 1.03;
+    data.getValue(GENERATOR_QG, &doubleValue, generatorIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "GENERATOR_QG actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
-        (*data)->getValue(BRANCH_TOBUS, &integerValue);
-        BOOST_CHECK_MESSAGE(integerValue == 2*index + 2,
-               "BRANCH_TOBUS actual = " << 2*index + 2 << " recovered is " << integerValue);
+    step            = 1.04;
+    data.getValue(GENERATOR_QMAX, &doubleValue, generatorIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "GENERATOR_QMAX actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
-        (*data)->getValue(BRANCH_INDEX, &integerValue,0);
-        BOOST_CHECK_MESSAGE(integerValue == index + 1,
-               "BRANCH_INDEX actual = " << index + 1 << " recovered is " << integerValue);
+    step            = 1.05;
+    data.getValue(GENERATOR_QMIN, &doubleValue, generatorIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "GENERATOR_QMIN actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
-        (*data)->getValue("mrid", &sourceValue, 0);
-        sprintf(stringValue, "%d", index + 1);
-        stringRead  = std::string(stringValue);
-        BOOST_CHECK_MESSAGE(stringRead == sourceValue,
-            "mrid actual = " << stringRead << " recovered is " << sourceValue);
+    step            = 1.06;
+    data.getValue(GENERATOR_VS, &doubleValue, generatorIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "GENERATOR_VS actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
-        step            = 1.01;
-        (*data)->getValue(BRANCH_FLOW_P, &doubleValue,0);
-        BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-        if ((double)index + step > doubleValue + EPSILON ||
-                (double)index + step < doubleValue - EPSILON )
-            std::cout << "BRANCH_FLOW_P actual = " << (double)index + 1.01 << " recovered is " << doubleValue << std::endl;
+    step            = 1.07;
+    data.getValue(GENERATOR_MBASE, &doubleValue, generatorIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "GENERATOR_MBASE actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
-        step            = 1.02;
-        (*data)->getValue(BRANCH_FLOW_Q, &doubleValue,0);
-        BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-        if ((double)index + step > doubleValue + EPSILON ||
-                (double)index + step < doubleValue - EPSILON )
-            std::cout << "BRANCH_FLOW_Q actual = " << (double)index + 1.02 << " recovered is " << doubleValue << std::endl;
+    step            = 1.08;
+    data.getValue(GENERATOR_ZR, &doubleValue, generatorIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "GENERATOR_ZR actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
-        step            = 1.03;
-        (*data)->getValue(BRANCH_R, &doubleValue,0);
-        BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-        if ((double)index + step > doubleValue + EPSILON ||
-                (double)index + step < doubleValue - EPSILON )
-            std::cout << "BRANCH_R actual = " << (double)index + 1.03 << " recovered is " << doubleValue << std::endl;
+    step            = 1.09;
+    data.getValue(GENERATOR_ZX, &doubleValue, generatorIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "GENERATOR_ZX actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
-        step            = 1.04;
-        (*data)->getValue(BRANCH_RATING_A, &doubleValue,0);
-        BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-        if ((double)index + step > doubleValue + EPSILON ||
-                (double)index + step < doubleValue - EPSILON )
-            std::cout << "BRANCH_RATING_A actual = " << (double)index + 1.04 << " recovered is " << doubleValue << std::endl;
+    step            = 1.10;
+    data.getValue(GENERATOR_RT, &doubleValue, generatorIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "GENERATOR_RT actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
-        step            = 1.05;
-        (*data)->getValue(BRANCH_RATING_B, &doubleValue,0);
-        BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-        if ((double)index + step > doubleValue + EPSILON ||
-                (double)index + step < doubleValue - EPSILON )
-            std::cout << "BRANCH_RATING_B actual = " << (double)index + 1.05 << " recovered is " << doubleValue << std::endl;
+    step            = 1.11;
+    data.getValue(GENERATOR_XT, &doubleValue, generatorIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "GENERATOR_XT actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
-        step            = 1.06;
-        (*data)->getValue(BRANCH_RATING_C, &doubleValue,0);
-        BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-        if ((double)index + step > doubleValue + EPSILON ||
-                (double)index + step < doubleValue - EPSILON )
-            std::cout << "BRANCH_RATING_C actual = " << (double)index + 1.06 << " recovered is " << doubleValue << std::endl;
+    step            = 1.12;
+    data.getValue(GENERATOR_GTAP, &doubleValue, generatorIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "GENERATOR_GTAP actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
-        step            = 1.07;
-        (*data)->getValue(BRANCH_RATING, &doubleValue,0);
-        BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-        if ((double)index + step > doubleValue + EPSILON ||
-                (double)index + step < doubleValue - EPSILON )
-            std::cout << "BRANCH_RATING actual = " << (double)index + 1.07 << " recovered is " << doubleValue << std::endl;
+    step            = 1.13;
+    data.getValue(GENERATOR_RMPCT, &doubleValue, generatorIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "GENERATOR_RMPCT actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
-        (*data)->getValue(BRANCH_STATUS, &integerValue,0);
-        BOOST_CHECK_MESSAGE(integerValue == index + 1,
-            "BRANCH_STATUS actual = " << index +1 << " recovered is " << integerValue);
+    step            = 1.14;
+    data.getValue(GENERATOR_PMAX, &doubleValue, generatorIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "GENERATOR_PMAX actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
-        step            = 1.08;
-        (*data)->getValue(BRANCH_X, &doubleValue,0);
-        BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-        if ((double)index + step > doubleValue + EPSILON ||
-                (double)index + step < doubleValue - EPSILON )
-            std::cout << "BRANCH_X actual = " << (double)index + 1.08 << " recovered is " << doubleValue << std::endl;
+    step            = 1.15;
+    data.getValue(GENERATOR_PMIN, &doubleValue, generatorIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "GENERATOR_PMIN actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
 
-        step            = 1.09;
-        (*data)->getValue(BRANCH_B, &doubleValue,0);
-        BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-        if ((double)index + step > doubleValue + EPSILON ||
-                (double)index + step < doubleValue - EPSILON )
-            std::cout << "BRANCH_B actual = " << (double)index + 1.09 << " recovered is " << doubleValue << std::endl;
+    return busValid;
+};
 
-        step            = 1.10;
-        (*data)->getValue(BRANCH_SHUNT_ADMTTNC_B1, &doubleValue,0);
-        BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-        if ((double)index + step > doubleValue + EPSILON ||
-                (double)index + step < doubleValue - EPSILON )
-            std::cout << "BRANCH_SHUNT_ADMTTNC_B1 actual = " << (double)index + 1.1 << " recovered is " << doubleValue << std::endl;
+bool verifyLoadData(gridpack::component::DataCollection & data,
+    gridpack::parser::GOSSParser parser, int busIndex, int loadIndex)
+{
+    bool                     valid          = true;
+    bool                     busValid       = true;
+    int                      integerValue   = 0;
+    double                   doubleValue    = 0.0;
+    bool                     logicalValue   = true;
+    char                     charValue      = 'a';
+    char                     stringValue[64];
+    std::string              sourceValue;
+    double                   step           = 0.0;
 
-        step            = 1.11;
-        (*data)->getValue(BRANCH_SHUNT_ADMTTNC_B2, &doubleValue,0);
-        BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-        if ((double)index + step > doubleValue + EPSILON ||
-                (double)index + step < doubleValue - EPSILON )
-            std::cout << "BRANCH_SHUNT_ADMTTNC_B2 actual = " << (double)index + 1.11 << " recovered is " << doubleValue << std::endl;
+    data.getValue(LOAD_BUSNUMBER, &integerValue, loadIndex);
+    valid               = integerValue == busIndex + 1 + 100*loadIndex;
+    busValid           |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "LOAD_BUSNUMBER actual = " << busIndex + 1 + 100*loadIndex << " recovered is " << integerValue);
 
-        step            = 1.12;
-        (*data)->getValue(BRANCH_SHUNT_ADMTTNC_G1, &doubleValue,0);
-        BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-        if ((double)index + step > doubleValue + EPSILON ||
-                (double)index + step < doubleValue - EPSILON )
-            std::cout << "BRANCH_SHUNT_ADMTTNC_G1 actual = " << (double)index + 1.12 << " recovered is " << doubleValue << std::endl;
+    data.getValue(LOAD_STATUS, &integerValue, loadIndex);
+    valid               = integerValue == busIndex + 1;
+    busValid           |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "LOAD_STATUS actual = " << busIndex + 1 << " recovered is " << integerValue);
 
-        step            = 1.13;
-        (*data)->getValue(BRANCH_SHUNT_ADMTTNC_G2, &doubleValue,0);
-        BOOST_CHECK_CLOSE(doubleValue, (double)index + step, EPSILON);
-        if ((double)index + step > doubleValue + EPSILON ||
-                (double)index + step < doubleValue - EPSILON )
-            std::cout << "BRANCH_SHUNT_ADMTTNC_G2 actual = " << (double)index + 1.13 << " recovered is " << doubleValue << std::endl;
+    data.getValue(LOAD_AREA, &integerValue, loadIndex);
+    valid               = integerValue == busIndex + 1;
+    busValid           |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "LOAD_AREA actual = " << busIndex + 1 << " recovered is " << integerValue);
 
-        ++index;
+    data.getValue(LOAD_ZONE, &integerValue, loadIndex);
+    valid               = integerValue == busIndex + 1;
+    busValid           |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "LOAD_ZONE actual = " << busIndex + 1 << " recovered is " << integerValue);
+
+    data.getValue(LOAD_OWNER, &integerValue, loadIndex);
+    valid               = integerValue == busIndex + 1;
+    busValid           |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "LOAD_OWNER actual = " << busIndex + 1 << " recovered is " << integerValue);
+
+    step            = 1.18;
+    data.getValue(LOAD_PL, &doubleValue, loadIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "LOAD_PL actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    step            = 1.19;
+    data.getValue(LOAD_QL, &doubleValue, loadIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "LOAD_QL actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    step            = 1.20;
+    data.getValue(LOAD_IP, &doubleValue, loadIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "LOAD_IP actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    step            = 1.21;
+    data.getValue(LOAD_IQ, &doubleValue, loadIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "LOAD_IQ actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    step            = 1.22;
+    data.getValue(LOAD_YP, &doubleValue, loadIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "LOAD_YP actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    step            = 1.23;
+    data.getValue(LOAD_YQ, &doubleValue, loadIndex);
+    valid               =
+            ((double)(busIndex + step) < doubleValue + EPSILON &&
+                    (double)(busIndex + step) > doubleValue - EPSILON );
+    busValid              |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)busIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "LOAD_YQ actual = " << (double)busIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    return busValid;
+};
+
+
+bool validateBus(gridpack::component::DataCollection & data,
+    gridpack::parser::GOSSParser parser, int busIndex)
+{
+    bool                     busValid       = true;
+    int                      generatorIndex = 0;
+    int                      loadIndex      = 0;
+    int                      integerValue   = 0;
+
+    busValid           |= verifyBusData(data, parser, busIndex);
+    while (data.getValue(GENERATOR_BUSNUMBER, &integerValue, generatorIndex))
+    {
+        busValid        |= verifyGeneratorData(data, parser, busIndex, generatorIndex);
+        ++generatorIndex;
+    }
+
+    while (data.getValue(LOAD_BUSNUMBER, &integerValue, loadIndex))
+    {
+        busValid        |= verifyLoadData(data, parser, busIndex, loadIndex);
+        ++loadIndex;
+    }
+
+    return busValid;
+}
+
+bool validateBranch(gridpack::component::DataCollection & data,
+    gridpack::parser::GOSSParser parser, int branchIndex)
+{
+    bool                     valid          = true;
+    bool                     branchValid    = true;
+    int                      integerValue   = 0;
+    double                   doubleValue    = 0.0;
+    char                     stringValue[64];
+    std::string              sourceValue;
+    double                   step           = 0.0;
+
+
+//    parser.test_dumpDataColletion(data);
+    // validate BRANCH_FROMBUS
+    data.getValue(BRANCH_FROMBUS, &integerValue);
+    valid               = integerValue == 2*branchIndex + 1;
+    branchValid        |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "BRANCH_FROMBUS actual = " << 2*branchIndex + 1 << " recovered is " << integerValue);
+
+    // validate BRANCH_TOBUS
+    data.getValue(BRANCH_TOBUS, &integerValue);
+    valid               = integerValue == 2*branchIndex + 2;
+    branchValid        |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "BRANCH_TOBUS actual = " << 2*branchIndex + 2 << " recovered is " << integerValue);
+
+    // validate BRANCH_INDEX
+    data.getValue(BRANCH_INDEX, &integerValue);
+    valid               = integerValue == branchIndex + 1;
+    branchValid        |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "BRANCH_INDEX actual = " << branchIndex + 1 << " recovered is " << integerValue);
+
+    // validate mrid
+    data.getValue("mrid", &sourceValue);
+    sprintf(stringValue, "%d", branchIndex + 1);
+    valid               = !strcmp(stringValue, sourceValue.c_str());
+    branchValid        |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "mrid actual = " << stringValue << " recovered is " << sourceValue);
+
+    // validate BRANCH_FLOW_P
+    step            = 1.01;
+    data.getValue(BRANCH_FLOW_P, &doubleValue);
+    valid               =
+            ((double)(branchIndex + step) < doubleValue + EPSILON &&
+                    (double)(branchIndex + step) > doubleValue - EPSILON );
+    branchValid        |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)branchIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BRANCH_FLOW_P actual = " << (double)branchIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    // validate BRANCH_FLOW_Q
+    step            = 1.02;
+    data.getValue(BRANCH_FLOW_Q, &doubleValue);
+    valid               =
+            ((double)(branchIndex + step) < doubleValue + EPSILON &&
+                    (double)(branchIndex + step) > doubleValue - EPSILON );
+    branchValid        |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)branchIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BRANCH_FLOW_Q actual = " << (double)branchIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    // validate BRANCH_R
+    step            = 1.03;
+    data.getValue(BRANCH_R, &doubleValue);
+    valid               =
+            ((double)(branchIndex + step) < doubleValue + EPSILON &&
+                    (double)(branchIndex + step) > doubleValue - EPSILON );
+    branchValid        |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)branchIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BRANCH_R actual = " << (double)branchIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    // validate BRANCH_RATING_A
+    step            = 1.04;
+    data.getValue(BRANCH_RATING_A, &doubleValue);
+    valid               =
+            ((double)(branchIndex + step) < doubleValue + EPSILON &&
+                    (double)(branchIndex + step) > doubleValue - EPSILON );
+    branchValid        |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)branchIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BRANCH_RATING_A actual = " << (double)branchIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    // validate BRANCH_RATING_B
+    step            = 1.05;
+    data.getValue(BRANCH_RATING_B, &doubleValue);
+    valid               =
+            ((double)(branchIndex + step) < doubleValue + EPSILON &&
+                    (double)(branchIndex + step) > doubleValue - EPSILON );
+    branchValid        |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)branchIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BRANCH_RATING_B actual = " << (double)branchIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    // validate BRANCH_RATING_C
+    step            = 1.06;
+    data.getValue(BRANCH_RATING_C, &doubleValue);
+    valid               =
+            ((double)(branchIndex + step) < doubleValue + EPSILON &&
+                    (double)(branchIndex + step) > doubleValue - EPSILON );
+    branchValid        |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)branchIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BRANCH_RATING_C actual = " << (double)branchIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    // validate BRANCH_RATING
+    step            = 1.07;
+    data.getValue(BRANCH_RATING, &doubleValue);
+    valid               =
+            ((double)(branchIndex + step) < doubleValue + EPSILON &&
+                    (double)(branchIndex + step) > doubleValue - EPSILON );
+    branchValid        |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)branchIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BRANCH_RATING actual = " << (double)branchIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    // validate BRANCH_STATUS
+    data.getValue(BRANCH_STATUS, &integerValue);
+    valid               = integerValue == branchIndex + 1;
+    branchValid        |= valid;
+    BOOST_CHECK_MESSAGE(valid,
+           "BRANCH_STATUS actual = " << branchIndex + 1 << " recovered is " << integerValue);
+
+    // validate BRANCH_X
+    step            = 1.08;
+    data.getValue(BRANCH_X, &doubleValue);
+    valid               =
+            ((double)(branchIndex + step) < doubleValue + EPSILON &&
+                    (double)(branchIndex + step) > doubleValue - EPSILON );
+    branchValid        |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)branchIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BRANCH_X actual = " << (double)branchIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    // validate BRANCH_B
+    step            = 1.09;
+    data.getValue(BRANCH_B, &doubleValue);
+    valid               =
+            ((double)(branchIndex + step) < doubleValue + EPSILON &&
+                    (double)(branchIndex + step) > doubleValue - EPSILON );
+    branchValid        |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)branchIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BRANCH_B actual = " << (double)branchIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    // validate BRANCH_SHUNT_ADMTTNC_B1
+    step            = 1.10;
+    data.getValue(BRANCH_SHUNT_ADMTTNC_B1, &doubleValue);
+    valid               =
+            ((double)(branchIndex + step) < doubleValue + EPSILON &&
+                    (double)(branchIndex + step) > doubleValue - EPSILON );
+    branchValid        |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)branchIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BRANCH_SHUNT_ADMTTNC_B1 actual = " << (double)branchIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    // validate BRANCH_SHUNT_ADMTTNC_B2
+    step            = 1.11;
+    data.getValue(BRANCH_SHUNT_ADMTTNC_B2, &doubleValue);
+    valid               =
+            ((double)(branchIndex + step) < doubleValue + EPSILON &&
+                    (double)(branchIndex + step) > doubleValue - EPSILON );
+    branchValid        |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)branchIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BRANCH_SHUNT_ADMTTNC_B2 actual = " << (double)branchIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    // validate BRANCH_SHUNT_ADMTTNC_G1
+    step            = 1.12;
+    data.getValue(BRANCH_SHUNT_ADMTTNC_G1, &doubleValue);
+    valid               =
+            ((double)(branchIndex + step) < doubleValue + EPSILON &&
+                    (double)(branchIndex + step) > doubleValue - EPSILON );
+    branchValid        |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)branchIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BRANCH_SHUNT_ADMTTNC_G1 actual = " << (double)branchIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    // validate BRANCH_SHUNT_ADMTTNC_G2
+    step            = 1.13;
+    data.getValue(BRANCH_SHUNT_ADMTTNC_G2, &doubleValue);
+    valid               =
+            ((double)(branchIndex + step) < doubleValue + EPSILON &&
+                    (double)(branchIndex + step) > doubleValue - EPSILON );
+    branchValid        |= valid;
+    BOOST_CHECK_CLOSE(doubleValue, (double)branchIndex + step, EPSILON);
+    if(!valid)
+    {
+        std::cout << "BRANCH_SHUNT_ADMTTNC_G2 actual = " << (double)branchIndex + step << " recovered is " << doubleValue << std::endl;
+    }
+
+    return branchValid;
+}
+
+void validateBusCollection(std::vector<boost::shared_ptr<gridpack::component::DataCollection> > & busCollectionVector,
+    gridpack::parser::GOSSParser & parser)
+{
+    bool                     busValid       = true;
+    int                      busIndex       = 0;
+
+    std::vector<boost::shared_ptr<gridpack::component::DataCollection> >::iterator dataCollection;
+    for (dataCollection = busCollectionVector.begin();
+            dataCollection != busCollectionVector.end(); ++dataCollection)
+    {
+        busValid        = validateBus(**dataCollection, parser, busIndex);
+        ++busIndex;
     }
 
 }
+
+void validateBranchCollection(std::vector<boost::shared_ptr<gridpack::component::DataCollection> > & branchCollectionVector,
+    gridpack::parser::GOSSParser & parser)
+{
+    bool                     branchValid    = true;
+    int                      branchIndex    = 0;
+
+    std::vector<boost::shared_ptr<gridpack::component::DataCollection> >::iterator dataCollection;
+    for (dataCollection = branchCollectionVector.begin();
+            dataCollection != branchCollectionVector.end(); ++dataCollection)
+    {
+        branchValid     = validateBranch(**dataCollection, parser, branchIndex);
+        ++branchIndex;
+//        parser.test_dumpDataColletion(**dataCollection);
+    }
+}
+
+void validateCaseData(std::string caseID, int caseSBase)
+{
+    bool                     valid          = true;
+    bool                     caseValid      = true;
+
+    valid               = !strcmp("Case 1", caseID.c_str());
+    caseValid           = valid;
+    BOOST_CHECK_MESSAGE(valid,
+        "CASE_ID actual                = --Case 1--  recovered is ++" << caseID << "++");
+
+    valid               = caseSBase == 100;
+    caseValid           = valid;
+    BOOST_CHECK_MESSAGE(valid,
+        "CASE_SBASE actual             = 100         recovered is " << caseSBase);
+
+    BOOST_CHECK_MESSAGE(caseValid, "Case data was incorrect");
+}
+
+
 
 BOOST_AUTO_TEST_CASE(ArtificialData)
 {
@@ -881,7 +895,18 @@ BOOST_AUTO_TEST_CASE(ArtificialData)
     gridpack::parser::GOSSParser           parser;
 
     try {
+        std::vector<boost::shared_ptr<gridpack::component::DataCollection> > busCollection;
+        std::vector<boost::shared_ptr<gridpack::component::DataCollection> > branchCollection;
         parser.parse(fileName.c_str());
+
+        std::string          caseID        = parser.getCaseId();
+        int                  caseSBase     = parser.getCaseSbase();
+
+        parser.copyDataCollection(busCollection, branchCollection);
+//        parser.test_dumpDataColletionVector(branchCollection);
+        validateBusCollection(busCollection, parser);
+        validateBranchCollection(branchCollection, parser);
+        validateCaseData(caseID, caseSBase);
     } catch (boost::property_tree::xml_parser_error & e) {
         e.what();
     } catch (boost::exception & e) {
@@ -889,16 +914,6 @@ BOOST_AUTO_TEST_CASE(ArtificialData)
         std::cout << std::endl;
     }
 
-    int busesWithGenerators[] = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    int busesWithLoad[]       = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
-    std::set<int> hasGenerator(busesWithGenerators, busesWithGenerators+10);
-    std::set<int> hasLoad(busesWithLoad, busesWithLoad+10);
-
-
-    dumpBuses(parser, hasGenerator, hasLoad);
-    compareBuses(parser, hasGenerator, hasLoad);
-    dumpBranches(parser);
-    compareBranches(parser);
     std::cout << "END TESTING LOAD OF " << fileName << std::endl;
 
 
